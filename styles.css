@@ -1,0 +1,838 @@
+:root{
+  --navy:#0F2A4D;
+  --navy-light:#1C3F6E;
+  --navy-soft:#EAF0F8;
+  --orange:#E8720F;
+  --orange-soft:#F5A64B;
+  --orange-light:#FDEBDA;
+  --cream:#F7F5F0;
+  --gray:#8A94A3;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:'Poppins',sans-serif;
+  background:var(--cream);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 16px;
+}
+.device{
+  width:390px;
+  max-width:100%;
+  background:#000;
+  border-radius:44px;
+  padding:12px;
+  box-shadow:0 20px 60px rgba(15,42,77,0.25);
+}
+.screen{
+  background:var(--cream);
+  border-radius:32px;
+  height:780px;
+  overflow:hidden;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+}
+.statusbar{
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  flex-shrink:0;
+  border-bottom:1px solid rgba(15,42,77,0.08);
+}
+.statusbar-logo{
+  height:38px;
+  width:auto;
+  display:block;
+}
+.statusbar-brand{
+  font-size:15px;
+  font-weight:700;
+  color:var(--navy);
+  letter-spacing:-0.01em;
+  line-height:1.15;
+}
+.statusbar-brand em{
+  display:block;
+  font-style:normal;
+  font-weight:500;
+  font-size:11px;
+  color:var(--orange);
+  letter-spacing:0.02em;
+}
+.view{
+  flex:1;
+  overflow-y:auto;
+  display:none;
+  flex-direction:column;
+  padding:0 20px 20px;
+}
+.view.active{display:flex;}
+
+/* ---- Header comun ---- */
+.app-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:8px 0 16px;
+}
+.app-header h1{font-size:18px; font-weight:600; color:var(--navy);}
+.app-header .sub{font-size:12px; color:var(--gray); font-weight:400; margin-top:2px;}
+.chip-monedas{
+  display:flex; align-items:center; gap:5px; flex-shrink:0;
+  padding:6px 12px; border-radius:20px;
+  font-size:12px; font-weight:700; letter-spacing:.3px; white-space:nowrap;
+  box-shadow:0 2px 8px rgba(232,114,15,.15);
+}
+.chip-monedas-juego{background:linear-gradient(135deg, var(--orange-light), #FBDCB8); color:var(--orange);}
+.chip-row{display:flex; flex-wrap:wrap; gap:8px;}
+.chip{
+  padding:9px 16px; border-radius:999px; border:none;
+  font-size:13px; font-weight:600; color:var(--navy); background:var(--navy-soft);
+  cursor:pointer; font-family:'Poppins',sans-serif; display:inline-block;
+  box-shadow:0 2px 6px rgba(15,42,77,.08);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.chip:active{transform:scale(.96);}
+.chip.selected{
+  background:linear-gradient(135deg, var(--orange-soft), var(--orange));
+  border-color:transparent; color:#fff;
+  box-shadow:0 4px 12px rgba(232,114,15,.35);
+}
+
+/* ---- Memoria ---- */
+.memoria-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:14px 0;}
+.memoria-carta{
+  aspect-ratio:1; border-radius:10px; border:none; cursor:pointer;
+  background:var(--navy); font-size:26px; display:flex; align-items:center; justify-content:center;
+  padding:0; transition:.15s;
+}
+.memoria-carta-volteada{background:#fff; border:1.5px solid var(--orange);}
+.memoria-carta-resuelta{background:var(--orange-light); border:1.5px solid var(--orange); opacity:.55; cursor:default;}
+.memoria-logo-img{width:60%; height:60%; object-fit:contain; border-radius:20%;}
+
+/* ---- Sudoku ---- */
+.sudoku-tablero{display:flex; flex-direction:column; border:2px solid var(--navy); border-radius:8px; overflow:hidden; margin:10px 0 16px;}
+.sudoku-fila{display:flex;}
+.sudoku-celda{
+  flex:1; aspect-ratio:1; border:1px solid #E3E7ED; background:#fff;
+  font-family:'Poppins',sans-serif; font-weight:700; font-size:15px; color:var(--navy);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
+}
+.sudoku-celda-fija{background:var(--navy-soft); cursor:default;}
+.sudoku-celda-correcta{color:var(--orange);}
+.sudoku-celda-incorrecta{color:#D9534F;}
+.sudoku-celda-elegida{background:var(--orange-light);}
+.sudoku-borde-derecho{border-right:2px solid var(--navy);}
+.sudoku-borde-abajo{border-bottom:2px solid var(--navy);}
+.sudoku-teclado{display:grid; grid-template-columns:repeat(5,1fr); gap:8px;}
+.sudoku-tecla{
+  aspect-ratio:1; border-radius:12px; border:none; background:var(--navy-soft); color:var(--navy);
+  font-family:'Poppins',sans-serif; font-weight:700; font-size:16px; cursor:pointer;
+  box-shadow:0 2px 6px rgba(15,42,77,.08); transition:transform .1s ease;
+}
+.sudoku-tecla:active{transform:scale(.92);}
+.sudoku-tecla-borrar{background:#FBE4E1; color:#D9534F;}
+
+/* ---- Patrones ---- */
+.patrones-secuencia{display:flex; gap:8px; justify-content:center; align-items:center; margin:14px 0 20px; flex-wrap:wrap;}
+.patron-celda{
+  width:56px; height:56px; border-radius:12px; background:#fff; border:1.5px solid #ECE9E1;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  box-shadow:0 2px 6px rgba(15,42,77,.06);
+}
+.patron-celda-incognita{background:var(--navy-soft); border-style:dashed; font-size:22px; font-weight:700; color:var(--navy);}
+.patrones-opciones{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
+.patron-opcion{
+  aspect-ratio:1; border-radius:16px; background:#fff; border:2px solid #ECE9E1; cursor:pointer; padding:8px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 3px 10px rgba(15,42,77,.08); transition:transform .12s ease;
+}
+.patron-opcion:not(:disabled):active{transform:scale(.95);}
+.patron-opcion-correcta{border-color:var(--orange); background:var(--orange-light);}
+.patron-opcion-incorrecta{border-color:#D9534F; background:#FBE4E1;}
+
+/* ---- Sopa de letras ---- */
+.sopa-grilla{
+  display:flex; flex-direction:column; gap:2px; align-items:center;
+  background:#fff; border:2px solid var(--navy); border-radius:8px;
+  padding:6px; margin:10px 0 16px; overflow-x:auto;
+}
+.sopa-fila{display:flex; gap:2px;}
+.sopa-celda{
+  border:1px solid #ECE9E1; border-radius:4px; background:#fff;
+  font-family:'Poppins',sans-serif; font-weight:700; color:var(--navy);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
+  touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+}
+.sopa-celda-seleccionada{background:var(--orange-light); border-color:var(--orange);}
+.sopa-celda-encontrada{background:var(--navy); color:#fff; border-color:var(--navy);}
+.sopa-lista-palabras{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;}
+.sopa-palabra{
+  font-size:12px; font-weight:700; color:var(--navy); background:var(--navy-soft);
+  border-radius:8px; padding:5px 10px;
+}
+.sopa-palabra-encontrada{background:var(--orange-light); color:var(--orange); text-decoration:line-through;}
+
+.btn-mute{
+  background:#fff; border:none; border-radius:50%;
+  width:34px; height:34px; font-size:15px; cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Poppins',sans-serif;
+  box-shadow:0 2px 8px rgba(15,42,77,.12);
+}
+
+/* ---- Onboarding: elegir emoji ---- */
+.hero{
+  background:linear-gradient(155deg, var(--navy-light), var(--navy));
+  border-radius:24px;
+  padding:24px 20px;
+  color:#fff;
+  margin-bottom:20px;
+  margin-top:8px;
+  box-shadow:0 10px 24px rgba(15,42,77,.22);
+}
+.hero h2{font-size:20px; font-weight:600; margin-bottom:4px;}
+.hero p{font-size:13px; color:#C6D3E8; font-weight:400;}
+/* ---- Botones grandes del menú de Juegos (solo / grupo) ---- */
+.categoria-juegos{
+  display:flex; align-items:center; gap:14px;
+  border-radius:20px; padding:18px 18px;
+  margin-bottom:10px; cursor:pointer; color:#fff;
+}
+.categoria-juegos-solo{background:linear-gradient(135deg, var(--navy-light), var(--navy)); box-shadow:0 8px 18px rgba(15,42,77,.28);}
+.categoria-juegos-grupo{background:linear-gradient(135deg, var(--orange-soft), var(--orange)); box-shadow:0 8px 18px rgba(232,114,15,.32);}
+.categoria-juegos-cartas{background:linear-gradient(135deg, #3B9B5A, #1E5C3A); box-shadow:0 8px 18px rgba(30,92,58,.32);}
+.categoria-juegos-icono{font-size:28px; flex-shrink:0;}
+.categoria-juegos-info{flex:1; min-width:0;}
+.categoria-juegos-info h2{font-size:17px; font-weight:700; margin-bottom:2px;}
+.categoria-juegos-info p{font-size:12px; color:rgba(255,255,255,0.8); font-weight:400;}
+.categoria-juegos-flecha{font-size:18px; transition:transform .2s; flex-shrink:0;}
+.categoria-juegos-flecha-abierta{transform:rotate(180deg);}
+.categoria-juegos-lista{margin-bottom:14px;}
+
+.home-logo-banner{
+  display:flex; align-items:center; justify-content:center;
+  padding:14px 0 20px;
+}
+.home-logo-banner img{height:88px; width:auto;}
+
+.btn-primary{
+  background:linear-gradient(135deg, var(--orange-soft), var(--orange)); color:#fff; border:none;
+  padding:16px; border-radius:999px; font-size:15px; font-weight:600;
+  font-family:'Poppins',sans-serif; cursor:pointer; width:100%;
+  margin-top:auto;
+  box-shadow:0 6px 16px rgba(232,114,15,.32);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.btn-primary:not(:disabled):active{transform:scale(.97); box-shadow:0 3px 8px rgba(232,114,15,.28);}
+.btn-primary:disabled{background:#E3E7ED; color:#AEB6C2; box-shadow:none; cursor:not-allowed;}
+.btn-ghost{
+  background:var(--navy-soft); border:none; color:var(--navy);
+  padding:12px; border-radius:999px; font-size:13px; font-weight:600;
+  font-family:'Poppins',sans-serif; cursor:pointer; width:100%; margin-top:10px;
+  box-shadow:0 3px 10px rgba(15,42,77,.12);
+  transition:transform .12s ease;
+}
+.btn-ghost:active{transform:scale(.97);}
+
+/* Onboarding: en vez de un botón de texto, se toca el logo -- así el
+   arranque de cada viaje suma una repetición más de marca. */
+.btn-continuar-logo{
+  background:none; border:none; cursor:pointer; padding:0;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  width:100%; margin-top:auto; padding-top:24px;
+}
+.btn-continuar-logo-img{
+  width:96px; height:96px; border-radius:22px;
+  box-shadow:0 6px 16px rgba(15,42,77,.25);
+  transition:transform .15s ease, opacity .15s ease, filter .15s ease;
+}
+.btn-continuar-logo span{
+  font-family:'Poppins',sans-serif; font-weight:600; font-size:14px; color:var(--navy);
+}
+.btn-continuar-logo:disabled{cursor:not-allowed;}
+.btn-continuar-logo:disabled .btn-continuar-logo-img{opacity:.35; filter:grayscale(70%); box-shadow:none;}
+.btn-continuar-logo:disabled span{color:#9AA3B0;}
+.btn-continuar-logo:not(:disabled):active .btn-continuar-logo-img{transform:scale(.92);}
+
+/* ---- Home ---- */
+.card{
+  background:#fff; border-radius:18px; padding:16px; margin-bottom:12px;
+  display:flex; gap:14px; align-items:center; cursor:pointer;
+  border:1px solid #ECE9E1;
+  box-shadow:0 3px 10px rgba(15,42,77,.06);
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.card:hover{border-color:var(--orange); box-shadow:0 4px 14px rgba(232,114,15,.14);}
+.card:active{transform:scale(.98);}
+.card .icon{
+  width:44px; height:44px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg, var(--orange-light), #FBDCB8); color:var(--orange);
+}
+.card .icon svg{width:22px; height:22px;}
+.card .txt h3{font-size:14px; font-weight:600; color:var(--navy); margin-bottom:2px;}
+.card .txt p{font-size:12px; color:var(--gray);}
+
+/* ---- Raspadita del día ---- */
+.raspadita-card{background:linear-gradient(135deg, var(--navy), var(--navy-light)); display:block; cursor:default;}
+.raspadita-titulo{font-size:15px; font-weight:700; color:#fff; margin-bottom:4px;}
+.raspadita-mensaje{font-size:12px; color:#C6D3E8; margin-bottom:12px;}
+.raspadita-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+.raspadita-casillero{
+  aspect-ratio:1; border-radius:14px; border:none; cursor:pointer;
+  background:rgba(255,255,255,0.15); font-size:26px;
+  display:flex; align-items:center; justify-content:center; padding:8px;
+}
+.raspadita-casillero.raspadita-revelada{background:#fff; cursor:default;}
+.raspadita-casillero.raspadita-revelada img{height:100%; width:auto; max-width:100%;}
+.section-label{font-size:12px; font-weight:600; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin:14px 0 8px;}
+
+/* ---- Trivia ---- */
+.progress-bar{height:6px; background:#EDEAE2; border-radius:3px; margin:12px 0 20px; overflow:hidden;}
+.progress-fill{height:100%; background:var(--orange); border-radius:3px; transition:width .3s;}
+.question-box{background:#fff; border-radius:18px; padding:20px; margin-bottom:16px;}
+.question-box .qnum{font-size:11px; color:var(--gray); font-weight:600; margin-bottom:8px;}
+.question-box h3{font-size:16px; color:var(--navy); font-weight:600; line-height:1.4;}
+.option{
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:14px;
+  padding:14px; margin-bottom:10px; font-size:13px; color:var(--navy);
+  font-weight:500; cursor:pointer;
+}
+.option:hover{border-color:var(--orange);}
+.option.correct{border-color:#3B9B5A; background:#EAF7EE; color:#256B3A;}
+.option.wrong{border-color:#D34C3D; background:#FCECEA; color:#9E3226;}
+
+/* ---- Acertijos ---- */
+.acertijo-respuesta{
+  background:#EAF7EE; border:1.5px solid #3B9B5A; border-radius:16px;
+  padding:16px; margin-bottom:16px;
+}
+.acertijo-respuesta .section-label{margin-top:0; color:#256B3A;}
+.acertijo-respuesta p{font-size:16px; font-weight:700; color:#256B3A;}
+.acertijo-respuesta.acertijo-respuesta-neutra{background:#fff; border-color:#ECE9E1;}
+.acertijo-respuesta.acertijo-respuesta-neutra .section-label{color:var(--gray);}
+.acertijo-respuesta.acertijo-respuesta-neutra p{color:var(--navy);}
+.acertijo-botones{display:flex; flex-direction:column; gap:10px;}
+.acertijo-botones .btn-ghost{margin-top:0;}
+.acertijo-imagen{font-size:56px; text-align:center; line-height:1.3; margin-bottom:10px;}
+
+/* ---- Pensamiento lateral ---- */
+.pens-dibujo{display:flex; justify-content:center; margin-bottom:10px;}
+.pens-historia{font-size:13px; color:var(--navy); line-height:1.5; margin-top:8px;}
+.pens-preguntas{display:flex; flex-direction:column; gap:8px; margin-bottom:6px;}
+.pens-pregunta-btn{
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:12px;
+  padding:10px 12px; font-size:12.5px; color:var(--navy); font-weight:500;
+  font-family:'Poppins',sans-serif; cursor:pointer; text-align:left;
+}
+.pens-pregunta-btn:hover{border-color:var(--orange);}
+.pens-pregunta-btn .pens-costo{color:var(--orange); font-weight:700; font-size:11px; flex-shrink:0;}
+.pens-pregunta{
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+  background:var(--cream); border:1.5px solid #ECE9E1; border-radius:12px;
+  padding:10px 12px; font-size:12.5px; color:var(--gray); font-weight:500;
+}
+.pens-pregunta .pens-pregunta-resp{color:var(--navy); font-weight:700; flex-shrink:0;}
+
+/* ---- Ahorcado ---- */
+.ahorcado-dibujo{display:flex; justify-content:center; margin-bottom:8px;}
+.ahorcado-palabra{font-size:22px; font-weight:700; letter-spacing:4px; color:var(--navy); margin-bottom:8px; word-break:break-all;}
+.ahorcado-vidas{font-size:12px; color:var(--gray);}
+.ahorcado-teclado{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:16px;}
+.ahorcado-tecla{
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:8px; padding:8px 0;
+  font-size:13px; font-weight:700; color:var(--navy); cursor:pointer;
+  font-family:'Poppins',sans-serif;
+}
+.ahorcado-tecla:hover:not(:disabled){border-color:var(--orange);}
+.ahorcado-tecla:disabled{cursor:not-allowed;}
+.ahorcado-tecla-correcta{background:#EAF7EE; border-color:#3B9B5A; color:#256B3A;}
+.ahorcado-tecla-incorrecta{background:#FCECEA; border-color:#D34C3D; color:#9E3226;}
+
+/* ---- 4+1 ---- */
+.cuatrouno-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:8px 0 12px;}
+.cuatrouno-imagen{
+  background:#fff; border:1px solid #ECE9E1; border-radius:16px;
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  font-size:38px;
+}
+.cuatrouno-pista{font-size:12px; color:var(--gray); text-align:center; margin-bottom:14px;}
+.cuatrouno-armada{
+  min-height:24px; background:#fff; border:1.5px solid #ECE9E1; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; font-weight:700; letter-spacing:4px; color:var(--navy);
+  margin-bottom:14px; padding:8px; word-break:break-all;
+}
+.cuatrouno-fichas{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-bottom:14px;}
+.cuatrouno-ficha{
+  width:38px; height:38px; border-radius:10px; border:1.5px solid #ECE9E1;
+  background:#fff; font-size:15px; font-weight:700; color:var(--navy);
+  cursor:pointer; font-family:'Poppins',sans-serif;
+}
+.cuatrouno-ficha:hover:not(:disabled){border-color:var(--orange);}
+.cuatrouno-ficha:disabled{opacity:.25; cursor:not-allowed;}
+.cuatrouno-acciones{display:flex; gap:10px;}
+.cuatrouno-acciones .btn-ghost{margin-top:0;}
+
+/* ---- Valija Express ---- */
+.valija-topbar{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px;}
+.valija-topbar-info{display:flex; align-items:center; gap:6px; min-width:0;}
+.valija-topbar-emoji{font-size:22px; flex-shrink:0; line-height:1;}
+.valija-topbar-destino{
+  font-size:15px; font-weight:700; color:var(--navy);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.valija-timer{font-size:26px; font-weight:800; color:var(--navy); flex-shrink:0; transition:.2s;}
+.valija-timer.valija-timer-urgente{color:#D34C3D; animation:valija-pulso .6s infinite;}
+@keyframes valija-pulso{0%,100%{transform:scale(1);} 50%{transform:scale(1.15);}}
+.valija-consigna{font-size:13px; color:var(--navy); line-height:1.4; margin:2px 0 8px; font-weight:500;}
+.valija-visual{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.valija-visual-emoji{font-size:34px; flex-shrink:0; line-height:1;}
+.valija-contenido{
+  flex:1; min-height:34px; background:#fff; border:1.5px dashed #ECE9E1; border-radius:12px;
+  display:flex; flex-wrap:wrap; gap:5px; align-items:center; padding:6px 8px;
+}
+.valija-contenido-badge{font-size:11px; font-weight:700; color:var(--navy); margin-right:2px;}
+.valija-chip{
+  background:var(--orange-light); color:var(--orange); border-radius:999px;
+  padding:3px 9px; font-size:10.5px; font-weight:600;
+}
+.valija-chip-vacio{background:none; color:var(--gray); font-weight:400;}
+.valija-items{display:grid; grid-template-columns:1fr 1fr; gap:5px;}
+.valija-item{
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:10px;
+  padding:6px 6px; font-size:11px; font-weight:600; color:var(--navy); line-height:1.15;
+  cursor:pointer; font-family:'Poppins',sans-serif; text-align:center;
+}
+.valija-item:hover{border-color:var(--orange);}
+.valija-item.valija-item-elegido{background:var(--navy); border-color:var(--navy); color:#fff;}
+.valija-resultado-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
+.valija-resultado-item{
+  background:#fff; border:1px solid #ECE9E1; border-radius:14px; padding:14px;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.valija-resultado-num{font-size:22px; font-weight:800; color:var(--orange);}
+.valija-resultado-item span:last-child{font-size:11px; color:var(--gray); font-weight:600; text-transform:uppercase;}
+
+/* ---- Ranking ---- */
+.rank-row{
+  display:flex; align-items:center; gap:12px; background:#fff;
+  border-radius:14px; padding:12px 14px; margin-bottom:8px;
+  transition:transform .3s;
+}
+.rank-row.me{border:1.5px solid var(--orange); background:var(--orange-light);}
+.rank-num{font-size:14px; font-weight:700; color:var(--gray); width:20px;}
+.rank-avatar{
+  width:34px; height:34px; border-radius:50%; background:var(--navy);
+  color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:600; flex-shrink:0;
+}
+.rank-name{flex:1; font-size:13px; font-weight:600; color:var(--navy); display:flex; flex-direction:column; gap:1px;}
+.rank-pts{font-size:13px; font-weight:700; color:var(--orange);}
+
+/* ---- Tienda / Premios ---- */
+.tienda-nota{font-size:12px; color:var(--gray); line-height:1.5; margin-bottom:14px;}
+
+.premios-hero{
+  background:linear-gradient(135deg, var(--navy), var(--navy-light));
+  border-radius:24px; padding:22px 20px; color:#fff; margin-bottom:18px;
+}
+.premios-hero-titulo{font-size:19px; font-weight:700; margin-bottom:6px;}
+.premios-hero p{font-size:13px; color:#C6D3E8; line-height:1.5;}
+
+.premios-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
+.premio-card{
+  border-radius:18px; padding:16px 12px; text-align:center; position:relative;
+  border:1.5px solid #ECE9E1; background:#fff; overflow:hidden;
+}
+.premio-card-0{background:linear-gradient(160deg,#FFF6DC,#fff); border-color:#E8C547;}
+.premio-card-1{background:linear-gradient(160deg,#F3F4F6,#fff); border-color:#B9C0CA;}
+.premio-card-2{background:linear-gradient(160deg,#FBE9DA,#fff); border-color:#D9A066;}
+.premio-card-3{background:linear-gradient(160deg,#FDEBDA,#fff); border-color:var(--orange);}
+.premio-card-medalla{font-size:30px; margin-bottom:4px;}
+.premio-card-puesto{font-size:10px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.4px;}
+.premio-card-nombre{font-size:13px; font-weight:700; color:var(--navy); margin-top:4px; line-height:1.3;}
+.premio-card-elegido{opacity:.6;}
+.premio-card-tag{
+  margin-top:8px; font-size:10px; font-weight:700; color:#3B9B5A;
+  background:rgba(59,155,90,0.12); border-radius:999px; padding:4px 8px; display:inline-block;
+}
+@keyframes premiosFlash{
+  0%{ box-shadow:0 0 0 0 rgba(232,114,15,0.5); }
+  50%{ box-shadow:0 0 0 10px rgba(232,114,15,0); }
+  100%{ box-shadow:0 0 0 0 rgba(232,114,15,0); }
+}
+.premios-grid-flash .premio-card-elegido{animation:premiosFlash 1s ease-out;}
+
+.podio{display:flex; align-items:flex-end; justify-content:center; gap:8px; margin-bottom:14px;}
+.podio-puesto{
+  flex:1; max-width:120px; background:#fff; border-radius:16px 16px 0 0;
+  border:1.5px solid #ECE9E1; padding:14px 8px 12px; display:flex;
+  flex-direction:column; align-items:center; gap:4px;
+}
+.podio-1{order:2; min-height:150px; border-color:#E8C547; background:linear-gradient(180deg,#FFF6DC,#fff); justify-content:flex-end;}
+.podio-2{order:1; min-height:122px; border-color:#B9C0CA; justify-content:flex-end;}
+.podio-3{order:3; min-height:100px; border-color:#D9A066; justify-content:flex-end;}
+.podio-avatar{
+  width:36px; height:36px; border-radius:50%; background:var(--navy); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0;
+}
+.podio-1 .podio-avatar{width:48px; height:48px; font-size:15px;}
+.podio-medalla{font-size:20px;}
+.podio-1 .podio-medalla{font-size:28px;}
+.podio-nombre{font-size:11px; font-weight:700; color:var(--navy); text-align:center; line-height:1.2;}
+.podio-estado{font-size:9.5px; color:var(--gray); text-align:center; line-height:1.2;}
+.podio-activo{
+  border-color:var(--orange); box-shadow:0 0 0 3px var(--orange-light);
+  animation:premioPulso 1.6s ease-in-out infinite;
+}
+@keyframes premioPulso{
+  0%,100%{ box-shadow:0 0 0 3px var(--orange-light); }
+  50%{ box-shadow:0 0 0 7px var(--orange-light); }
+}
+.premios-fila-activa{border:1.5px solid var(--orange); animation:premioPulso 1.6s ease-in-out infinite;}
+.premios-tu-turno{animation:premioPulso 1.6s ease-in-out infinite;}
+
+/* ---- Nav inferior ---- */
+.tabbar{
+  display:flex; justify-content:space-around; padding:12px 0;
+  border-top:1px solid #ECE9E1; background:#fff; flex-shrink:0;
+}
+.tab{
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  font-size:10px; color:var(--gray); font-weight:500; cursor:pointer;
+  background:none; border:none; font-family:'Poppins',sans-serif;
+}
+.tab.active{color:var(--orange); font-weight:600;}
+.tab .dot{width:28px; height:28px; display:flex; align-items:center; justify-content:center;}
+.tab .dot svg{width:26px; height:26px;}
+
+.toast{
+  position:absolute; top:56px; left:20px; right:20px;
+  background:var(--navy); color:#fff; padding:16px 18px; border-radius:16px;
+  font-size:15px; font-weight:700; text-align:center;
+  opacity:0; transform:translateY(-10px) scale(.96); transition:.25s;
+  pointer-events:none; box-shadow:0 8px 24px rgba(15,42,77,0.35);
+  z-index:20;
+}
+.toast.show{opacity:1; transform:translateY(0) scale(1);}
+.toast.toast-gain{background:#256B3A;}
+.toast.toast-loss{background:#9E3226;}
+
+/* ---- Bingo de nombres ---- */
+.bingo-input-numero{
+  width:100%; text-align:center; font-size:22px; font-weight:700; color:var(--navy);
+  border:1.5px solid #ECE9E1; border-radius:14px; padding:12px; margin:16px 0 10px;
+  font-family:'Poppins',sans-serif;
+}
+.bingo-lista-nombres{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
+.bingo-nombre-item{
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:999px; padding:8px 16px;
+  font-size:13px; font-weight:600; color:var(--navy); cursor:pointer; transition:.15s;
+}
+.bingo-nombre-item:hover{border-color:var(--orange);}
+.bingo-nombre-item.bingo-nombre-elegido{background:var(--orange); border-color:var(--orange); color:#fff;}
+.bingo-roster{margin-bottom:16px;}
+.bingo-roster-item{
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+  background:#fff; border:1px solid #ECE9E1; border-radius:12px;
+  padding:10px 14px; margin-bottom:6px; font-size:12px; color:var(--gray); font-weight:500;
+}
+.bingo-roster-item span:first-child{color:var(--navy); font-weight:600;}
+.bingo-roster-item.bingo-roster-listo{border-color:#3B9B5A;}
+.bingo-roster-derecha{display:flex; align-items:center; gap:8px;}
+.bingo-roster-item.bingo-roster-listo .bingo-roster-derecha span{color:#3B9B5A; font-weight:700;}
+.btn-eliminar-pasajero{
+  background:none; border:1.5px solid #D9534F; color:#D9534F; border-radius:50%;
+  width:22px; height:22px; font-size:12px; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  font-family:'Poppins',sans-serif;
+}
+.btn-eliminar-pasajero:hover{background:#D9534F; color:#fff;}
+.btn-finalizar-viaje{
+  background:none; border:1.5px solid var(--orange); color:var(--orange); border-radius:20px;
+  padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;
+  font-family:'Poppins',sans-serif;
+}
+.btn-finalizar-viaje:hover{background:var(--orange); color:#fff;}
+.btn-organizador-link{
+  display:block; width:100%; background:var(--navy); color:#fff; border:none;
+  border-radius:14px; padding:12px; font-size:13px; font-weight:600;
+  font-family:'Poppins',sans-serif; cursor:pointer; margin-bottom:16px;
+}
+.bingo-pin-box{margin-bottom:16px;}
+.link-chico{
+  text-align:center; font-size:12px; color:var(--gray); text-decoration:underline;
+  cursor:pointer; margin-top:12px;
+}
+.rank-asiento{font-size:11px; font-weight:500; color:var(--gray);}
+.bingo-sorteo{background:var(--navy); border-radius:18px; padding:20px; text-align:center; margin-bottom:16px;}
+.bingo-ultimo{
+  display:flex; align-items:baseline; justify-content:center; gap:10px; flex-wrap:wrap;
+  margin-bottom:14px; min-height:56px;
+  animation:bingo-llamada-pop .35s ease-out;
+}
+@keyframes bingo-llamada-pop{
+  from{opacity:0; transform:translateY(6px) scale(.96);}
+  to{opacity:1; transform:translateY(0) scale(1);}
+}
+.bingo-numero-resaltado{
+  color:var(--orange); font-size:2.4em; font-weight:800; letter-spacing:.5px; line-height:1;
+}
+.bingo-numero-significado{
+  color:#C6D3E8; font-size:15px; font-weight:500; text-transform:capitalize;
+}
+.bingo-sorteo .btn-primary{margin-top:0;}
+.bingo-espera{color:#C6D3E8; font-size:12px; margin:0;}
+.bingo-pin-error{color:var(--orange); font-size:13px; text-align:center; margin-top:8px; min-height:16px;}
+.bingo-historial{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;}
+.bingo-chip{
+  background:#fff; border:1px solid #ECE9E1; border-radius:999px; padding:4px 10px;
+  font-size:11px; font-weight:600; color:var(--navy);
+}
+.bingo-chip-vacio{color:var(--gray); font-weight:400;}
+.bingo-chip-ultimo{background:var(--orange); border-color:var(--orange); color:#fff;}
+.bingo-carton{background:#fff; border-radius:16px; padding:12px; margin-bottom:12px; border:1px solid #ECE9E1;}
+.bingo-carton-titulo{font-size:13px; font-weight:700; color:var(--navy); margin-bottom:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;}
+.bingo-badge{
+  background:var(--orange-light); color:var(--orange); font-size:10px; font-weight:700;
+  padding:2px 8px; border-radius:999px; text-transform:uppercase;
+}
+.bingo-badge-full{background:var(--orange); color:#fff;}
+.bingo-grid{display:grid; gap:4px;}
+.bingo-celda{
+  aspect-ratio:1; background:var(--cream); border-radius:8px; display:flex; align-items:center;
+  justify-content:center; text-align:center; font-size:36px; font-weight:700; color:var(--navy);
+  padding:2px; overflow:hidden; transition:.15s;
+}
+.bingo-celda.bingo-marcada{background:var(--orange); color:#fff;}
+.bingo-celda-clickeable{cursor:pointer;}
+.bingo-celda-disponible{
+  background:var(--orange-light); color:var(--orange);
+  box-shadow:0 0 0 2px var(--orange) inset;
+  animation:bingo-pulso-disponible 1.1s ease-in-out infinite;
+}
+@keyframes bingo-pulso-disponible{
+  0%, 100%{ transform:scale(1); }
+  50%{ transform:scale(0.94); }
+}
+
+/* ---- Tutti Frutti ---- */
+.tuti-categorias{display:flex; flex-direction:column; gap:10px; margin:16px 0;}
+.tuti-categoria{display:flex; flex-direction:column; gap:4px;}
+.tuti-categoria label{font-size:11px; font-weight:700; text-transform:uppercase; color:var(--gray); letter-spacing:.4px;}
+.tuti-categoria input{
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:12px;
+  padding:12px 14px; font-size:14px; font-family:'Poppins',sans-serif; color:var(--navy);
+}
+.tuti-categoria input:focus{outline:none; border-color:var(--orange);}
+.tuti-basta{background:#D34C3D;}
+.tuti-resultados{display:flex; flex-direction:column; gap:8px; margin-bottom:16px;}
+.tuti-resultado-detalle{display:grid; grid-template-columns:1fr 1fr; gap:6px 8px; margin-top:6px; width:100%;}
+.tuti-resultado-item{display:flex; flex-direction:column; gap:1px; min-width:0;}
+.tuti-resultado-cat{font-size:9px; color:var(--gray); font-weight:700; text-transform:uppercase; letter-spacing:.3px;}
+.tuti-resultado-palabra{background:var(--cream); border-radius:6px; padding:2px 6px; font-size:12px; color:var(--navy); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.tuti-resultado-invalida{background:#F4E6E0; color:#A8432F; text-decoration:line-through;}
+.tuti-resultado-corregida{box-shadow:0 0 0 1.5px var(--orange) inset;}
+.tuti-override-btn{
+  border:none; background:rgba(0,0,0,0.08); color:inherit; cursor:pointer;
+  width:16px; height:16px; border-radius:50%; font-size:10px; line-height:1;
+  margin-left:4px; padding:0; vertical-align:middle; font-family:'Poppins',sans-serif;
+}
+.tuti-sorteo{display:flex; flex-direction:column; align-items:center; gap:22px; margin:32px 0;}
+.impostor-hero-malo{background:#8C4033;}
+.impostor-palabra{
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:16px;
+  padding:20px; margin-bottom:14px; text-align:center;
+  font-size:26px; font-weight:700; color:var(--navy);
+}
+.tuti-sorteo-letra{
+  width:140px; height:140px; border-radius:28px;
+  background:var(--navy); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:68px; font-weight:800; font-family:'Poppins',sans-serif;
+}
+
+/* ---- Dibujar y Adivinar ---- */
+.dibujar-canvas{
+  width:100%; aspect-ratio:1; background:#fff; border:1.5px solid #ECE9E1;
+  border-radius:16px; margin-bottom:12px; touch-action:none; cursor:crosshair;
+}
+.dibujar-intentos{margin-bottom:14px;}
+.dibujar-intento{
+  font-size:13px; color:var(--gray); background:#fff; border:1px solid #ECE9E1;
+  border-radius:10px; padding:8px 12px; margin-bottom:6px;
+}
+.dibujar-intento-correcto{border-color:#3B9B5A; color:#3B9B5A; font-weight:600;}
+.dibujar-herramientas{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin-bottom:14px;
+}
+.dibujar-colores{display:flex; gap:8px;}
+.dibujar-color-swatch{
+  width:30px; height:30px; border-radius:50%; border:2px solid #fff;
+  box-shadow:0 0 0 1.5px #ECE9E1; cursor:pointer; padding:0; flex-shrink:0;
+}
+.dibujar-color-swatch-selected{box-shadow:0 0 0 2.5px var(--navy);}
+.dibujar-btn-borrar{width:auto; margin-top:0; padding:8px 14px; font-size:12px; white-space:nowrap;}
+
+/* ---- Escoba de 15 (y cartas en general) ---- */
+.escoba-marcador{
+  display:flex; flex-direction:column; gap:2px; font-size:12px; font-weight:600;
+  color:var(--navy); background:#fff; border:1px solid #ECE9E1; border-radius:12px;
+  padding:10px 14px; margin-bottom:8px;
+}
+.escoba-fila{display:flex; flex-wrap:wrap; gap:9px; margin-bottom:14px;}
+.escoba-carta{
+  width:50px; height:70px; border-radius:10px; border:1.5px solid #ECE9E1;
+  background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  font-family:'Poppins',sans-serif; cursor:pointer; flex-shrink:0; padding:0;
+  box-shadow:0 2px 4px rgba(15,42,77,.08); border-bottom-width:3px;
+  transition:transform .1s ease;
+}
+.escoba-carta:disabled{cursor:default; opacity:.9;}
+.escoba-carta:not(:disabled):active{transform:scale(.95);}
+.escoba-carta-numero{font-size:13px; font-weight:700; color:var(--navy);}
+.escoba-carta-palo{display:flex; line-height:0;}
+.escoba-carta-seleccionada{border-color:var(--orange); box-shadow:0 0 0 2px var(--orange-light); background:var(--orange-light);}
+.escoba-carta-oro{border-bottom-color:#F5C242;}
+.escoba-carta-copa{border-bottom-color:#D64545;}
+.escoba-carta-espada{border-bottom-color:#2D3E50;}
+.escoba-carta-basto{border-bottom-color:#A9713F;}
+.escoba-carta-seleccionada.escoba-carta-oro, .escoba-carta-seleccionada.escoba-carta-copa,
+.escoba-carta-seleccionada.escoba-carta-espada, .escoba-carta-seleccionada.escoba-carta-basto{border-bottom-color:var(--orange);}
+.escoba-carta-dorso{background:var(--navy) url('icons/icon-192.png') center/68% no-repeat; border-color:var(--navy-light);}
+.escoba-carta-comodin{border-bottom-color:#8E44AD; color:#8E44AD;}
+.escoba-carta-comodin .escoba-carta-numero{color:#8E44AD;}
+.escoba-carta-seleccionada.escoba-carta-comodin{border-bottom-color:var(--orange);}
+
+/* El abanico de cartas del rival: cada carta se posiciona absoluta dentro de
+   este contenedor (el JS calcula la rotación y el corrimiento de cada una). */
+.abanico-cartas{ position:relative; height:92px; margin-bottom:14px; }
+
+/* El "tapete": marca bien cuál es la mesa compartida (donde se apilan o se
+   juegan cartas comunes), separada de tu mano o del mazo. Siempre 2 cartas
+   por fila, así que por más que se acumulen muchas sigue siendo prolijo. */
+.tapete-mesa{
+  background:linear-gradient(155deg, #2F7D4F, #1E5C3A);
+  border:4px solid #6B4423; border-radius:14px;
+  padding:12px; margin-bottom:14px;
+  box-shadow:inset 0 2px 10px rgba(0,0,0,.25);
+}
+.tapete-mesa .escoba-fila{
+  display:grid; grid-template-columns:repeat(2, max-content);
+  justify-content:center; gap:8px; margin-bottom:0;
+}
+.tapete-mesa p{ color:#EAF3EC; text-align:center; margin:6px 0; }
+
+/* BusColor tiene su propio tapete: el verde de fieltro se confundía con la
+   carta verde. Un gris grafito no compite con ninguno de los 4 colores. */
+.tapete-mesa-buscolor{
+  background:linear-gradient(155deg, #384354, #1B222E);
+  border-color:#0F2A4D;
+}
+
+/* ---- BusColor: cartas a todo color, lo más parecidas posible a las de un
+   mazo de cartas de colores real, para que no se confundan al jugarlas. El
+   lomo reutiliza el mismo dorso con el logo B que el resto de los juegos. ---- */
+.buscolor-carta{
+  width:54px; height:76px; border-radius:10px; border:2.5px solid #fff;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  font-family:'Poppins',sans-serif; cursor:pointer; flex-shrink:0; padding:0;
+  box-shadow:0 2px 6px rgba(15,42,77,.25); transition:transform .1s ease;
+  color:#fff;
+}
+.buscolor-carta:disabled{cursor:not-allowed; opacity:.4; filter:grayscale(.6);}
+.buscolor-carta-vista{cursor:default;}
+.buscolor-carta:not(:disabled):active{transform:scale(.95);}
+.buscolor-carta-seleccionada{box-shadow:0 0 0 3px var(--orange), 0 2px 6px rgba(15,42,77,.25); transform:translateY(-6px);}
+.buscolor-carta-rojo{background:linear-gradient(155deg, #E85D5D, #C22F2F);}
+.buscolor-carta-amarillo{background:linear-gradient(155deg, #F7D154, #E3A916); color:#5A3D00;}
+.buscolor-carta-verde{background:linear-gradient(155deg, #4FBE73, #2A8A4A);}
+.buscolor-carta-azul{background:linear-gradient(155deg, #4A82D4, #2258A8);}
+.buscolor-carta-negra{background:linear-gradient(155deg, #3A3A3A, #101010);}
+.buscolor-carta-simbolo{font-size:20px; font-weight:800;}
+.buscolor-carta-comodin-icono{
+  width:26px; height:26px; border-radius:50%; border:2px solid #fff;
+  background:conic-gradient(#E85D5D 0 25%, #F7D154 0 50%, #4FBE73 0 75%, #4A82D4 0 100%);
+}
+.buscolor-carta-mas4{font-size:11px; font-weight:800; margin-top:2px;}
+.buscolor-color-actual{
+  display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700;
+  color:#EAF3EC;
+}
+.buscolor-color-punto{width:14px; height:14px; border-radius:50%; border:2px solid #fff; display:inline-block;}
+.buscolor-elegir-color{display:flex; gap:10px; justify-content:center; margin:10px 0 16px;}
+.buscolor-elegir-color button{
+  width:48px; height:48px; border-radius:50%; border:3px solid #fff; cursor:pointer;
+  box-shadow:0 2px 6px rgba(15,42,77,.3);
+}
+
+/* Fila compacta de rivales: reemplaza el abanico grande de cartas por
+   jugador (que con 5-6 en la mesa obligaba a scrollear un montón). */
+.buscolor-rivales{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+.buscolor-rival-chip{
+  display:flex; align-items:center; gap:6px;
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:999px;
+  padding:6px 12px; font-size:12.5px; font-weight:600; color:var(--navy);
+  box-shadow:0 2px 6px rgba(15,42,77,.06);
+}
+.buscolor-rival-chip-turno{border-color:var(--orange); background:var(--orange-light);}
+.buscolor-rival-dorso{font-size:15px; line-height:0;}
+.buscolor-rival-cant{
+  background:var(--navy-soft); color:var(--navy); border-radius:999px;
+  padding:1px 7px; font-size:11.5px; font-weight:700;
+}
+.buscolor-rival-chip-turno .buscolor-rival-cant{background:var(--orange); color:#fff;}
+
+/* ---- Comercios adheridos ---- */
+.comercio-fila{
+  display:flex; align-items:center; gap:14px; width:100%; text-align:left;
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:18px;
+  padding:16px 18px; margin-bottom:12px; cursor:pointer; font-family:'Poppins',sans-serif;
+  box-shadow:0 3px 10px rgba(15,42,77,.06); transition:transform .12s ease;
+}
+.comercio-fila:active{transform:scale(.98);}
+.comercio-fila-txt h3{font-size:16px; font-weight:600; color:var(--navy); margin-bottom:2px;}
+.comercio-fila-txt p{font-size:12.5px; color:var(--gray);}
+.comercio-fila-flecha{font-size:20px; color:var(--gray); margin-left:auto;}
+
+.comercio-confirmado-banner{
+  background:#E4F7EC; color:#1E8E5A; border:1.5px solid #B7EBCE; border-radius:14px;
+  padding:12px 14px; margin-bottom:14px; font-size:13.5px; font-weight:600; text-align:center;
+}
+
+.comercio-qr-box{
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:18px;
+  padding:20px; text-align:center; margin-bottom:16px;
+}
+.comercio-qr-box #comercio-qr-canvas{display:flex; justify-content:center; margin-bottom:12px;}
+.comercio-qr-nota{font-size:12.5px; color:var(--gray); line-height:1.4;}
+
+.comercio-confirmar-box{
+  background:var(--navy-soft); border-radius:14px; padding:14px 16px; margin-bottom:16px;
+  font-size:13.5px; color:var(--navy); line-height:1.6;
+}
+
+.comercio-admin-card{
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:14px;
+  padding:12px; margin-bottom:12px;
+}
+.comercio-admin-card input{margin-bottom:8px;}
+.comercio-admin-checkbox{
+  display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--navy);
+  margin:2px 0 8px; font-weight:600;
+}
+.comercio-flyer-box{
+  background:#fff; border:1.5px solid #ECE9E1; border-radius:18px;
+  padding:14px; text-align:center; margin-bottom:16px;
+}
+.comercio-flyer-img{max-width:100%; border-radius:12px; display:block; margin:0 auto;}
+.comercio-flyer-iframe{width:100%; height:420px; border:none; border-radius:12px; display:block;}

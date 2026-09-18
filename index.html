@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Busmac Viajes y Turismo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=75">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0F2A4D">
+</head>
+<body>
+
+<div class="device">
+  <div class="screen">
+    <div class="statusbar">
+      <img src="logo-empresa.png" alt="Logo" class="statusbar-logo">
+      <span class="statusbar-brand" id="marca-statusbar">busmac <em>viajes y turismo</em></span>
+    </div>
+
+    <!-- CÓDIGO DE VIAJE -->
+    <div class="view active" id="view-codigo-viaje">
+      <div class="hero">
+        <h2 id="marca-bienvenida">¡Bienvenido a bordo! 🚌 Arrancamos esta nueva experiencia con Busmac</h2>
+      </div>
+      <input type="text" id="codigo-viaje-input" class="bingo-input-numero" style="width:100%; text-transform:uppercase;" placeholder="Código del viaje" oninput="actualizarBotonCodigoViaje()">
+      <p style="color:var(--gray); font-size:14px; margin:10px 0 18px;">¡Vamos a divertirnos! Solicitá el código de acceso al administrador del viaje.</p>
+      <button class="btn-primary" id="btn-continuar-codigo" disabled onclick="confirmarCodigoViaje()">Continuar</button>
+      <p id="codigo-viaje-error" class="bingo-pin-error"></p>
+      <p class="link-chico" onclick="mostrarGenerarCodigo()">¿Sos el organizador y estás por empezar un viaje nuevo?</p>
+      <div id="generar-codigo-content"></div>
+      <p class="link-chico" onclick="mostrarAdminViajes()">🔧 Administrar viajes</p>
+      <div id="admin-viajes-content"></div>
+      <p class="link-chico" onclick="mostrarAdminComercios()">🏪 Administrar comercios</p>
+      <div id="admin-comercios-content"></div>
+    </div>
+
+    <!-- ONBOARDING -->
+    <div class="view" id="view-onboard">
+      <div id="lista-pasajeros-onboard"></div>
+      <div class="hero">
+        <h2>¡Sumate al viaje!</h2>
+        <p>Contanos quién sos para arrancar a jugar.</p>
+      </div>
+      <div class="section-label">¿Y vos, cómo te llamás?</div>
+      <input type="text" id="mi-nombre-input" class="bingo-input-numero" style="width:100%;" placeholder="Tu nombre o apodo" oninput="actualizarBotonContinuar()">
+      <div class="section-label">¿En qué asiento vas?</div>
+      <input type="number" id="mi-asiento-input" class="bingo-input-numero" style="width:100%;" min="1" placeholder="Número de asiento" oninput="actualizarBotonContinuar()">
+      <div class="section-label">¿Sos mayor de 12 años?</div>
+      <div class="chip-row" id="mi-mayor-de-12-chips" style="margin-bottom:14px;">
+        <div class="chip" onclick="elegirMayorDe12(true)">Sí</div>
+        <div class="chip" onclick="elegirMayorDe12(false)">No</div>
+      </div>
+      <button class="btn-continuar-logo" id="btn-continuar" disabled onclick="goHome()">
+        <img src="icons/icon-192.png" alt="Bus Coin" class="btn-continuar-logo-img">
+        <span>Tocá la B para continuar</span>
+      </button>
+    </div>
+
+    <!-- HOME -->
+    <div class="view" id="view-home">
+      <div class="app-header">
+        <div>
+          <h1 id="home-saludo">Hola</h1>
+          <div class="sub" id="home-viaje" onclick="copiarLinkViaje()" style="text-decoration:underline; cursor:pointer;">Viaje</div>
+        </div>
+        <div class="chip-monedas chip-monedas-juego">MONEDAS <span id="monedas-coin-count">0</span></div>
+      </div>
+
+      <div id="home-content"></div>
+    </div>
+
+    <!-- COMERCIOS ADHERIDOS -->
+    <div class="view" id="view-comercios">
+      <div class="app-header">
+        <div>
+          <h1>Comercios adheridos</h1>
+          <div class="sub">Descuentos en tu destino</div>
+        </div>
+      </div>
+      <div id="comercios-content"></div>
+      <p class="link-chico" onclick="showView('home')">‹ Volver a Inicio</p>
+    </div>
+
+    <!-- JUEGOS (menú) -->
+    <div class="view" id="view-juegos">
+      <div class="app-header">
+        <div>
+          <h1>Juegos</h1>
+          <div class="sub">Elegí a qué jugar</div>
+        </div>
+      </div>
+      <div id="juegos-content"></div>
+    </div>
+
+    <!-- TRIVIA -->
+    <div class="view" id="view-trivia">
+      <div class="app-header">
+        <div>
+          <h1>Trivia</h1>
+          <div class="sub" id="trivia-sub">Elegí un tema</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="trivia-content"></div>
+    </div>
+
+    <!-- ACERTIJOS -->
+    <div class="view" id="view-acertijos">
+      <div class="app-header">
+        <div>
+          <h1>Acertijos</h1>
+          <div class="sub" id="acertijos-sub">Acertijo 1 de 20</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="acertijos-content"></div>
+    </div>
+
+    <!-- PENSAMIENTO LATERAL -->
+    <div class="view" id="view-pensamiento">
+      <div class="app-header">
+        <div>
+          <h1>Pensamiento lateral</h1>
+          <div class="sub" id="pensamiento-sub">Caso 1 de 20</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="pensamiento-content"></div>
+    </div>
+
+    <!-- AHORCADO -->
+    <div class="view" id="view-ahorcado">
+      <div class="app-header">
+        <div>
+          <h1>Ahorcado</h1>
+          <div class="sub" id="ahorcado-sub">Palabra 1 de 50</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="ahorcado-content"></div>
+    </div>
+
+    <!-- 4+1 -->
+    <div class="view" id="view-cuatrouno">
+      <div class="app-header">
+        <div>
+          <h1>4+1</h1>
+          <div class="sub" id="cuatrouno-sub">Palabra 1 de 20</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="cuatrouno-content"></div>
+    </div>
+
+    <!-- VALIJA EXPRESS -->
+    <div class="view" id="view-valija">
+      <div class="app-header">
+        <div>
+          <h1>Valija Express</h1>
+          <div class="sub" id="valija-sub">Destino 1 de 20</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="valija-content"></div>
+    </div>
+
+    <!-- MEMORIA -->
+    <div class="view" id="view-memoria">
+      <div class="app-header">
+        <div>
+          <h1>Memoria</h1>
+          <div class="sub" id="memoria-sub">Nivel 1 de 3</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="memoria-content"></div>
+    </div>
+
+    <!-- SUDOKU -->
+    <div class="view" id="view-sudoku">
+      <div class="app-header">
+        <div>
+          <h1>Sudoku</h1>
+          <div class="sub" id="sudoku-sub">Elegí un nivel</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="sudoku-content"></div>
+    </div>
+
+    <!-- PATRONES -->
+    <div class="view" id="view-patrones">
+      <div class="app-header">
+        <div>
+          <h1>Patrones</h1>
+          <div class="sub" id="patrones-sub">Elegí un nivel</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="patrones-content"></div>
+    </div>
+
+    <!-- SOPA DE LETRAS -->
+    <div class="view" id="view-sopa">
+      <div class="app-header">
+        <div>
+          <h1>Sopa de letras</h1>
+          <div class="sub" id="sopa-sub">Elegí un nivel</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="sopa-content"></div>
+    </div>
+
+    <!-- RANKING -->
+    <div class="view" id="view-ranking">
+      <div class="app-header">
+        <div>
+          <h1>Ranking</h1>
+          <div class="sub">Solo tu grupo, en este viaje</div>
+        </div>
+      </div>
+      <div id="ranking-list"></div>
+    </div>
+
+    <!-- TUTTI FRUTTI -->
+    <div class="view" id="view-tutifruti">
+      <div class="app-header">
+        <div>
+          <h1>Tutti Frutti</h1>
+          <div class="sub" id="tutifruti-sub">Contra el resto del viaje</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="tutifruti-content"></div>
+    </div>
+
+    <!-- EL IMPOSTOR -->
+    <div class="view" id="view-impostor">
+      <div class="app-header">
+        <div>
+          <h1>El Impostor</h1>
+          <div class="sub" id="impostor-sub">Para grupos chicos</div>
+        </div>
+      </div>
+      <div id="impostor-content"></div>
+    </div>
+
+    <!-- BINGO DE NOMBRES -->
+    <div class="view" id="view-bingo">
+      <div class="app-header">
+        <div>
+          <h1>Bingo</h1>
+          <div class="sub">Números del 00 al 99</div>
+        </div>
+        <button class="btn-mute" onclick="toggleSonido()">🔊</button>
+      </div>
+      <div id="bingo-content"></div>
+    </div>
+
+    <!-- TRIVIA EN VIVO -->
+    <div class="view" id="view-triviavivo">
+      <div class="app-header">
+        <div>
+          <h1>Trivia en Vivo</h1>
+          <div class="sub" id="triviavivo-sub">Todo el micro compite junto</div>
+        </div>
+      </div>
+      <div id="triviavivo-content"></div>
+    </div>
+
+    <!-- CADÁVER EXQUISITO -->
+    <div class="view" id="view-cuento">
+      <div class="app-header">
+        <div>
+          <h1>Cadáver Exquisito</h1>
+          <div class="sub" id="cuento-sub">Para grupos chicos</div>
+        </div>
+      </div>
+      <div id="cuento-content"></div>
+    </div>
+
+    <!-- DIBUJAR Y ADIVINAR -->
+    <div class="view" id="view-dibujar">
+      <div class="app-header">
+        <div>
+          <h1>Dibujar y Adivinar</h1>
+          <div class="sub" id="dibujar-sub">Para grupos chicos</div>
+        </div>
+      </div>
+      <div id="dibujar-content"></div>
+    </div>
+
+    <!-- ESCOBA DE 15 -->
+    <div class="view" id="view-escoba">
+      <div class="app-header">
+        <div>
+          <h1>Escoba de 15</h1>
+          <div class="sub" id="escoba-sub">Para 2 jugadores</div>
+        </div>
+      </div>
+      <div id="escoba-content"></div>
+    </div>
+
+    <!-- CHINCHÓN -->
+    <div class="view" id="view-chinchon">
+      <div class="app-header">
+        <div>
+          <h1>Chinchón</h1>
+          <div class="sub" id="chinchon-sub">De 2 a 4 jugadores</div>
+        </div>
+      </div>
+      <div id="chinchon-content"></div>
+    </div>
+
+    <!-- TRUCO -->
+    <div class="view" id="view-truco">
+      <div class="app-header">
+        <div>
+          <h1>Truco</h1>
+          <div class="sub" id="truco-sub">De a 2, 4 o 6</div>
+        </div>
+      </div>
+      <div id="truco-content"></div>
+    </div>
+
+    <!-- BUSCOLOR -->
+    <div class="view" id="view-buscolor">
+      <div class="app-header">
+        <div>
+          <h1>BusColor</h1>
+          <div class="sub" id="buscolor-sub">De 2 a 6 jugadores</div>
+        </div>
+      </div>
+      <div id="buscolor-content"></div>
+    </div>
+
+    <!-- PREMIOS -->
+    <div class="view" id="view-tienda">
+      <div class="app-header">
+        <div>
+          <h1>Premios</h1>
+          <div class="sub">Los primeros del ranking eligen premio</div>
+        </div>
+      </div>
+      <div id="tienda-content"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="tabbar" id="tabbar" style="display:none;">
+      <button class="tab active" onclick="showView('home')" data-tab="home"><span class="dot" data-icon="casa"></span>Inicio</button>
+      <button class="tab" onclick="showView('juegos')" data-tab="juegos"><span class="dot" data-icon="control"></span>Juegos</button>
+      <button class="tab" onclick="showView('ranking')" data-tab="ranking"><span class="dot" data-icon="trofeo"></span>Ranking</button>
+      <button class="tab" onclick="showView('tienda')" data-tab="tienda"><span class="dot" data-icon="regalo"></span>Premios</button>
+      <button class="tab" onclick="showView('comercios')" data-tab="comercios"><span class="dot" data-icon="tienda"></span>Comercios</button>
+    </div>
+  </div>
+</div>
+
+<!-- El "?v=N" de cada archivo evita que el celular de alguien se quede con una
+     versión vieja en caché mientras el resto de la app ya se actualizó. Subí
+     este número cada vez que cambies styles.css o algún archivo de js/. -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/firebase-config.js?v=75"></script>
+<script src="js/marca.js?v=1"></script>
+<script src="js/agencias.js?v=1"></script>
+<script src="js/iconos.js?v=75"></script>
+<script src="js/sonido.js?v=75"></script>
+<script src="js/trivia.js?v=75"></script>
+<script src="js/acertijos.js?v=75"></script>
+<script src="js/pensamiento.js?v=75"></script>
+<script src="js/ahorcado.js?v=75"></script>
+<script src="js/cuatrouno.js?v=75"></script>
+<script src="js/valija.js?v=75"></script>
+<script src="js/memoria.js?v=4"></script>
+<script src="js/sudoku.js?v=1"></script>
+<script src="js/patrones.js?v=2"></script>
+<script src="js/sopa.js?v=2"></script>
+<script src="js/bingo.js?v=75"></script>
+<script src="js/tutifruti.js?v=75"></script>
+<script src="js/impostor.js?v=8"></script>
+<script src="js/tienda.js?v=75"></script>
+<script src="js/raspadita.js?v=2"></script>
+<script src="js/pwa.js?v=2"></script>
+<script src="js/triviaVivo.js?v=1"></script>
+<script src="js/cuento.js?v=1"></script>
+<script src="js/dibujar.js?v=4"></script>
+<script src="js/escoba.js?v=10"></script>
+<script src="js/chinchon.js?v=5"></script>
+<script src="js/truco.js?v=6"></script>
+<script src="js/buscolor.js?v=6"></script>
+<script src="js/comercios.js?v=6"></script>
+<script src="js/analytics.js?v=1"></script>
+<script src="js/listaPasajeros.js?v=1"></script>
+<script src="js/app.js?v=75"></script>
+</body>
+</html>
