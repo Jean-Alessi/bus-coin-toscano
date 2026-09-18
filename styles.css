@@ -1,10 +1,15 @@
+/* Paleta de Turismo Toscano: tomada del rojo real del logo (#FE0000),
+   en vez del azul/naranja de Busmac. --navy pasa a ser un rojo oscuro
+   (rol de texto/fondos oscuros) y --orange el rojo vivo del logo (rol
+   de acento/botones), para que las clases existentes no haya que
+   tocarlas — solo cambian los valores. */
 :root{
-  --navy:#0F2A4D;
-  --navy-light:#1C3F6E;
-  --navy-soft:#EAF0F8;
-  --orange:#E8720F;
-  --orange-soft:#F5A64B;
-  --orange-light:#FDEBDA;
+  --navy:#7A0E10;
+  --navy-light:#9E1417;
+  --navy-soft:#FBEAEA;
+  --orange:#E8231A;
+  --orange-soft:#F2685E;
+  --orange-light:#FCE4E2;
   --cream:#F7F5F0;
   --gray:#8A94A3;
 }

@@ -5,9 +5,10 @@
 // logo). js/firebase-config.js se deja igual: todos los clientes comparten
 // el mismo proyecto de Firebase, aislados por agencia — ver ONBOARDING.md.
 const MARCA = {
-  // Como aparece en la barra de arriba, al lado del logo.
-  marcaPrincipal: 'toscano',
-  marcaSecundaria: 'viajes',
+  // Vacío a propósito: el logo de Toscano ya trae el nombre escrito
+  // adentro de la imagen, así que repetirlo al lado sería redundante.
+  marcaPrincipal: '',
+  marcaSecundaria: '',
 
   // <title> de la pestaña del navegador.
   nombreCompleto: 'Turismo Toscano',
@@ -27,6 +28,12 @@ const MARCA = {
 // y no hace falta esperar a DOMContentLoaded.
 document.title = MARCA.nombreCompleto;
 const elMarcaStatusbar = document.getElementById('marca-statusbar');
-if(elMarcaStatusbar) elMarcaStatusbar.innerHTML = `${MARCA.marcaPrincipal} <em>${MARCA.marcaSecundaria}</em>`;
+if(elMarcaStatusbar){
+  if(MARCA.marcaPrincipal || MARCA.marcaSecundaria){
+    elMarcaStatusbar.innerHTML = `${MARCA.marcaPrincipal} <em>${MARCA.marcaSecundaria}</em>`;
+  } else {
+    elMarcaStatusbar.hidden = true;
+  }
+}
 const elMarcaBienvenida = document.getElementById('marca-bienvenida');
 if(elMarcaBienvenida) elMarcaBienvenida.textContent = MARCA.bienvenida;
