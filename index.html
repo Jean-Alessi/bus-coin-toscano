@@ -17,7 +17,7 @@
 <div class="device">
   <div class="screen">
     <div class="statusbar">
-      <img src="logo-empresa.png" alt="Logo" class="statusbar-logo">
+      <img src="logo-empresa.png" alt="Logo" class="statusbar-logo" onclick="tapLogoOrganizador()">
       <span class="statusbar-brand" id="marca-statusbar">busmac <em>viajes y turismo</em></span>
     </div>
 
@@ -30,12 +30,18 @@
       <p style="color:var(--gray); font-size:14px; margin:10px 0 18px;">¡Vamos a divertirnos! Solicitá el código de acceso al administrador del viaje.</p>
       <button class="btn-primary" id="btn-continuar-codigo" disabled onclick="confirmarCodigoViaje()">Continuar</button>
       <p id="codigo-viaje-error" class="bingo-pin-error"></p>
-      <p class="link-chico" onclick="mostrarGenerarCodigo()">¿Sos el organizador y estás por empezar un viaje nuevo?</p>
-      <div id="generar-codigo-content"></div>
-      <p class="link-chico" onclick="mostrarAdminViajes()">🔧 Administrar viajes</p>
-      <div id="admin-viajes-content"></div>
-      <p class="link-chico" onclick="mostrarAdminComercios()">🏪 Administrar comercios</p>
-      <div id="admin-comercios-content"></div>
+      <!-- Oculto por defecto: un pasajero no tiene nada que hacer acá. Se
+           muestra solo, si este celular ya organizó antes o tiene sesión de
+           agencia (ver organizadorActualizarVisibilidad en app.js), o
+           tocando 5 veces el logo de arriba (ver tapLogoOrganizador). -->
+      <div id="bloque-organizador" hidden>
+        <p class="link-chico" onclick="mostrarGenerarCodigo()">¿Sos el organizador y estás por empezar un viaje nuevo?</p>
+        <div id="generar-codigo-content"></div>
+        <p class="link-chico" onclick="mostrarAdminViajes()">🔧 Administrar viajes</p>
+        <div id="admin-viajes-content"></div>
+        <p class="link-chico" onclick="mostrarAdminComercios()">🏪 Administrar comercios</p>
+        <div id="admin-comercios-content"></div>
+      </div>
     </div>
 
     <!-- ONBOARDING -->
@@ -374,7 +380,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="js/firebase-config.js?v=75"></script>
 <script src="js/marca.js?v=2"></script>
-<script src="js/agencias.js?v=1"></script>
+<script src="js/agencias.js?v=2"></script>
 <script src="js/iconos.js?v=75"></script>
 <script src="js/sonido.js?v=75"></script>
 <script src="js/trivia.js?v=76"></script>
@@ -403,6 +409,6 @@
 <script src="js/comercios.js?v=6"></script>
 <script src="js/analytics.js?v=1"></script>
 <script src="js/listaPasajeros.js?v=1"></script>
-<script src="js/app.js?v=75"></script>
+<script src="js/app.js?v=76"></script>
 </body>
 </html>

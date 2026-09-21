@@ -102,5 +102,6 @@ firebase.auth().onAuthStateChanged(user => {
     if(typeof renderPinCodigoNuevo === 'function') renderPinCodigoNuevo();
     if(typeof renderAdminViajes === 'function') renderAdminViajes();
     if(typeof renderAdminComercios === 'function') renderAdminComercios();
+    if(typeof organizadorActualizarVisibilidad === 'function') organizadorActualizarVisibilidad();
   });
 });

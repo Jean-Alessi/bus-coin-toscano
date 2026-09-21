@@ -55,6 +55,35 @@ function codigoAlAzar(){
   return codigo;
 }
 
+// El bloque de organizador (generar código / administrar viajes / administrar
+// comercios / panel general) viene oculto por defecto: un pasajero no tiene
+// nada que hacer ahí, y mostrárselo solo lo iba a tentar a tocarlo. Se
+// revela solo si este celular ya organizó algo antes o tiene una sesión de
+// agencia activa -- así el organizador de siempre lo sigue viendo directo,
+// sin pasos de más.
+function organizadorActualizarVisibilidad(){
+  const bloque = document.getElementById('bloque-organizador');
+  if(!bloque) return;
+  if(bingoEsOrganizador() || agenciasEsOrganizador()) bloque.hidden = false;
+}
+
+// Para un organizador en un celular nuevo (donde todavía no hay ninguna
+// marca de que ya organizó algo): tocando 5 veces seguidas el logo de
+// arriba en menos de 2 segundos aparece el bloque de organizador. Un
+// pasajero no tiene forma de adivinar este gesto sin que se lo cuenten.
+let tapsLogoOrganizador = 0;
+let tapsLogoOrganizadorTimer = null;
+function tapLogoOrganizador(){
+  tapsLogoOrganizador++;
+  clearTimeout(tapsLogoOrganizadorTimer);
+  tapsLogoOrganizadorTimer = setTimeout(() => { tapsLogoOrganizador = 0; }, 2000);
+  if(tapsLogoOrganizador >= 5){
+    tapsLogoOrganizador = 0;
+    const bloque = document.getElementById('bloque-organizador');
+    if(bloque) bloque.hidden = false;
+  }
+}
+
 // Generar un código nuevo queda atrás del PIN: si cualquiera pudiera tocarlo,
 // un pasajero se manda solo a un viaje vacío sin querer. Escribir un código
 // ya existente, en cambio, lo puede hacer cualquiera (eso es "unirse").
@@ -194,7 +223,11 @@ function renderAdminViajes(){
     return;
   }
   cont.innerHTML = `<p class="link-chico">Conectado como ${agenciaActualNombre}. <span onclick="agenciasCerrarSesion()" style="text-decoration:underline;cursor:pointer;">Cerrar sesión</span></p><p style="color:var(--gray);font-size:13px;">Cargando viajes...</p>`;
+  const agenciaIdAlPedir = agenciaActualId;
   db.ref('salas').orderByChild('agenciaId').equalTo(agenciaActualId).once('value').then(snap => {
+    // Si mientras cargaba se cerró sesión (o se inició otra), esta respuesta
+    // ya está vieja: no pisar la pantalla de login con datos de otra sesión.
+    if(agenciaActualId !== agenciaIdAlPedir) return;
     const datos = snap.val() || {};
     const codigos = Object.keys(datos);
     if(!codigos.length){
@@ -592,4 +625,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     codigoInput.value = localStorage.getItem('codigo-viaje') || '';
     actualizarBotonCodigoViaje();
   }
+
+  organizadorActualizarVisibilidad();
 });
