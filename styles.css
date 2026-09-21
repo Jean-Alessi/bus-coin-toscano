@@ -591,6 +591,23 @@ body{
   text-align:center; font-size:12px; color:var(--gray); text-decoration:underline;
   cursor:pointer; margin-top:12px;
 }
+
+/* ---- Menú de organizador: botones en vez de una lista de links largos ---- */
+.organizador-grid{
+  display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:16px;
+}
+.btn-organizador{
+  flex:1 1 27%; min-width:80px; max-width:130px;
+  background:#fff; border:1px solid #ECE9E1; border-radius:16px;
+  padding:14px 8px; cursor:pointer; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  font-family:var(--font-juego); font-weight:700; font-size:12px; color:var(--navy);
+  box-shadow:0 3px 10px rgba(15,42,77,.06);
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.btn-organizador:hover{border-color:var(--orange); box-shadow:0 4px 14px rgba(232,114,15,.14);}
+.btn-organizador:active{transform:scale(.96);}
+.btn-organizador-icono{font-size:24px;}
 .rank-asiento{font-size:11px; font-weight:500; color:var(--gray);}
 .bingo-sorteo{background:var(--navy); border-radius:18px; padding:20px; text-align:center; margin-bottom:16px;}
 .bingo-ultimo{

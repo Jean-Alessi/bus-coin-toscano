@@ -6,7 +6,7 @@
 <title>Turismo Toscano</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=78">
+<link rel="stylesheet" href="styles.css?v=79">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -35,11 +35,13 @@
            agencia (ver organizadorActualizarVisibilidad en app.js), o
            tocando 5 veces el logo de arriba (ver tapLogoOrganizador). -->
       <div id="bloque-organizador" hidden>
-        <p class="link-chico" onclick="mostrarGenerarCodigo()">¿Sos el organizador y estás por empezar un viaje nuevo?</p>
+        <div class="organizador-grid">
+          <button class="btn-organizador" onclick="mostrarGenerarCodigo()"><span class="btn-organizador-icono">➕</span>Nuevo viaje</button>
+          <button class="btn-organizador" onclick="mostrarAdminViajes()"><span class="btn-organizador-icono">🔧</span>Viajes</button>
+          <button class="btn-organizador" onclick="mostrarAdminComercios()"><span class="btn-organizador-icono">🏪</span>Comercios</button>
+        </div>
         <div id="generar-codigo-content"></div>
-        <p class="link-chico" onclick="mostrarAdminViajes()">🔧 Administrar viajes</p>
         <div id="admin-viajes-content"></div>
-        <p class="link-chico" onclick="mostrarAdminComercios()">🏪 Administrar comercios</p>
         <div id="admin-comercios-content"></div>
       </div>
     </div>
