@@ -10,8 +10,10 @@
   --orange:#E8231A;
   --orange-soft:#F2685E;
   --orange-light:#FCE4E2;
+  --orange-sombra:#A3140D;
   --cream:#F7F5F0;
   --gray:#8A94A3;
+  --font-juego:'Baloo 2','Poppins',sans-serif;
 }
 *{box-sizing:border-box; margin:0; padding:0;}
 body{
@@ -85,12 +87,13 @@ body{
   justify-content:space-between;
   padding:8px 0 16px;
 }
-.app-header h1{font-size:18px; font-weight:600; color:var(--navy);}
+.app-header h1{font-size:19px; font-weight:700; color:var(--navy); font-family:var(--font-juego);}
 .app-header .sub{font-size:12px; color:var(--gray); font-weight:400; margin-top:2px;}
 .chip-monedas{
   display:flex; align-items:center; gap:5px; flex-shrink:0;
   padding:6px 12px; border-radius:20px;
-  font-size:12px; font-weight:700; letter-spacing:.3px; white-space:nowrap;
+  font-size:13px; font-weight:700; letter-spacing:.3px; white-space:nowrap;
+  font-family:var(--font-juego);
   box-shadow:0 2px 8px rgba(232,114,15,.15);
 }
 .chip-monedas-juego{background:linear-gradient(135deg, var(--orange-light), #FBDCB8); color:var(--orange);}
@@ -98,7 +101,7 @@ body{
 .chip{
   padding:9px 16px; border-radius:999px; border:none;
   font-size:13px; font-weight:600; color:var(--navy); background:var(--navy-soft);
-  cursor:pointer; font-family:'Poppins',sans-serif; display:inline-block;
+  cursor:pointer; font-family:var(--font-juego); display:inline-block;
   box-shadow:0 2px 6px rgba(15,42,77,.08);
   transition:transform .12s ease, box-shadow .12s ease;
 }
@@ -125,7 +128,7 @@ body{
 .sudoku-fila{display:flex;}
 .sudoku-celda{
   flex:1; aspect-ratio:1; border:1px solid #E3E7ED; background:#fff;
-  font-family:'Poppins',sans-serif; font-weight:700; font-size:15px; color:var(--navy);
+  font-family:var(--font-juego); font-weight:700; font-size:15px; color:var(--navy);
   display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
 }
 .sudoku-celda-fija{background:var(--navy-soft); cursor:default;}
@@ -137,7 +140,7 @@ body{
 .sudoku-teclado{display:grid; grid-template-columns:repeat(5,1fr); gap:8px;}
 .sudoku-tecla{
   aspect-ratio:1; border-radius:12px; border:none; background:var(--navy-soft); color:var(--navy);
-  font-family:'Poppins',sans-serif; font-weight:700; font-size:16px; cursor:pointer;
+  font-family:var(--font-juego); font-weight:700; font-size:16px; cursor:pointer;
   box-shadow:0 2px 6px rgba(15,42,77,.08); transition:transform .1s ease;
 }
 .sudoku-tecla:active{transform:scale(.92);}
@@ -170,7 +173,7 @@ body{
 .sopa-fila{display:flex; gap:2px;}
 .sopa-celda{
   border:1px solid #ECE9E1; border-radius:4px; background:#fff;
-  font-family:'Poppins',sans-serif; font-weight:700; color:var(--navy);
+  font-family:var(--font-juego); font-weight:700; color:var(--navy);
   display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
   touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
 }
@@ -187,7 +190,7 @@ body{
   background:#fff; border:none; border-radius:50%;
   width:34px; height:34px; font-size:15px; cursor:pointer; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  font-family:'Poppins',sans-serif;
+  font-family:var(--font-juego);
   box-shadow:0 2px 8px rgba(15,42,77,.12);
 }
 
@@ -201,20 +204,25 @@ body{
   margin-top:8px;
   box-shadow:0 10px 24px rgba(15,42,77,.22);
 }
-.hero h2{font-size:20px; font-weight:600; margin-bottom:4px;}
+.hero h2{font-size:21px; font-weight:700; margin-bottom:4px; font-family:var(--font-juego);}
 .hero p{font-size:13px; color:#C6D3E8; font-weight:400;}
 /* ---- Botones grandes del menú de Juegos (solo / grupo) ---- */
 .categoria-juegos{
   display:flex; align-items:center; gap:14px;
   border-radius:20px; padding:18px 18px;
   margin-bottom:10px; cursor:pointer; color:#fff;
+  transition:transform .1s ease, box-shadow .1s ease;
 }
-.categoria-juegos-solo{background:linear-gradient(135deg, var(--navy-light), var(--navy)); box-shadow:0 8px 18px rgba(15,42,77,.28);}
-.categoria-juegos-grupo{background:linear-gradient(135deg, var(--orange-soft), var(--orange)); box-shadow:0 8px 18px rgba(232,114,15,.32);}
-.categoria-juegos-cartas{background:linear-gradient(135deg, #3B9B5A, #1E5C3A); box-shadow:0 8px 18px rgba(30,92,58,.32);}
+.categoria-juegos-solo{background:linear-gradient(135deg, var(--navy-light), var(--navy)); box-shadow:0 4px 0 #3D0708, 0 8px 18px rgba(15,42,77,.28);}
+.categoria-juegos-grupo{background:linear-gradient(135deg, var(--orange-soft), var(--orange)); box-shadow:0 4px 0 var(--orange-sombra), 0 8px 18px rgba(232,114,15,.32);}
+.categoria-juegos-cartas{background:linear-gradient(135deg, #3B9B5A, #1E5C3A); box-shadow:0 4px 0 #123D26, 0 8px 18px rgba(30,92,58,.32);}
+.categoria-juegos:active{transform:translateY(3px);}
+.categoria-juegos-solo:active{box-shadow:0 1px 0 #3D0708, 0 3px 8px rgba(15,42,77,.24);}
+.categoria-juegos-grupo:active{box-shadow:0 1px 0 var(--orange-sombra), 0 3px 8px rgba(232,114,15,.24);}
+.categoria-juegos-cartas:active{box-shadow:0 1px 0 #123D26, 0 3px 8px rgba(30,92,58,.24);}
 .categoria-juegos-icono{font-size:28px; flex-shrink:0;}
 .categoria-juegos-info{flex:1; min-width:0;}
-.categoria-juegos-info h2{font-size:17px; font-weight:700; margin-bottom:2px;}
+.categoria-juegos-info h2{font-size:18px; font-weight:700; margin-bottom:2px; font-family:var(--font-juego);}
 .categoria-juegos-info p{font-size:12px; color:rgba(255,255,255,0.8); font-weight:400;}
 .categoria-juegos-flecha{font-size:18px; transition:transform .2s; flex-shrink:0;}
 .categoria-juegos-flecha-abierta{transform:rotate(180deg);}
@@ -228,22 +236,22 @@ body{
 
 .btn-primary{
   background:linear-gradient(135deg, var(--orange-soft), var(--orange)); color:#fff; border:none;
-  padding:16px; border-radius:999px; font-size:15px; font-weight:600;
-  font-family:'Poppins',sans-serif; cursor:pointer; width:100%;
+  padding:16px; border-radius:999px; font-size:16px; font-weight:700; letter-spacing:.2px;
+  font-family:var(--font-juego); cursor:pointer; width:100%;
   margin-top:auto;
-  box-shadow:0 6px 16px rgba(232,114,15,.32);
-  transition:transform .12s ease, box-shadow .12s ease;
+  box-shadow:0 4px 0 var(--orange-sombra), 0 8px 16px rgba(232,114,15,.28);
+  transition:transform .1s ease, box-shadow .1s ease;
 }
-.btn-primary:not(:disabled):active{transform:scale(.97); box-shadow:0 3px 8px rgba(232,114,15,.28);}
+.btn-primary:not(:disabled):active{transform:translateY(3px); box-shadow:0 1px 0 var(--orange-sombra), 0 3px 8px rgba(232,114,15,.24);}
 .btn-primary:disabled{background:#E3E7ED; color:#AEB6C2; box-shadow:none; cursor:not-allowed;}
 .btn-ghost{
   background:var(--navy-soft); border:none; color:var(--navy);
-  padding:12px; border-radius:999px; font-size:13px; font-weight:600;
-  font-family:'Poppins',sans-serif; cursor:pointer; width:100%; margin-top:10px;
-  box-shadow:0 3px 10px rgba(15,42,77,.12);
-  transition:transform .12s ease;
+  padding:12px; border-radius:999px; font-size:14px; font-weight:700;
+  font-family:var(--font-juego); cursor:pointer; width:100%; margin-top:10px;
+  box-shadow:0 3px 0 #F0C9C7, 0 5px 10px rgba(15,42,77,.1);
+  transition:transform .1s ease, box-shadow .1s ease;
 }
-.btn-ghost:active{transform:scale(.97);}
+.btn-ghost:active{transform:translateY(2px); box-shadow:0 1px 0 #F0C9C7, 0 2px 6px rgba(15,42,77,.1);}
 
 /* Onboarding: en vez de un botón de texto, se toca el logo -- así el
    arranque de cada viaje suma una repetición más de marca. */
@@ -258,7 +266,7 @@ body{
   transition:transform .15s ease, opacity .15s ease, filter .15s ease;
 }
 .btn-continuar-logo span{
-  font-family:'Poppins',sans-serif; font-weight:600; font-size:14px; color:var(--navy);
+  font-family:var(--font-juego); font-weight:600; font-size:14px; color:var(--navy);
 }
 .btn-continuar-logo:disabled{cursor:not-allowed;}
 .btn-continuar-logo:disabled .btn-continuar-logo-img{opacity:.35; filter:grayscale(70%); box-shadow:none;}
@@ -335,7 +343,7 @@ body{
   display:flex; justify-content:space-between; align-items:center; gap:8px;
   background:#fff; border:1.5px solid #ECE9E1; border-radius:12px;
   padding:10px 12px; font-size:12.5px; color:var(--navy); font-weight:500;
-  font-family:'Poppins',sans-serif; cursor:pointer; text-align:left;
+  font-family:var(--font-juego); cursor:pointer; text-align:left;
 }
 .pens-pregunta-btn:hover{border-color:var(--orange);}
 .pens-pregunta-btn .pens-costo{color:var(--orange); font-weight:700; font-size:11px; flex-shrink:0;}
@@ -354,7 +362,7 @@ body{
 .ahorcado-tecla{
   background:#fff; border:1.5px solid #ECE9E1; border-radius:8px; padding:8px 0;
   font-size:13px; font-weight:700; color:var(--navy); cursor:pointer;
-  font-family:'Poppins',sans-serif;
+  font-family:var(--font-juego);
 }
 .ahorcado-tecla:hover:not(:disabled){border-color:var(--orange);}
 .ahorcado-tecla:disabled{cursor:not-allowed;}
@@ -379,7 +387,7 @@ body{
 .cuatrouno-ficha{
   width:38px; height:38px; border-radius:10px; border:1.5px solid #ECE9E1;
   background:#fff; font-size:15px; font-weight:700; color:var(--navy);
-  cursor:pointer; font-family:'Poppins',sans-serif;
+  cursor:pointer; font-family:var(--font-juego);
 }
 .cuatrouno-ficha:hover:not(:disabled){border-color:var(--orange);}
 .cuatrouno-ficha:disabled{opacity:.25; cursor:not-allowed;}
@@ -414,7 +422,7 @@ body{
 .valija-item{
   background:#fff; border:1.5px solid #ECE9E1; border-radius:10px;
   padding:6px 6px; font-size:11px; font-weight:600; color:var(--navy); line-height:1.15;
-  cursor:pointer; font-family:'Poppins',sans-serif; text-align:center;
+  cursor:pointer; font-family:var(--font-juego); text-align:center;
 }
 .valija-item:hover{border-color:var(--orange);}
 .valija-item.valija-item-elegido{background:var(--navy); border-color:var(--navy); color:#fff;}
@@ -513,7 +521,7 @@ body{
 .tab{
   display:flex; flex-direction:column; align-items:center; gap:4px;
   font-size:10px; color:var(--gray); font-weight:500; cursor:pointer;
-  background:none; border:none; font-family:'Poppins',sans-serif;
+  background:none; border:none; font-family:var(--font-juego);
 }
 .tab.active{color:var(--orange); font-weight:600;}
 .tab .dot{width:28px; height:28px; display:flex; align-items:center; justify-content:center;}
@@ -535,7 +543,7 @@ body{
 .bingo-input-numero{
   width:100%; text-align:center; font-size:22px; font-weight:700; color:var(--navy);
   border:1.5px solid #ECE9E1; border-radius:14px; padding:12px; margin:16px 0 10px;
-  font-family:'Poppins',sans-serif;
+  font-family:var(--font-juego);
 }
 .bingo-lista-nombres{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
 .bingo-nombre-item{
@@ -558,19 +566,19 @@ body{
   background:none; border:1.5px solid #D9534F; color:#D9534F; border-radius:50%;
   width:22px; height:22px; font-size:12px; line-height:1; cursor:pointer;
   display:flex; align-items:center; justify-content:center; flex-shrink:0;
-  font-family:'Poppins',sans-serif;
+  font-family:var(--font-juego);
 }
 .btn-eliminar-pasajero:hover{background:#D9534F; color:#fff;}
 .btn-finalizar-viaje{
   background:none; border:1.5px solid var(--orange); color:var(--orange); border-radius:20px;
   padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;
-  font-family:'Poppins',sans-serif;
+  font-family:var(--font-juego);
 }
 .btn-finalizar-viaje:hover{background:var(--orange); color:#fff;}
 .btn-organizador-link{
   display:block; width:100%; background:var(--navy); color:#fff; border:none;
   border-radius:14px; padding:12px; font-size:13px; font-weight:600;
-  font-family:'Poppins',sans-serif; cursor:pointer; margin-bottom:16px;
+  font-family:var(--font-juego); cursor:pointer; margin-bottom:16px;
 }
 .bingo-pin-box{margin-bottom:16px;}
 .link-chico{
@@ -635,7 +643,7 @@ body{
 .tuti-categoria label{font-size:11px; font-weight:700; text-transform:uppercase; color:var(--gray); letter-spacing:.4px;}
 .tuti-categoria input{
   background:#fff; border:1.5px solid #ECE9E1; border-radius:12px;
-  padding:12px 14px; font-size:14px; font-family:'Poppins',sans-serif; color:var(--navy);
+  padding:12px 14px; font-size:14px; font-family:var(--font-juego); color:var(--navy);
 }
 .tuti-categoria input:focus{outline:none; border-color:var(--orange);}
 .tuti-basta{background:#D34C3D;}
@@ -649,7 +657,7 @@ body{
 .tuti-override-btn{
   border:none; background:rgba(0,0,0,0.08); color:inherit; cursor:pointer;
   width:16px; height:16px; border-radius:50%; font-size:10px; line-height:1;
-  margin-left:4px; padding:0; vertical-align:middle; font-family:'Poppins',sans-serif;
+  margin-left:4px; padding:0; vertical-align:middle; font-family:var(--font-juego);
 }
 .tuti-sorteo{display:flex; flex-direction:column; align-items:center; gap:22px; margin:32px 0;}
 .impostor-hero-malo{background:#8C4033;}
@@ -662,7 +670,7 @@ body{
   width:140px; height:140px; border-radius:28px;
   background:var(--navy); color:#fff;
   display:flex; align-items:center; justify-content:center;
-  font-size:68px; font-weight:800; font-family:'Poppins',sans-serif;
+  font-size:68px; font-weight:800; font-family:var(--font-juego);
 }
 
 /* ---- Dibujar y Adivinar ---- */
@@ -698,7 +706,7 @@ body{
 .escoba-carta{
   width:50px; height:70px; border-radius:10px; border:1.5px solid #ECE9E1;
   background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-  font-family:'Poppins',sans-serif; cursor:pointer; flex-shrink:0; padding:0;
+  font-family:var(--font-juego); cursor:pointer; flex-shrink:0; padding:0;
   box-shadow:0 2px 4px rgba(15,42,77,.08); border-bottom-width:3px;
   transition:transform .1s ease;
 }
@@ -750,7 +758,7 @@ body{
 .buscolor-carta{
   width:54px; height:76px; border-radius:10px; border:2.5px solid #fff;
   display:flex; align-items:center; justify-content:center; flex-direction:column;
-  font-family:'Poppins',sans-serif; cursor:pointer; flex-shrink:0; padding:0;
+  font-family:var(--font-juego); cursor:pointer; flex-shrink:0; padding:0;
   box-shadow:0 2px 6px rgba(15,42,77,.25); transition:transform .1s ease;
   color:#fff;
 }
@@ -801,7 +809,7 @@ body{
 .comercio-fila{
   display:flex; align-items:center; gap:14px; width:100%; text-align:left;
   background:#fff; border:1.5px solid #ECE9E1; border-radius:18px;
-  padding:16px 18px; margin-bottom:12px; cursor:pointer; font-family:'Poppins',sans-serif;
+  padding:16px 18px; margin-bottom:12px; cursor:pointer; font-family:var(--font-juego);
   box-shadow:0 3px 10px rgba(15,42,77,.06); transition:transform .12s ease;
 }
 .comercio-fila:active{transform:scale(.98);}
