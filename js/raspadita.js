@@ -90,7 +90,7 @@ function raspaditaCasilleroHTML(i){
     return `<button class="raspadita-casillero" onclick="raspaditaTocar(${i})">🎫</button>`;
   }
   const simbolo = raspaditaResultado[i];
-  const contenido = simbolo.tipo === 'logo' ? `<img src="logo-empresa.png" alt="Logo">` : simbolo.emoji;
+  const contenido = simbolo.tipo === 'logo' ? `<img src="icons/icon-192.png" alt="Logo">` : simbolo.emoji;
   return `<button class="raspadita-casillero raspadita-revelada" disabled>${contenido}</button>`;
 }
 

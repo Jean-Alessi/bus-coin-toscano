@@ -188,6 +188,18 @@ function iniciarTrivia(){
   renderSeleccionTema();
 }
 
+// Botón "←" del header: si ya elegiste un tema (estás respondiendo o viendo
+// el resultado), vuelve a la lista de temas; si ya estás en la lista de
+// temas, sale de Trivia hacia el menú de Juegos.
+function triviaVolver(){
+  if(temaActual === null){
+    showView('juegos');
+  } else {
+    temaActual = null;
+    renderSeleccionTema();
+  }
+}
+
 function renderSeleccionTema(){
   document.getElementById('trivia-sub').textContent = 'Elegí un tema';
   const cont = document.getElementById('trivia-content');

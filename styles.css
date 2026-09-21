@@ -193,6 +193,12 @@ body{
   font-family:var(--font-juego);
   box-shadow:0 2px 8px rgba(15,42,77,.12);
 }
+.btn-back{
+  background:#fff; border:none; border-radius:50%; color:var(--navy);
+  width:34px; height:34px; font-size:18px; font-weight:700; cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 8px rgba(15,42,77,.12);
+}
 
 /* ---- Onboarding: elegir emoji ---- */
 .hero{

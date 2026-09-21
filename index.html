@@ -6,7 +6,7 @@
 <title>Turismo Toscano</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=77">
+<link rel="stylesheet" href="styles.css?v=78">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -99,9 +99,12 @@
     <!-- TRIVIA -->
     <div class="view" id="view-trivia">
       <div class="app-header">
-        <div>
-          <h1>Trivia</h1>
-          <div class="sub" id="trivia-sub">Elegí un tema</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn-back" onclick="triviaVolver()">←</button>
+          <div>
+            <h1>Trivia</h1>
+            <div class="sub" id="trivia-sub">Elegí un tema</div>
+          </div>
         </div>
         <button class="btn-mute" onclick="toggleSonido()">🔊</button>
       </div>
@@ -374,7 +377,7 @@
 <script src="js/agencias.js?v=1"></script>
 <script src="js/iconos.js?v=75"></script>
 <script src="js/sonido.js?v=75"></script>
-<script src="js/trivia.js?v=75"></script>
+<script src="js/trivia.js?v=76"></script>
 <script src="js/acertijos.js?v=75"></script>
 <script src="js/pensamiento.js?v=75"></script>
 <script src="js/ahorcado.js?v=75"></script>
@@ -388,7 +391,7 @@
 <script src="js/tutifruti.js?v=75"></script>
 <script src="js/impostor.js?v=8"></script>
 <script src="js/tienda.js?v=75"></script>
-<script src="js/raspadita.js?v=2"></script>
+<script src="js/raspadita.js?v=3"></script>
 <script src="js/pwa.js?v=2"></script>
 <script src="js/triviaVivo.js?v=1"></script>
 <script src="js/cuento.js?v=1"></script>
