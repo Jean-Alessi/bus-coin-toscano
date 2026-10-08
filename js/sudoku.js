@@ -101,58 +101,60 @@ function sudokuBorrarCelda(){
 }
 
 function sudokuCeldaClases(r, c){
-  const clases = ['sudoku-celda'];
-  if(sudokuEsFija(r, c)) clases.push('sudoku-celda-fija');
-  else if(sudokuTablero[r][c] !== 0){
-    clases.push(sudokuTablero[r][c] === sudokuSolucion[r][c] ? 'sudoku-celda-correcta' : 'sudoku-celda-incorrecta');
+  const clases = ['sd-celda'];
+  const valor = sudokuTablero[r][c];
+  if(sudokuEsFija(r, c)) clases.push('sd-celda-fija');
+  else if(valor !== 0){
+    clases.push(valor === sudokuSolucion[r][c] ? 'sd-celda-correcta' : 'sd-celda-incorrecta');
   }
-  if(sudokuSeleccion && sudokuSeleccion.r === r && sudokuSeleccion.c === c) clases.push('sudoku-celda-elegida');
-  if((c + 1) % 3 === 0 && c !== 8) clases.push('sudoku-borde-derecho');
-  if((r + 1) % 3 === 0 && r !== 8) clases.push('sudoku-borde-abajo');
+  if(sudokuSeleccion){
+    const { r: sr, c: sc } = sudokuSeleccion;
+    if(sr === r && sc === c) clases.push('sd-celda-elegida');
+    else if(sr === r || sc === c || (Math.floor(sr / 3) === Math.floor(r / 3) && Math.floor(sc / 3) === Math.floor(c / 3))) clases.push('sd-celda-relacion');
+    if(valor !== 0 && valor === sudokuTablero[sr][sc] && !(sr === r && sc === c)) clases.push('sd-celda-igual');
+  }
+  if((c + 1) % 3 === 0 && c !== 8) clases.push('sd-borde-derecho');
+  if((r + 1) % 3 === 0 && r !== 8) clases.push('sd-borde-abajo');
   return clases.join(' ');
 }
 
 function renderSudoku(){
   const cont = document.getElementById('sudoku-content');
   if(!cont) return;
+  document.getElementById('view-sudoku').classList.toggle('juego-inmersivo', sudokuFase === 'jugando');
 
   if(sudokuFase === 'inicio'){
     document.getElementById('sudoku-sub').textContent = 'Elegí un nivel';
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>🔢 Sudoku</h2>
-        <p>Completá el tablero para que cada fila, columna y cuadro de 3x3 tenga los números del 1 al 9 sin repetir.</p>
+    cont.innerHTML = gEscenaHTML('noche', `
+      ${gDialogoHTML('🔢 Sudoku', 'Completá el tablero para que cada fila, columna y cuadro de 3x3 tenga los números del 1 al 9 sin repetir.')}
+      <div class="g-dialogo-sub" style="text-align:center;margin:6px 0;font-weight:700;">Elegí el nivel</div>
+      <div class="g-acciones g-acciones-3">
+        ${Object.keys(SUDOKU_NOMBRE_NIVEL).map(n => `<button class="gbtn ${sudokuNivelElegido === n ? 'gbtn-sel' : 'gbtn-no'}" onclick="sudokuElegirNivel('${n}')">${SUDOKU_NOMBRE_NIVEL[n]}</button>`).join('')}
       </div>
-      <div class="section-label">Nivel</div>
-      <div class="chip-row" style="margin-bottom:16px;">
-        ${Object.keys(SUDOKU_NOMBRE_NIVEL).map(n => `<div class="chip ${sudokuNivelElegido === n ? 'selected' : ''}" onclick="sudokuElegirNivel('${n}')">${SUDOKU_NOMBRE_NIVEL[n]}</div>`).join('')}
-      </div>
-      <button class="btn-primary" onclick="sudokuComenzar()">Comenzar</button>`;
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="sudokuComenzar()">Comenzar</button></div>`);
     return;
   }
 
   document.getElementById('sudoku-sub').textContent = `Nivel ${SUDOKU_NOMBRE_NIVEL[sudokuNivelElegido]}`;
 
   if(sudokuFase === 'ganado'){
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>🏁 ¡Completaste el Sudoku!</h2>
-        <p>${sudokuErrores === 0 ? 'Sin ningún error — perfecto.' : `Con ${sudokuErrores} error${sudokuErrores === 1 ? '' : 'es'} en el camino.`}</p>
-      </div>
-      <button class="btn-primary" onclick="iniciarSudoku()">Jugar de nuevo</button>`;
+    cont.innerHTML = gEscenaHTML('noche', `
+      <div class="vj-portada">🏁</div>
+      ${gDialogoHTML('¡Completaste el Sudoku!', sudokuErrores === 0 ? 'Sin ningún error: perfecto.' : `Con ${sudokuErrores} error${sudokuErrores === 1 ? '' : 'es'} en el camino.`)}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="iniciarSudoku()">Jugar de nuevo</button></div>`);
     return;
   }
 
   const filasHTML = sudokuTablero.map((fila, r) => `
-    <div class="sudoku-fila">
+    <div class="sd-fila">
       ${fila.map((valor, c) => `<button class="${sudokuCeldaClases(r, c)}" ${sudokuEsFija(r, c) ? 'disabled' : ''} onclick="sudokuTocarCelda(${r},${c})">${valor || ''}</button>`).join('')}
     </div>`).join('');
 
-  const numerosHTML = [1,2,3,4,5,6,7,8,9].map(n => `<button class="sudoku-tecla" onclick="sudokuIngresarNumero(${n})">${n}</button>`).join('');
+  const numerosHTML = [1,2,3,4,5,6,7,8,9].map(n => `<button class="sd-tecla" onclick="sudokuIngresarNumero(${n})">${n}</button>`).join('');
 
-  cont.innerHTML = `
-    <p class="tienda-nota">Errores: ${sudokuErrores}</p>
-    <div class="sudoku-tablero">${filasHTML}</div>
-    <div class="sudoku-teclado">${numerosHTML}<button class="sudoku-tecla sudoku-tecla-borrar" onclick="sudokuBorrarCelda()">✕</button></div>
-    <p class="link-chico" onclick="iniciarSudoku()">‹ Elegir otro nivel</p>`;
+  cont.innerHTML = gEscenaHTML('noche', `
+    <div class="g-hud"><span class="g-pill">❌ ${sudokuErrores}</span><span class="g-pill">${SUDOKU_NOMBRE_NIVEL[sudokuNivelElegido]}</span><span class="g-pill">🪙 <span class="js-monedas">${monedasCoin}</span></span></div>
+    <div class="sd-tablero">${filasHTML}</div>
+    <div class="sd-teclado">${numerosHTML}<button class="sd-tecla sd-tecla-borrar" onclick="sudokuBorrarCelda()">✕</button></div>
+    <div class="g-pie"><span onclick="iniciarSudoku()">‹ Elegir otro nivel</span></div>`);
 }

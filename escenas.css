@@ -1,0 +1,638 @@
+/* ====================================================================
+   Escenas de juego: cada juego tiene su propio "mundo" (madera, neón,
+   casino...) en vez del estilo de app compartido. La base (.escena) y las
+   piezas genéricas (.g-*, .gbtn*) son comunes; el tema cambia solo el fondo.
+   ==================================================================== */
+.escena{
+  position:relative; border-radius:22px; padding:12px 10px 14px; margin-bottom:14px;
+  border:3px solid rgba(0,0,0,.4);
+  box-shadow:inset 0 0 46px rgba(0,0,0,.4), 0 8px 18px rgba(15,42,77,.28);
+  color:#fff; font-family:var(--font-juego);
+}
+/* Mesa de madera (Truco, Escoba, Chinchón) */
+.escena-madera{
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.22) 0 2px, rgba(255,255,255,.05) 2px 4px, transparent 4px 46px),
+    radial-gradient(120% 90% at 50% 35%, #9A6A38 0%, #7A4F26 55%, #5A3A1C 100%);
+  border-color:#3E2713;
+}
+/* Neón violeta (Trivia) */
+.escena-neon{
+  background:
+    radial-gradient(60% 40% at 15% 8%, rgba(255,110,255,.30), transparent 70%),
+    radial-gradient(55% 40% at 88% 92%, rgba(70,200,255,.26), transparent 70%),
+    linear-gradient(180deg, #5326A6 0%, #34157A 55%, #1F0B4D 100%);
+  border-color:#9B6BFF;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.35), 0 0 22px rgba(155,107,255,.45), 0 8px 18px rgba(15,42,77,.28);
+}
+/* Paño verde de casino (Bingo) */
+.escena-casino{
+  background:
+    radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.4px) 0 0/9px 9px,
+    radial-gradient(120% 90% at 50% 30%, #22844A 0%, #115E33 65%, #0A4125 100%);
+  border-color:#C9A227;
+}
+.g-hud{display:flex; gap:8px; margin-bottom:10px;}
+.g-score{
+  flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  background:rgba(20,10,0,.55); border:2px solid rgba(255,255,255,.18); border-radius:14px; padding:6px 10px;
+}
+.g-score-yo{border-color:var(--orange-soft);}
+.g-score-nombre{font-size:11px; font-weight:700; line-height:1.15; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:.92;}
+.g-score-puntos{font-size:28px; font-weight:800; line-height:1; flex-shrink:0;}
+.g-score-puntos small{font-size:11px; font-weight:600; opacity:.65;}
+
+.m-rivales{display:flex; justify-content:center; gap:18px; flex-wrap:wrap; margin-bottom:8px;}
+.m-rival{text-align:center;}
+.m-rival-nombre{font-size:11px; font-weight:700; margin-bottom:4px; text-shadow:0 1px 2px rgba(0,0,0,.7);}
+.m-rival-mano{display:flex; justify-content:center;}
+.m-dorso{
+  width:34px; height:52px; border-radius:6px; margin-left:-12px;
+  background:var(--navy) url('icons/icon-192.png') center/72% no-repeat;
+  border:2px solid #F7F5F0; box-shadow:0 3px 6px rgba(0,0,0,.4);
+}
+.m-dorso:first-child{margin-left:0;}
+
+.m-tapete{
+  border-radius:18px; padding:8px 8px 10px; margin:4px 0 8px; min-height:116px;
+  background:radial-gradient(90% 100% at 50% 30%, #2F7D4F, #1E5C3A 80%);
+  border:3px solid #2A1808; box-shadow:inset 0 3px 14px rgba(0,0,0,.5);
+}
+.truco-en-mesa .app-header{display:none;}
+.g-chips{display:flex; gap:5px; flex-wrap:wrap; justify-content:center; align-items:center; margin-bottom:6px;}
+.g-chip{
+  background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.25); border-radius:999px;
+  padding:2px 9px; font-size:10px; font-weight:700;
+}
+.g-chip-rojo{background:linear-gradient(135deg, #E5484D, #B4252A); border-color:rgba(255,255,255,.4);}
+.truco-rondas{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-bottom:8px;}
+.truco-ronda{
+  display:flex; align-items:center; gap:3px; background:rgba(0,0,0,.3);
+  border-radius:10px; padding:4px 7px; border-left:4px solid #9AA3AE;
+}
+.truco-ronda-gane{border-left-color:#4ADE80;}
+.truco-ronda-perdi{border-left-color:#F87171;}
+.truco-ronda-res{font-size:12px; font-weight:800; margin-left:2px;}
+.truco-jugadas{display:flex; justify-content:center; align-items:flex-end; gap:10px; flex-wrap:wrap; min-height:90px;}
+.truco-jugada{text-align:center;}
+.truco-jugada-nombre{font-size:10px; font-weight:700; margin-top:4px; text-shadow:0 1px 2px #000;}
+.truco-jugada .tcarta{animation:trucoCaer .28s ease-out;}
+@keyframes trucoCaer{ from{transform:translateY(-16px) scale(1.12); opacity:0;} to{transform:none; opacity:1;} }
+.truco-vacio{align-self:center; font-size:12px; opacity:.85; text-align:center; padding:18px 0;}
+
+.m-turno-wrap{text-align:center; margin-bottom:8px;}
+.m-turno{
+  display:inline-block; padding:5px 18px; border-radius:999px; font-size:14px; font-weight:800;
+  background:rgba(0,0,0,.5); border:2px solid rgba(255,255,255,.2);
+}
+.m-turno-mio{
+  background:linear-gradient(180deg, var(--orange-soft), var(--orange)); border-color:transparent;
+  box-shadow:0 3px 0 var(--orange-sombra); animation:trucoPulso 1.5s ease-in-out infinite;
+}
+@keyframes trucoPulso{ 50%{transform:scale(1.06);} }
+
+.m-mano{display:flex; justify-content:center; gap:8px; margin:16px 0 12px;}
+
+/* Cartas: naipe crema con número en dos esquinas y el palo repetido en el
+   centro, como el mazo español real (las figuras 10/11/12 llevan un
+   ilustración provisoria hasta tener el arte definitivo). */
+.tcarta{
+  position:relative; display:block; padding:0; flex-shrink:0; font-family:var(--font-juego);
+  background:linear-gradient(160deg, #FFFDF6, #F3EAD3); border:2px solid #D9CBA8; border-radius:9px;
+  box-shadow:0 3px 0 rgba(0,0,0,.3), 0 6px 10px rgba(0,0,0,.35);
+}
+.tcarta-grande{width:76px; height:116px;}
+.tcarta-media{width:58px; height:88px; border-radius:8px;}
+.tcarta-mini{width:26px; height:40px; border-radius:5px; border-width:1px; box-shadow:0 2px 3px rgba(0,0,0,.35);}
+.tcarta-oro{color:#B8860B;} .tcarta-copa{color:#C0392B;} .tcarta-espada{color:#2D3E50;} .tcarta-basto{color:#6B4423;}
+.tcarta-esquina{position:absolute; font-weight:800; line-height:1;}
+.tcarta-grande .tcarta-esquina{font-size:16px;}
+.tcarta-media .tcarta-esquina{font-size:13px;}
+.tcarta-esquina-1{top:5px; left:6px;}
+.tcarta-esquina-2{bottom:5px; right:6px; transform:rotate(180deg);}
+.tcarta-centro{position:absolute; left:16%; right:16%; top:20%; bottom:20%; display:flex; align-items:center; justify-content:center;}
+.tcarta-pips{width:100%; display:grid; justify-items:center; align-items:center; align-content:center; gap:2px 0; grid-template-columns:1fr;}
+.tcarta-pips-4, .tcarta-pips-5, .tcarta-pips-6, .tcarta-pips-7{grid-template-columns:1fr 1fr;}
+.tcarta-pips-5 svg:nth-child(5), .tcarta-pips-7 svg:nth-child(7){grid-column:1 / 3;}
+.tcarta-figura{display:flex; flex-direction:column; align-items:center; gap:2px; line-height:1;}
+.tcarta-figura-emoji{font-size:30px;}
+.tcarta-media .tcarta-figura-emoji{font-size:22px;}
+.tcarta-mini-contenido{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; font-size:11px; font-weight:800; line-height:1;}
+button.tcarta{cursor:default;}
+.tcarta-jugable{
+  cursor:pointer; transform:translateY(-8px);
+  box-shadow:0 0 0 3px var(--orange-soft), 0 6px 0 rgba(0,0,0,.3), 0 10px 14px rgba(0,0,0,.4);
+  transition:transform .1s ease;
+}
+.tcarta-jugable:active{transform:translateY(-2px) scale(.97);}
+
+.g-acciones{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;}
+.g-acciones-3{grid-template-columns:repeat(3, 1fr);}
+.gbtn{
+  border:none; border-radius:14px; padding:11px 6px; font-family:var(--font-juego); font-weight:800;
+  font-size:14px; color:#fff; cursor:pointer; text-shadow:0 1px 0 rgba(0,0,0,.28);
+  background:linear-gradient(180deg, var(--orange-soft), var(--orange));
+  box-shadow:0 4px 0 var(--orange-sombra), 0 8px 12px rgba(0,0,0,.3);
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.gbtn:active{transform:translateY(3px); box-shadow:0 1px 0 var(--orange-sombra), 0 3px 6px rgba(0,0,0,.3);}
+.gbtn-chico{font-size:12px; padding:9px 4px;}
+.gbtn-ancho{grid-column:1 / -1; font-size:17px; padding:13px 6px;}
+.gbtn-rojo{background:linear-gradient(180deg, #F26A6F, #D6343A); box-shadow:0 4px 0 #8E1F23, 0 8px 12px rgba(0,0,0,.3);}
+.gbtn-rojo:active{box-shadow:0 1px 0 #8E1F23, 0 3px 6px rgba(0,0,0,.3);}
+.gbtn-quiero{background:linear-gradient(180deg, #4ADE80, #1E9E52); box-shadow:0 4px 0 #14532D, 0 8px 12px rgba(0,0,0,.3);}
+.gbtn-quiero:active{box-shadow:0 1px 0 #14532D, 0 3px 6px rgba(0,0,0,.3);}
+.gbtn-no{background:linear-gradient(180deg, #8794A6, #5B6878); box-shadow:0 4px 0 #343D4A, 0 8px 12px rgba(0,0,0,.3);}
+.gbtn-no:active{box-shadow:0 1px 0 #343D4A, 0 3px 6px rgba(0,0,0,.3);}
+.gbtn-sel{outline:3px solid #fff;}
+
+.g-dialogo{
+  background:rgba(0,0,0,.55); border:2px solid rgba(255,255,255,.25); border-radius:16px;
+  padding:9px 12px; text-align:center; margin-bottom:8px;
+}
+.g-dialogo-titulo{font-size:19px; font-weight:800; line-height:1.15; text-shadow:0 2px 4px rgba(0,0,0,.6);}
+.g-dialogo-sub{font-size:12px; opacity:.88; margin-top:4px;}
+.g-pie{display:flex; justify-content:space-between; gap:8px; font-size:11px; opacity:.9; margin-top:4px;}
+.g-pie span{cursor:pointer; text-decoration:underline;}
+
+/* ---- Trivia: neón violeta, pregunta con borde luminoso y respuestas-pastilla ---- */
+.tv-escena{min-height:470px;}
+.g-pill{
+  display:inline-flex; align-items:center; gap:6px; background:rgba(10,4,40,.55);
+  border:2px solid rgba(255,255,255,.22); border-radius:999px; padding:5px 14px; font-size:15px; font-weight:800;
+}
+.tv-top{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;}
+.g-barra{height:8px; background:rgba(255,255,255,.18); border-radius:4px; overflow:hidden; margin:0 2px 12px;}
+.g-barra-relleno{height:100%; background:linear-gradient(90deg,#FFD84D,#FF8A3D); border-radius:4px; transition:width .3s; box-shadow:0 0 10px rgba(255,216,77,.8);}
+.tv-categoria{
+  display:block; width:max-content; max-width:90%; margin:0 auto -14px; position:relative; z-index:1;
+  background:linear-gradient(180deg,#FFD84D,#FF9F1C); color:#4A2A00; border-radius:999px; padding:4px 18px;
+  font-size:12px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; box-shadow:0 3px 0 #A85B00;
+}
+.tv-pregunta{
+  background:linear-gradient(180deg, rgba(12,6,56,.92), rgba(24,10,82,.92));
+  border:3px solid #7CE7FF; border-radius:20px; padding:24px 16px 20px; margin-bottom:16px; text-align:center;
+  box-shadow:0 0 0 3px rgba(124,231,255,.25), 0 0 18px rgba(124,231,255,.55), inset 0 0 18px rgba(124,231,255,.12);
+  font-size:20px; font-weight:800; line-height:1.25; text-shadow:0 2px 4px rgba(0,0,0,.5);
+}
+.tv-opcion{
+  display:block; width:100%; margin:0 0 12px; padding:14px 40px 15px 18px; border:none; border-radius:999px;
+  font-family:var(--font-juego); font-size:17px; font-weight:800; color:#fff; text-align:center; cursor:pointer; position:relative;
+  text-shadow:0 1px 0 rgba(0,0,0,.3);
+  transition:transform .08s ease, box-shadow .08s ease, opacity .2s ease;
+}
+.tv-opcion-0{background:linear-gradient(180deg,#F25BFF,#C42BDD); box-shadow:0 5px 0 #6E1285, 0 9px 14px rgba(0,0,0,.35);}
+.tv-opcion-1{background:linear-gradient(180deg,#A07BFF,#6B43E0); box-shadow:0 5px 0 #34208A, 0 9px 14px rgba(0,0,0,.35);}
+.tv-opcion-2{background:linear-gradient(180deg,#4FB8FF,#2678E0); box-shadow:0 5px 0 #123F8A, 0 9px 14px rgba(0,0,0,.35);}
+.tv-opcion:active:not([disabled]){transform:translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,.4);}
+.tv-opcion[disabled]{cursor:default;}
+.tv-opcion.tv-ok{background:linear-gradient(180deg,#5BE88D,#1FAE55); box-shadow:0 5px 0 #0F6B33, 0 0 18px rgba(91,232,141,.7);}
+.tv-opcion.tv-ok::after{content:"✓"; position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:22px;}
+.tv-opcion.tv-mal{background:linear-gradient(180deg,#FF6B6B,#D12F3A); box-shadow:0 5px 0 #7A1620;}
+.tv-opcion.tv-mal::after{content:"✗"; position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:22px;}
+.tv-opcion.tv-off{opacity:.5;}
+.tv-temas{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
+.tv-tema{
+  border:none; border-radius:18px; padding:14px 8px 12px; color:#fff; font-family:var(--font-juego); cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:4px; text-shadow:0 1px 0 rgba(0,0,0,.3);
+  box-shadow:0 5px 0 rgba(0,0,0,.35), 0 9px 14px rgba(0,0,0,.3); transition:transform .08s, box-shadow .08s;
+}
+.tv-tema:active{transform:translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,.35);}
+.tv-tema-icono svg{width:34px; height:34px; stroke:#fff; color:#fff;}
+.tv-tema-nombre{font-size:16px; font-weight:800; line-height:1.1;}
+.tv-tema-sub{font-size:11px; opacity:.9; font-weight:600;}
+.tv-resultado-trofeo{font-size:64px; text-align:center; line-height:1.1; margin:6px 0;}
+
+/* ---- Piezas genéricas dentro de cualquier escena ---- */
+.escena .section-label{color:rgba(255,255,255,.88); text-shadow:0 1px 2px rgba(0,0,0,.45);}
+.escena .link-chico{color:rgba(255,255,255,.85);}
+.gbtn:disabled{opacity:.5; filter:grayscale(.5); box-shadow:0 2px 0 rgba(0,0,0,.35); cursor:not-allowed; transform:none;}
+.escena .bingo-input-numero{margin:8px 0;}
+
+/* ---- Bingo: casino. La bola cantada grande y el cartón con fichas ---- */
+.escena-casino .bingo-sorteo{
+  background:rgba(0,0,0,.32); border:2px solid rgba(201,162,39,.65); border-radius:20px; padding:14px; margin-bottom:12px;
+}
+.escena-casino .bingo-ultimo{flex-direction:column; align-items:center; gap:8px; margin-bottom:12px; min-height:0;}
+.escena-casino .bingo-numero-resaltado{
+  width:104px; height:104px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:46px; font-weight:800; letter-spacing:0; color:#3A2400;
+  background:radial-gradient(circle at 35% 28%, #fff 0%, #FFE680 45%, #E8A91C 100%);
+  border:4px solid #fff; box-shadow:0 0 24px rgba(255,226,122,.85), 0 6px 0 #9A6B00;
+}
+.escena-casino .bingo-numero-significado{font-size:19px; font-weight:800; color:#fff; text-shadow:0 2px 4px rgba(0,0,0,.55);}
+.escena-casino .bingo-sorteo .gbtn{width:100%;}
+.escena-casino .bingo-espera{color:rgba(255,255,255,.85);}
+.escena-casino .bingo-historial{gap:5px;}
+.escena-casino .bingo-chip{
+  width:34px; height:34px; padding:0; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 35% 30%, #fff, #E9E2CF); border:2px solid #C9A227; color:#3A2400; font-size:12px; font-weight:800;
+}
+.escena-casino .bingo-chip-vacio{width:auto; border-radius:999px; padding:4px 12px; font-weight:600;}
+.escena-casino .bingo-chip-ultimo{background:radial-gradient(circle at 35% 30%, #FFF2A8, #F0A81E); border-color:#fff; box-shadow:0 0 10px rgba(255,226,122,.9);}
+.escena-casino .bingo-carton{background:#FFF8E6; border:4px solid #C9A227; border-radius:18px; box-shadow:0 5px 0 #7A5A00, 0 9px 14px rgba(0,0,0,.35);}
+.escena-casino .bingo-carton-titulo{color:#3A2400;}
+.escena-casino .bingo-badge-full{background:#D61F3A;}
+.escena-casino .bingo-grid{gap:6px;}
+.escena-casino .bingo-celda{background:#fff; border:2px solid #E6D9B0; border-radius:12px; color:#3A2400; font-size:30px; font-weight:800;}
+.escena-casino .bingo-celda.bingo-marcada{
+  background:radial-gradient(circle at 35% 28%, #FF8F9C, #D61F3A 70%); border-color:#8E1224; color:#fff;
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.25), 0 2px 0 #8E1224;
+}
+.escena-casino .bingo-celda-disponible{background:#FFF3B8; color:#7A4B00; border-color:#F0A81E; box-shadow:0 0 0 3px rgba(240,168,30,.55);}
+.escena-casino .bingo-lista-nombres{gap:7px; justify-content:center;}
+.escena-casino .bingo-nombre-item{
+  width:42px; height:42px; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 35% 30%, #fff, #E9E2CF); border:2px solid #C9A227; color:#3A2400; font-size:13px; font-weight:800;
+}
+.escena-casino .bingo-nombre-item.bingo-nombre-elegido{background:radial-gradient(circle at 35% 28%, #FF8F9C, #D61F3A 70%); border-color:#fff; color:#fff; box-shadow:0 0 10px rgba(214,31,58,.8);}
+.escena-casino .bingo-pin-error{color:#FFD84D;}
+
+/* Bingo: bola y significado en una fila, para que el cartón entre en pantalla */
+.escena-casino .bingo-ultimo{flex-direction:row; justify-content:center; gap:14px; margin-bottom:8px;}
+.escena-casino .bingo-numero-resaltado{width:84px; height:84px; font-size:38px; flex-shrink:0;}
+.escena-casino .bingo-numero-significado{font-size:20px; text-align:left; line-height:1.1; max-width:55%;}
+.escena-casino .bingo-sorteo{padding:12px;}
+.escena-casino .bingo-chip{width:30px; height:30px; font-size:11px;}
+.escena-casino .bingo-historial{margin-bottom:10px;}
+.escena-casino .bingo-celda{font-size:26px;}
+.escena-casino .bingo-grid{gap:5px;}
+
+/* Mientras se juega de verdad, el título de arriba sobra: ese lugar es para el juego. */
+.juego-inmersivo .app-header{display:none;}
+
+/* ---- Ahorcado: pizarrón con marco de madera y letras de tiza ---- */
+.escena-pizarra{
+  background:
+    radial-gradient(70% 50% at 25% 15%, rgba(255,255,255,.08), transparent 70%),
+    radial-gradient(90% 70% at 80% 85%, rgba(255,255,255,.05), transparent 70%),
+    linear-gradient(180deg, #34543F, #22382C);
+  border:8px solid #8B5A2B; border-radius:20px;
+  box-shadow:inset 0 0 36px rgba(0,0,0,.5), 0 0 0 3px #5E3B17, 0 8px 18px rgba(15,42,77,.3);
+}
+.ah-tablero{text-align:center; margin-bottom:8px;}
+.ah-dibujo{display:flex; justify-content:center; margin-bottom:2px; filter:drop-shadow(0 0 3px rgba(255,255,255,.35));}
+.ah-vidas{font-size:15px; letter-spacing:2px; margin-bottom:10px;}
+.ah-palabra{display:flex; flex-wrap:wrap; justify-content:center; gap:5px;}
+.ah-slot{
+  min-width:24px; height:42px; padding:0 2px; border-bottom:4px solid rgba(255,255,255,.9); text-align:center;
+  font-size:30px; font-weight:800; line-height:42px; color:#fff; text-shadow:0 0 6px rgba(255,255,255,.4);
+}
+.ah-slot-perdida{color:#FF9B9B; text-shadow:none;}
+.ah-teclado{display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; margin-top:10px;}
+.ah-tecla{
+  border:none; border-radius:10px; padding:9px 0 8px; font-family:var(--font-juego); font-size:17px; font-weight:800; color:#fff; cursor:pointer;
+  background:linear-gradient(180deg, #E0A864, #B97A3C); box-shadow:0 4px 0 #6B4423, 0 6px 8px rgba(0,0,0,.3);
+  text-shadow:0 1px 0 rgba(0,0,0,.3); transition:transform .08s, box-shadow .08s;
+}
+.ah-tecla:active:not(:disabled){transform:translateY(3px); box-shadow:0 1px 0 #6B4423;}
+.ah-tecla:disabled{cursor:default;}
+.ah-tecla-ok{background:linear-gradient(180deg,#5BE88D,#1FAE55); box-shadow:0 4px 0 #0F6B33;}
+.ah-tecla-mal{background:linear-gradient(180deg,#7A6A5A,#5A4B3E); box-shadow:0 2px 0 #3A2E24; opacity:.55; transform:translateY(2px);}
+
+/* ---- Valija Express: cielo de aeropuerto, reloj circular y valija de cuero ---- */
+.escena-cielo{
+  background:
+    radial-gradient(40% 14% at 18% 12%, rgba(255,255,255,.75), transparent 70%),
+    radial-gradient(34% 12% at 82% 22%, rgba(255,255,255,.6), transparent 70%),
+    linear-gradient(180deg, #2F9BF2 0%, #6CC3FF 48%, #FFE0A6 100%);
+  border-color:#fff;
+}
+.escena-cielo .g-dialogo{background:rgba(10,40,90,.5); border-color:rgba(255,255,255,.55);}
+.vj-portada{font-size:60px; text-align:center; line-height:1.1; margin:4px 0 8px; filter:drop-shadow(0 4px 4px rgba(0,0,0,.25));}
+.vj-top{
+  position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:rgba(8,36,84,.72); border:2px solid rgba(255,255,255,.5); border-radius:16px; padding:8px 10px; margin-bottom:8px;
+  backdrop-filter:blur(3px);
+}
+.vj-destino{display:flex; align-items:center; gap:8px; font-size:16px; font-weight:800; line-height:1.1; min-width:0;}
+.vj-destino-emoji{font-size:26px;}
+.vj-timer{
+  width:54px; height:54px; border-radius:50%; flex-shrink:0; display:grid; place-items:center;
+  background:conic-gradient(#FFD84D var(--p), rgba(255,255,255,.28) 0);
+}
+.vj-timer span{width:42px; height:42px; border-radius:50%; background:#0B2A5E; display:grid; place-items:center; font-size:21px; font-weight:800;}
+.vj-timer-urgente{background:conic-gradient(#FF4D4D var(--p), rgba(255,255,255,.28) 0);}
+.vj-timer-urgente span{color:#FF9B9B;}
+.vj-consigna{font-size:13px; font-weight:700; text-align:center; margin:2px 4px 8px; text-shadow:0 1px 3px rgba(0,0,0,.45);}
+.vj-valija{
+  position:relative; display:flex; align-items:center; gap:8px; margin-bottom:10px; padding:10px 40px 10px 10px;
+  background:linear-gradient(180deg, #A5683A, #7B4724); border:3px solid #4B2A12; border-radius:16px;
+  box-shadow:0 4px 0 #3A200D, 0 8px 12px rgba(0,0,0,.28);
+}
+.vj-valija-emoji{font-size:30px; flex-shrink:0;}
+.vj-contenido{display:flex; flex-wrap:wrap; gap:4px; min-height:30px; align-items:center;}
+.vj-chip{background:#FFF3D6; color:#4B2A12; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:800;}
+.vj-chip-vacio{opacity:.7; background:rgba(255,255,255,.25); color:#fff;}
+.vj-contador{
+  position:absolute; right:8px; top:8px; background:#FFD84D; color:#4A2A00; border-radius:999px; padding:2px 8px;
+  font-size:12px; font-weight:800; box-shadow:0 2px 0 #A85B00;
+}
+.vj-items{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.vj-item{
+  border:none; border-radius:14px; padding:11px 8px 12px; font-family:var(--font-juego); font-size:14px; font-weight:800; cursor:pointer;
+  color:#143A66; background:linear-gradient(180deg,#FFFFFF,#E3EEFB); box-shadow:0 4px 0 #8FA9CC, 0 6px 8px rgba(0,0,0,.18);
+  transition:transform .08s, box-shadow .08s; line-height:1.15;
+}
+.vj-item:active{transform:translateY(3px); box-shadow:0 1px 0 #8FA9CC;}
+.vj-item-elegido{color:#fff; background:linear-gradient(180deg,#FFB547,#F08A1C); box-shadow:0 4px 0 #A85B00, 0 6px 8px rgba(0,0,0,.2); text-shadow:0 1px 0 rgba(0,0,0,.3);}
+.vj-item-elegido::before{content:"✓ ";}
+.vj-stats{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;}
+.vj-stat{
+  background:rgba(8,36,84,.6); border:2px solid rgba(255,255,255,.4); border-radius:14px; padding:10px 6px;
+  display:flex; flex-direction:column; align-items:center; font-size:12px; font-weight:700;
+}
+.vj-stat-num{font-size:26px; font-weight:800; line-height:1.1;}
+.vj-nota{font-size:12px; text-align:center; margin:4px 0 10px; text-shadow:0 1px 3px rgba(0,0,0,.45);}
+
+/* ---- Memoria: arcade de menta, cartas con el dorso de Bus Coin ---- */
+.escena-menta{
+  background:
+    radial-gradient(50% 30% at 85% 8%, rgba(255,255,255,.28), transparent 70%),
+    linear-gradient(180deg, #12B8A6 0%, #0E8F9A 55%, #0B5E7A 100%);
+  border-color:#7FF0E0;
+}
+.mem-portada{font-size:56px; text-align:center; margin:4px 0 6px;}
+.mem-grid{display:grid; gap:9px; margin-top:4px; grid-template-columns:repeat(4, 1fr);}
+.mem-grid-4{grid-template-columns:repeat(4, 1fr);}
+.mem-grid-16{grid-template-columns:repeat(4, 1fr); gap:6px;}
+.mem-carta{
+  aspect-ratio:3/4; border:none; border-radius:12px; cursor:pointer; padding:0; font-size:30px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--navy) url('icons/icon-192.png') center/70% no-repeat;
+  border:3px solid #F7F5F0; box-shadow:0 4px 0 rgba(0,0,0,.35), 0 7px 10px rgba(0,0,0,.25);
+  transition:transform .08s;
+}
+.mem-carta:active{transform:translateY(3px);}
+.mem-grid-16 .mem-carta{font-size:22px; border-width:2px; border-radius:9px;}
+.mem-carta-cara{background:linear-gradient(160deg,#FFFDF6,#F3EAD3); border-color:#fff;}
+.mem-carta-resuelta{background:linear-gradient(160deg,#C9FFD8,#7FE8A3); border-color:#fff; box-shadow:0 0 14px rgba(127,232,163,.8); cursor:default;}
+.mem-logo-img{width:70%; height:70%; object-fit:contain; border-radius:20%;}
+.mem-flip{animation:memGirar .28s ease-out;}
+@keyframes memGirar{ from{transform:rotateY(90deg) scale(.9);} to{transform:rotateY(0) scale(1);} }
+.mem-grid-16 .mem-carta{aspect-ratio:1/1;}
+
+/* ---- Sudoku: noche índigo con tablero claro y resaltado de fila/columna/cuadro ---- */
+.escena-noche{
+  background:
+    radial-gradient(60% 40% at 80% 5%, rgba(80,140,255,.28), transparent 70%),
+    linear-gradient(180deg, #1B2A66 0%, #121C4A 60%, #0B1233 100%);
+  border-color:#5B7CFF;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.4), 0 0 18px rgba(91,124,255,.4), 0 8px 18px rgba(15,42,77,.28);
+}
+.g-acciones-3{grid-template-columns:repeat(3, 1fr);}
+.sd-tablero{display:flex; flex-direction:column; background:#fff; border:3px solid #7C9BFF; border-radius:10px; overflow:hidden; margin:6px 0 12px; box-shadow:0 0 14px rgba(124,155,255,.5);}
+.sd-fila{display:flex;}
+.sd-celda{
+  flex:1; aspect-ratio:1; border:0; border-right:1px solid #CFD8F0; border-bottom:1px solid #CFD8F0; background:#fff; padding:0;
+  font-family:var(--font-juego); font-size:20px; font-weight:800; color:#2563EB; display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.sd-celda-fija{color:#0F1B4D; background:#EEF2FF; cursor:default;}
+.sd-celda-correcta{color:#2563EB;}
+.sd-celda-incorrecta{color:#E5484D; background:#FFE9EA;}
+.sd-celda-relacion{background:#E3EBFF;}
+.sd-celda-fija.sd-celda-relacion{background:#D6E1FF;}
+.sd-celda-igual{background:#FFE9A8 !important;}
+.sd-celda-elegida{background:#7CE7FF !important; box-shadow:inset 0 0 0 2px #1E8FB8;}
+.sd-borde-derecho{border-right:2px solid #3B4F9A;}
+.sd-borde-abajo{border-bottom:2px solid #3B4F9A;}
+.sd-teclado{display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;}
+.sd-tecla{
+  aspect-ratio:1; border:none; border-radius:12px; font-family:var(--font-juego); font-size:22px; font-weight:800; color:#fff; cursor:pointer;
+  background:linear-gradient(180deg,#6C8CFF,#3F5FE0); box-shadow:0 4px 0 #1E2F86, 0 6px 8px rgba(0,0,0,.3); transition:transform .08s, box-shadow .08s;
+}
+.sd-tecla:active{transform:translateY(3px); box-shadow:0 1px 0 #1E2F86;}
+.sd-tecla-borrar{background:linear-gradient(180deg,#FF7B7B,#D63A44); box-shadow:0 4px 0 #7A1620, 0 6px 8px rgba(0,0,0,.3);}
+.sd-tecla-borrar:active{box-shadow:0 1px 0 #7A1620;}
+
+/* ---- Papel (Sopa de letras, Tutti Frutti, Cadáver Exquisito): hoja de pasatiempos ---- */
+.escena-papel{
+  background:
+    repeating-linear-gradient(180deg, transparent 0 27px, rgba(120,150,200,.18) 27px 28px),
+    linear-gradient(180deg, #FFF8E1, #FBEFCB);
+  border-color:#D9B95F; color:#3A2A12;
+  box-shadow:inset 0 0 30px rgba(180,140,40,.25), 0 8px 18px rgba(15,42,77,.22);
+}
+.escena-papel .g-pill{background:#fff; color:#3A2A12; border-color:#E0C98E;}
+.escena-papel .g-dialogo{background:#FFFDF2; border-color:#E0C98E; color:#3A2A12;}
+.escena-papel .g-dialogo-titulo{text-shadow:none;}
+.escena-papel .section-label{color:#7A5C1C; text-shadow:none;}
+.escena-papel .link-chico, .escena-papel .g-pie{color:#7A5C1C;}
+
+/* Sopa de letras sobre papel: marcador amarillo al elegir, verde al encontrar */
+.escena-papel .sopa-grilla{background:#FFFEF7; border:3px solid #3A2A12; border-radius:10px; box-shadow:0 4px 0 rgba(58,42,18,.35); margin:6px 0 12px;}
+.escena-papel .sopa-celda{background:transparent; border:0; border-radius:8px; color:#3A2A12; font-weight:800;}
+.escena-papel .sopa-celda-seleccionada{background:#FFE066; box-shadow:0 0 0 2px #E0B100 inset;}
+.escena-papel .sopa-celda-encontrada{background:#9BE7A9; color:#134D22; box-shadow:0 0 0 2px #3FAE5C inset;}
+.escena-papel .sopa-lista-palabras{gap:6px; margin-bottom:12px; justify-content:center;}
+.escena-papel .sopa-palabra{background:#fff; color:#3A2A12; border:2px solid #E0C98E; border-radius:999px; padding:4px 11px; font-weight:800;}
+.escena-papel .sopa-palabra-encontrada{background:#D4F5DB; border-color:#3FAE5C; color:#1E6B34; text-decoration:line-through;}
+.escena-papel .sopa-grilla{container-type:inline-size; align-items:stretch; overflow:hidden; padding:6px;}
+.escena-papel .sopa-fila{width:100%;}
+.escena-papel .sopa-celda{flex:1 1 0; min-width:0; aspect-ratio:1; font-size:calc(100cqw / var(--cols, 8) * .52);}
+.escena-papel{padding-left:6px; padding-right:6px;}
+.escena-papel .sopa-grilla{padding:4px;}
+.tcarta-sel{transform:translateY(-14px) !important; box-shadow:0 0 0 4px #4ADE80, 0 8px 0 rgba(0,0,0,.3), 0 12px 16px rgba(0,0,0,.4) !important;}
+
+/* Piezas extra de mesas de cartas */
+.g-chip-verde{background:linear-gradient(135deg,#4ADE80,#1E9E52); border-color:rgba(255,255,255,.5);}
+.g-ayuda{text-align:center; font-size:12px; font-weight:700; opacity:.92; margin:0 0 6px; text-shadow:0 1px 2px rgba(0,0,0,.5);}
+
+/* En el centro de la mesa las cartas elegibles no se levantan: solo se marcan */
+.m-tapete .tcarta-jugable{transform:none; box-shadow:0 0 0 3px rgba(255,216,77,.85), 0 3px 0 rgba(0,0,0,.3), 0 6px 10px rgba(0,0,0,.35);}
+.m-tapete .tcarta-sel{transform:translateY(-6px) !important;}
+.m-tapete .g-chips{margin-bottom:10px;}
+
+/* Chinchón: mano en abanico solapado, mazo con dorso, comodín */
+.g-hud-varios{flex-wrap:wrap;}
+.g-hud-varios .g-score{flex:1 1 calc(50% - 8px);}
+.m-mano-solapada{gap:0; padding:0 8px;}
+.m-mano-solapada .tcarta{margin-left:-20px;}
+.m-mano-solapada .tcarta:first-child{margin-left:0;}
+.m-dorso-media{
+  width:58px; height:88px; border-radius:8px; padding:0; cursor:default;
+  background:var(--navy) url('icons/icon-192.png') center/72% no-repeat; border:3px solid #F7F5F0;
+  box-shadow:0 3px 0 rgba(0,0,0,.3), 0 6px 10px rgba(0,0,0,.35);
+}
+.m-dorso-media:disabled{opacity:.8;}
+.m-dorso-activo{cursor:pointer; opacity:1; box-shadow:0 0 0 3px rgba(255,216,77,.9), 0 3px 0 rgba(0,0,0,.3), 0 6px 10px rgba(0,0,0,.35); animation:trucoPulso 1.5s ease-in-out infinite;}
+.tcarta-comodin{background:linear-gradient(160deg,#F5E6FF,#D9B8F5); border-color:#B58AE0; color:#7B3FB5; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;}
+.tcarta-comodin-estrella{font-size:30px; line-height:1;}
+.tcarta-comodin-texto{font-size:10px; font-weight:800;}
+.g-hud-compacto .g-score{flex-direction:column; align-items:center; gap:0; padding:4px 6px;}
+.g-hud-compacto .g-score-nombre{font-size:10px; max-width:100%;}
+.g-hud-compacto .g-score-puntos{font-size:22px;}
+.m-rivales-chicos{gap:10px; margin-bottom:4px;}
+.m-rivales-chicos .m-rival-nombre{font-size:10px; margin-bottom:2px;}
+.m-rivales-chicos .m-dorso{width:24px; height:36px; margin-left:-13px; border-width:1.5px; border-radius:4px;}
+.m-rivales-chicos .m-dorso:first-child{margin-left:0;}
+.gbtn-chico-texto{font-size:13px; white-space:nowrap;}
+.m-mano-solapada{margin-top:20px;}
+
+/* ---- BusColor: grafito con destellos de los 4 colores, cartas estilo mazo de colores ---- */
+.escena-grafito{
+  background:
+    radial-gradient(45% 30% at 0% 0%, rgba(232,93,93,.40), transparent 70%),
+    radial-gradient(45% 30% at 100% 0%, rgba(74,130,212,.40), transparent 70%),
+    radial-gradient(45% 30% at 0% 100%, rgba(79,190,115,.38), transparent 70%),
+    radial-gradient(45% 30% at 100% 100%, rgba(247,209,84,.36), transparent 70%),
+    linear-gradient(180deg, #2C3446, #151B27);
+  border-color:#8FA0C0;
+}
+.m-tapete-grafito{background:radial-gradient(90% 100% at 50% 30%, #3B4660, #1F2638 80%); border-color:#0E1320;}
+.gbtn-violeta{background:linear-gradient(180deg,#B66FE0,#8E44AD); box-shadow:0 4px 0 #522070, 0 8px 12px rgba(0,0,0,.3);}
+.gbtn-violeta:active{box-shadow:0 1px 0 #522070;}
+.escena-grafito .buscolor-carta{width:62px; height:92px; border-radius:11px; border:3px solid #fff; position:relative; box-shadow:0 3px 0 rgba(0,0,0,.35), 0 6px 10px rgba(0,0,0,.35); overflow:hidden;}
+.escena-grafito .buscolor-carta-rojo{--c:#C22F2F;} .escena-grafito .buscolor-carta-amarillo{--c:#C98A00;}
+.escena-grafito .buscolor-carta-verde{--c:#2A8A4A;} .escena-grafito .buscolor-carta-azul{--c:#2258A8;}
+.escena-grafito .buscolor-carta-negra{--c:#111;}
+.bc-oval{
+  width:76%; height:60%; border-radius:50%; background:#fff; transform:rotate(-24deg);
+  display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 2px rgba(0,0,0,.08);
+}
+.bc-oval > *{transform:rotate(24deg);}
+.escena-grafito .buscolor-carta-simbolo{color:var(--c, #111); font-size:26px; font-weight:800; line-height:1;}
+.escena-grafito .buscolor-carta-mas4{color:#111; font-size:12px; margin-top:0;}
+.escena-grafito .buscolor-carta-comodin-icono{width:26px; height:26px; border-width:0;}
+.bc-esq{position:absolute; font-size:11px; font-weight:800; line-height:1; color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.35);}
+.buscolor-carta-amarillo .bc-esq{color:#5A3D00; text-shadow:none;}
+.bc-esq-1{top:4px; left:5px;}
+.bc-esq-2{bottom:4px; right:5px; transform:rotate(180deg);}
+.escena-grafito .buscolor-carta:not(:disabled):not(.buscolor-carta-vista){transform:translateY(-6px); box-shadow:0 0 0 3px rgba(255,216,77,.9), 0 6px 0 rgba(0,0,0,.35), 0 10px 14px rgba(0,0,0,.4);}
+.escena-grafito .buscolor-carta:disabled{opacity:.45; filter:grayscale(.5);}
+.bc-mano{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:14px 0 10px;}
+.escena-grafito .buscolor-rival-chip{background:rgba(255,255,255,.1); color:#fff; border:2px solid rgba(255,255,255,.28); box-shadow:none;}
+.escena-grafito .buscolor-rival-cant{background:rgba(0,0,0,.35); color:#fff;}
+.escena-grafito .buscolor-rival-chip-turno{background:linear-gradient(180deg,var(--orange-soft),var(--orange)); border-color:#fff; color:#3A2400;}
+.escena-grafito .buscolor-rival-chip-turno .buscolor-rival-cant{background:rgba(255,255,255,.55); color:#3A2400;}
+.escena-grafito .buscolor-rivales{justify-content:center; margin-bottom:8px;}
+.escena-grafito .buscolor-elegir-color button{width:58px; height:58px; box-shadow:0 4px 0 rgba(0,0,0,.35);}
+.bc-mano{gap:6px;}
+.bc-mano .buscolor-carta{width:54px; height:80px;}
+.bc-mano .buscolor-carta-simbolo{font-size:22px;}
+.bc-mano .bc-esq{font-size:10px;}
+
+/* ---- Tutti Frutti: hoja de cuaderno, letra grande y ¡BASTA! ---- */
+.tf-top{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+.tf-letra{
+  width:58px; height:58px; border-radius:16px; flex-shrink:0; display:grid; place-items:center;
+  background:linear-gradient(180deg,#FF8A5B,#E5484D); color:#fff; font-size:38px; font-weight:800;
+  box-shadow:0 4px 0 #8E1F23, 0 7px 10px rgba(0,0,0,.2); transform:rotate(-4deg); text-shadow:0 2px 0 rgba(0,0,0,.25);
+}
+.tf-top-txt{flex:1; display:flex; flex-direction:column; line-height:1.1; font-size:12px; font-weight:700; color:#7A5C1C;}
+.tf-top-txt strong{font-size:22px; color:#3A2A12;}
+.tf-timer{
+  width:54px; height:54px; border-radius:50%; flex-shrink:0; display:grid; place-items:center;
+  background:linear-gradient(180deg,#FFD84D,#FF9F1C); color:#4A2A00; font-size:24px; font-weight:800;
+  box-shadow:0 4px 0 #A85B00, 0 7px 10px rgba(0,0,0,.2);
+}
+.tf-timer.valija-timer-urgente{background:linear-gradient(180deg,#FF6B6B,#D12F3A); color:#fff; box-shadow:0 4px 0 #7A1620; animation:trucoPulso .6s ease-in-out infinite;}
+.tf-nota{font-size:12px; font-weight:600; text-align:center; color:#7A5C1C; margin:8px 4px;}
+.escena-papel .tuti-categorias{gap:8px; margin:8px 0 12px;}
+.escena-papel .tuti-categoria label{color:#fff; background:linear-gradient(180deg,#7C9BFF,#4C6FE0); width:max-content; padding:2px 10px; border-radius:999px 999px 0 0; margin-left:8px; font-size:11px; letter-spacing:.5px;}
+.escena-papel .tuti-categoria input{border:2px solid #4C6FE0; border-radius:12px; background:#fff; font-size:17px; font-weight:700; color:#3A2A12; padding:10px 14px; margin-top:-4px;}
+.escena-papel .tuti-categoria input:focus{border-color:#E5484D; box-shadow:0 0 0 3px rgba(229,72,77,.25);}
+.escena-papel .tuti-basta{font-size:22px; letter-spacing:1px; padding:14px 6px;}
+.escena-papel .tuti-sorteo{margin:12px 0;}
+.escena-papel .tuti-sorteo-letra{background:linear-gradient(180deg,#FF8A5B,#E5484D); width:150px; height:150px; border-radius:30px; box-shadow:0 6px 0 #8E1F23, 0 10px 16px rgba(0,0,0,.3); text-shadow:0 3px 0 rgba(0,0,0,.25);}
+.escena-papel .rank-row{background:#fff; border:2px solid #E0C98E; border-radius:14px; padding:8px 10px;}
+.escena-papel .rank-row.me{border-color:#4C6FE0; background:#EEF2FF;}
+.escena-papel .rank-name{color:#3A2A12;}
+.escena-papel .rank-pts{color:#E5484D; font-weight:800;}
+.escena-papel .tuti-resultado-palabra{background:#FFF3D6; color:#3A2A12;}
+.escena-papel .tuti-resultado-invalida{background:#FFE0DC; color:#A8432F;}
+.escena-papel .tuti-resultado-cat{color:#7A5C1C;}
+.escena-papel .tuti-categorias{gap:4px; margin:4px 0 8px;}
+.escena-papel .tuti-categoria input{padding:7px 12px; font-size:16px; margin-top:-3px;}
+.escena-papel .tuti-categoria label{font-size:10px; padding:1px 9px;}
+.tf-top{margin-bottom:6px;}
+.tf-letra{width:48px; height:48px; font-size:32px;}
+.tf-timer{width:46px; height:46px; font-size:21px;}
+.escena-papel .tuti-basta{font-size:20px; padding:11px 6px;}
+
+/* ---- El Impostor: noche de espías con luz roja, tarjeta de rol secreta ---- */
+.escena-espia{
+  background:
+    radial-gradient(70% 40% at 50% 0%, rgba(229,72,77,.38), transparent 70%),
+    radial-gradient(50% 30% at 100% 100%, rgba(120,60,200,.28), transparent 70%),
+    linear-gradient(180deg, #221330, #0C0712);
+  border-color:#E5484D;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.5), 0 0 22px rgba(229,72,77,.5), 0 8px 18px rgba(15,42,77,.28);
+}
+.im-portada{font-size:54px; text-align:center; line-height:1.1; margin:2px 0 6px; filter:drop-shadow(0 0 10px rgba(229,72,77,.7));}
+.im-nota{font-size:12px; font-weight:600; text-align:center; opacity:.9; margin:8px 4px; text-shadow:0 1px 2px rgba(0,0,0,.6);}
+.im-carta{
+  background:linear-gradient(160deg,#FFF8E1,#F1E2B3); color:#2A1A00; border-radius:20px; border:4px solid #E5484D;
+  padding:18px 14px; text-align:center; margin-bottom:10px;
+  box-shadow:0 0 0 3px rgba(229,72,77,.3), 0 8px 0 rgba(0,0,0,.4), 0 0 24px rgba(229,72,77,.35);
+}
+.im-cat{display:inline-block; background:#2A1A00; color:#FFD84D; border-radius:999px; padding:3px 14px; font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;}
+.im-carta-sub{font-size:12px; font-weight:700; margin:10px 0 2px; opacity:.75;}
+.im-palabra-grande{font-size:38px; font-weight:800; line-height:1.1; margin:2px 0 4px; word-break:break-word;}
+.im-carta-impostor{background:linear-gradient(160deg,#2A0A0A,#120404); color:#FF8A8A; border-color:#FF3B3B; box-shadow:0 0 0 3px rgba(255,59,59,.35), 0 0 30px rgba(255,59,59,.7); animation:trucoPulso 2s ease-in-out infinite;}
+.im-carta-emoji{font-size:56px; line-height:1.1;}
+.im-carta-titulo{font-size:26px; font-weight:800; letter-spacing:.5px; margin:4px 0 8px; text-shadow:0 0 12px rgba(255,59,59,.8);}
+.im-carta-texto{font-size:13px; font-weight:600; color:#FFD0D0; margin-bottom:10px;}
+.im-carta-impostor .im-cat{background:#FF3B3B; color:#fff;}
+.im-votos{display:flex; flex-direction:column; gap:8px; margin-top:8px;}
+.im-voto{width:100%; text-align:left; padding:12px 14px; font-size:15px;}
+
+/* ---- Cadáver Exquisito: libro de cuentos, hoja envejecida con tinta ---- */
+.escena-libro{
+  background:
+    radial-gradient(60% 40% at 50% 0%, rgba(255,214,120,.28), transparent 70%),
+    linear-gradient(180deg, #6B3E75, #3F2150 60%, #2A1236);
+  border-color:#C9A227;
+}
+.cu-portada{font-size:50px; text-align:center; line-height:1.1; margin:2px 0 6px; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4));}
+.cu-nota{font-size:12px; font-weight:600; text-align:center; opacity:.9; margin:8px 4px;}
+.cu-hoja{
+  background:
+    repeating-linear-gradient(180deg, transparent 0 25px, rgba(120,80,30,.15) 25px 26px),
+    linear-gradient(160deg, #FFF6DA, #F0DDAA);
+  color:#3A2410; border:3px solid #C9A227; border-radius:6px 18px 18px 6px; padding:14px 14px 16px; margin-bottom:12px;
+  box-shadow:0 6px 0 rgba(0,0,0,.35), -8px 0 0 -2px #8E6A1E inset;
+}
+.cu-hoja-sup{font-size:11px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:#8E6A1E; margin-bottom:8px;}
+.cu-pregunta{font-size:21px; font-weight:800; line-height:1.2; margin-bottom:12px;}
+.cu-input{
+  width:100%; border:0; border-bottom:3px solid #8E6A1E; background:rgba(255,255,255,.55); border-radius:8px 8px 0 0;
+  padding:10px 12px; font-family:var(--font-juego); font-size:18px; font-weight:700; color:#3A2410;
+}
+.cu-input:focus{outline:none; background:#fff; border-bottom-color:#E5484D;}
+.cu-historia{font-size:19px; font-weight:700; line-height:1.55; margin:0;}
+.cu-hoja-historia{padding:16px;}
+
+/* ---- Dibujar y Adivinar: lienzo amarillo, alegre como un juego de dibujo ---- */
+.escena-lienzo{
+  background:
+    radial-gradient(14% 10% at 12% 10%, rgba(255,255,255,.5), transparent 70%),
+    radial-gradient(18% 12% at 90% 90%, rgba(255,255,255,.35), transparent 70%),
+    linear-gradient(180deg, #FFD84D 0%, #FFB52E 100%);
+  border-color:#E58A00; color:#4A2A00;
+  box-shadow:inset 0 0 30px rgba(180,100,0,.25), 0 8px 18px rgba(15,42,77,.22);
+}
+.escena-lienzo .g-dialogo{background:rgba(255,255,255,.55); border-color:#E58A00; color:#4A2A00;}
+.escena-lienzo .g-dialogo-titulo{text-shadow:none;}
+.escena-lienzo .g-pie{color:#7A4A00;}
+.db-portada{font-size:50px; text-align:center; line-height:1.1; margin:2px 0 6px;}
+.db-nota{font-size:12px; font-weight:700; text-align:center; color:#7A4A00; margin:8px 4px;}
+.db-banner{
+  display:flex; flex-direction:column; align-items:center; text-align:center; gap:2px; padding:8px 10px; margin-bottom:10px;
+  background:#fff; border:3px solid #E58A00; border-radius:16px; box-shadow:0 4px 0 #A85B00;
+}
+.db-banner-yo{background:linear-gradient(180deg,#5BE88D,#1FAE55); border-color:#0F6B33; color:#fff; box-shadow:0 4px 0 #0F6B33;}
+.db-banner-sup{font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; opacity:.85;}
+.db-banner-palabra{font-size:22px; font-weight:800; line-height:1.1;}
+.escena-lienzo .dibujar-canvas{border:4px solid #fff; border-radius:16px; box-shadow:0 0 0 3px #E58A00, 0 6px 0 rgba(0,0,0,.2); margin-bottom:12px;}
+.escena-lienzo .dibujar-herramientas{margin-bottom:10px;}
+.escena-lienzo .dibujar-color-swatch{width:32px; height:32px; border:3px solid #fff; box-shadow:0 2px 0 rgba(0,0,0,.3);}
+.escena-lienzo .dibujar-color-swatch-selected{box-shadow:0 0 0 3px #4A2A00, 0 2px 0 rgba(0,0,0,.3); transform:scale(1.12);}
+.escena-lienzo .dibujar-btn-borrar{width:auto; padding:8px 12px; font-size:13px;}
+.escena-lienzo .dibujar-intento{background:#fff; border:2px solid #FFE08A; border-radius:14px; color:#4A2A00; font-size:13px; font-weight:600;}
+.escena-lienzo .dibujar-intento-correcto{background:#D4F5DB; border-color:#3FAE5C; color:#1E6B34;}
+.db-input{
+  width:100%; border:3px solid #E58A00; border-radius:14px; background:#fff; padding:11px 14px; margin-bottom:8px;
+  font-family:var(--font-juego); font-size:18px; font-weight:800; color:#4A2A00; text-align:center;
+}
+.db-input:focus{outline:none; box-shadow:0 0 0 3px rgba(229,138,0,.35);}

@@ -172,7 +172,7 @@ function impostorTerminarJuego(){
 
 function impostorListaAnotadosHTML(){
   const asientos = impostorOrdenAsientos(impostorAnotados);
-  if(!asientos.length) return '<p style="color:var(--gray);font-size:13px;">Todavía no se anotó nadie.</p>';
+  if(!asientos.length) return '<p class="im-nota">Todavía no se anotó nadie.</p>';
   return `<div class="bingo-roster">${asientos.map(a => `
     <div class="bingo-roster-item"><span>Asiento ${a} — ${impostorAnotados[a]}</span></div>`).join('')}</div>`;
 }
@@ -192,31 +192,29 @@ function renderImpostor(){
     const maxImpostores = impostorMaxImpostores(asientos.length);
     if(impostorCantidadElegida > maxImpostores) impostorCantidadElegida = maxImpostores;
     const selectorCantidadHTML = soyDirector && asientos.length >= IMPOSTOR_MIN_JUGADORES
-      ? `<div class="section-label">¿Cuántos impostores?</div>
-         <div class="chip-row" style="margin-bottom:14px;">
+      ? `<div class="g-dialogo-sub" style="text-align:center;margin:8px 0 6px;font-weight:800;">¿Cuántos impostores?</div>
+         <div class="g-acciones" style="grid-template-columns:repeat(${Math.min(maxImpostores, 4)},1fr);">
            ${Array.from({ length: maxImpostores }, (_, i) => i + 1).map(n => `
-             <div class="chip ${impostorCantidadElegida === n ? 'selected' : ''}" onclick="impostorElegirCantidad(${n})">${n}</div>
+             <button class="gbtn ${impostorCantidadElegida === n ? 'gbtn-sel' : 'gbtn-no'}" onclick="impostorElegirCantidad(${n})">${n}</button>
            `).join('')}
          </div>`
       : '';
     let controlHTML = '';
     if(soyDirector){
-      controlHTML = `<button class="btn-primary" onclick="impostorEmpezarRonda()" ${asientos.length >= IMPOSTOR_MIN_JUGADORES ? '' : 'disabled'}>Repartir roles y arrancar (${asientos.length}/${IMPOSTOR_MIN_JUGADORES})</button>`;
+      controlHTML = `<div class="g-acciones"><button class="gbtn gbtn-rojo gbtn-ancho" style="font-size:15px;" onclick="impostorEmpezarRonda()" ${asientos.length >= IMPOSTOR_MIN_JUGADORES ? '' : 'disabled'}>Repartir roles y arrancar (${asientos.length}/${IMPOSTOR_MIN_JUGADORES})</button></div>`;
     } else if(anotado){
-      controlHTML = `<p class="tienda-nota">Sos parte del grupo. El organizador del viaje es quien reparte los roles y arranca.</p>`;
+      controlHTML = `<p class="im-nota">Sos parte del grupo. El organizador del viaje es quien reparte los roles y arranca.</p>`;
     }
-    cont.innerHTML = `
-      ${soyDirector ? '' : bingoPinHTML()}
-      <div class="hero" style="margin-top:8px;">
-        <h2>🕵️ El Impostor</h2>
-        <p>Se juega con el grupo con el que viajás (mínimo ${IMPOSTOR_MIN_JUGADORES}), no con todo el micro. Todos reciben la misma palabra menos el o los impostores. Las pistas, la charla y la votación son en voz alta — la app solo reparte el rol en secreto.</p>
-      </div>
-      ${anotado
-        ? `<button class="btn-ghost" style="width:100%;" onclick="impostorSalirDelGrupo()">Salir del grupo</button>`
-        : `<button class="btn-primary" onclick="impostorAnotarme()">Anotarme a este grupo</button>`}
+    cont.innerHTML = gEscenaHTML('espia', `
+      <div class="im-portada">🕵️</div>
+      ${gDialogoHTML('El Impostor', `Se juega con el grupo con el que viajás (mínimo ${IMPOSTOR_MIN_JUGADORES}), no con todo el micro. Todos reciben la misma palabra menos el o los impostores. Las pistas, la charla y la votación son en voz alta: la app solo reparte el rol en secreto.`)}
+      <div class="g-acciones">${anotado
+        ? `<button class="gbtn gbtn-no gbtn-ancho" onclick="impostorSalirDelGrupo()">Salir del grupo</button>`
+        : `<button class="gbtn gbtn-ancho" onclick="impostorAnotarme()">Anotarme a este grupo</button>`}</div>
       ${impostorListaAnotadosHTML()}
       ${selectorCantidadHTML}
-      ${controlHTML}`;
+      ${controlHTML}
+      ${soyDirector ? '' : bingoPinHTML()}`);
     return;
   }
 
@@ -224,49 +222,46 @@ function renderImpostor(){
 
   if(impostorEstado.fase === 'jugando'){
     if(!soyJugador){
-      cont.innerHTML = `
-        <div class="hero" style="margin-top:8px;">
-          <h2>🕵️ Hay una ronda en curso</h2>
-          <p>Otro grupo está jugando ahora. Esperá a que termine, o anotate para la próxima.</p>
-        </div>
-        ${miAsiento && impostorAnotados[String(miAsiento)] != null ? '' : `<button class="btn-primary" onclick="impostorAnotarme()">Anotarme para la próxima</button>`}`;
+      cont.innerHTML = gEscenaHTML('espia', `
+        <div class="im-portada">🕵️</div>
+        ${gDialogoHTML('Hay una ronda en curso', 'Otro grupo está jugando ahora. Esperá a que termine, o anotate para la próxima.')}
+        ${miAsiento && impostorAnotados[String(miAsiento)] != null ? '' : `<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="impostorAnotarme()">Anotarme para la próxima</button></div>`}`);
       return;
     }
     const soyImpostor = impostorEstado.impostores.includes(String(miAsiento));
-    cont.innerHTML = soyImpostor ? `
-      <div class="hero impostor-hero-malo" style="margin-top:8px;">
-        <h2>🤫 SOS EL IMPOSTOR</h2>
-        <p>No sabés la palabra. Escuchá bien las pistas de los demás e inventá una pista ambigua para no llamar la atención.</p>
+    const rolHTML = soyImpostor ? `
+      <div class="im-carta im-carta-impostor">
+        <div class="im-carta-emoji">🤫</div>
+        <div class="im-carta-titulo">SOS EL IMPOSTOR</div>
+        <div class="im-carta-texto">No sabés la palabra. Escuchá bien las pistas de los demás e inventá una pista ambigua para no llamar la atención.</div>
+        <div class="im-cat">Categoría: ${impostorEstado.categoria}</div>
+      </div>` : `
+      <div class="im-carta">
+        <div class="im-cat">${impostorEstado.categoria}</div>
+        <div class="im-carta-sub">Tu palabra secreta</div>
+        <div class="im-palabra-grande">${impostorEstado.palabra}</div>
       </div>
-      <p class="tienda-nota">Categoría: <strong>${impostorEstado.categoria}</strong> (eso sí lo sabés, la palabra no).</p>
-    ` : `
-      <div class="hero" style="margin-top:8px;">
-        <h2>Tu palabra secreta</h2>
-        <p>Categoría: ${impostorEstado.categoria}</p>
-      </div>
-      <div class="impostor-palabra">${impostorEstado.palabra}</div>
-      <p class="tienda-nota">Por turnos, cada uno dice una palabra relacionada con esta. El impostor no la sabe — atento a quién duda o tira algo raro.</p>
-    `;
-    cont.innerHTML += impostorEsDirector()
-      ? `<button class="btn-primary" style="margin-top:14px;" onclick="impostorTerminarYVotar()">Terminar ronda y votar</button>`
-      : `<p class="tienda-nota" style="margin-top:14px;">Cuando terminen las pistas, el organizador del viaje corta la ronda para pasar a votar.</p>`;
+      <p class="im-nota">Por turnos, cada uno dice una palabra relacionada con esta. El impostor no la sabe: atento a quién duda o tira algo raro.</p>`;
+    cont.innerHTML = gEscenaHTML('espia', `
+      ${rolHTML}
+      ${impostorEsDirector()
+        ? `<div class="g-acciones"><button class="gbtn gbtn-rojo gbtn-ancho" onclick="impostorTerminarYVotar()">Terminar ronda y votar</button></div>`
+        : `<p class="im-nota">Cuando terminen las pistas, el organizador del viaje corta la ronda para pasar a votar.</p>`}`);
     return;
   }
 
   if(impostorEstado.fase === 'votando'){
     if(!impostorEsDirector()){
-      cont.innerHTML = `<div class="hero" style="margin-top:8px;"><h2>Votando...</h2><p>Discutan en voz alta a quién señalan. El organizador del viaje va a cargar el resultado.</p></div>`;
+      cont.innerHTML = gEscenaHTML('espia', `<div class="im-portada">🗳️</div>${gDialogoHTML('Votando...', 'Discutan en voz alta a quién señalan. El organizador del viaje va a cargar el resultado.')}`);
       return;
     }
     const opcionesHTML = impostorEstado.jugadores.map(a => `
-      <button class="chip" style="width:100%; text-align:left; margin-bottom:8px;" onclick="impostorVotar('${a}')">Asiento ${a} — ${impostorAnotados[a] || '?'}</button>
+      <button class="gbtn gbtn-no im-voto" onclick="impostorVotar('${a}')">Asiento ${a} — ${impostorAnotados[a] || '?'}</button>
     `).join('');
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>¿A quién señaló el grupo?</h2>
-        <p>Discutan en voz alta y, cuando decidan, tocá el nombre que votó la mayoría.</p>
-      </div>
-      ${opcionesHTML}`;
+    cont.innerHTML = gEscenaHTML('espia', `
+      <div class="im-portada">🗳️</div>
+      ${gDialogoHTML('¿A quién señaló el grupo?', 'Discutan en voz alta y, cuando decidan, tocá el nombre que votó la mayoría.')}
+      <div class="im-votos">${opcionesHTML}</div>`);
     return;
   }
 
@@ -275,14 +270,12 @@ function renderImpostor(){
   const grupoAcerto = impostorEstado.votoGrupal && impostorEstado.impostores.includes(String(impostorEstado.votoGrupal));
   const votado = impostorEstado.votoGrupal ? (impostorAnotados[impostorEstado.votoGrupal] || `Asiento ${impostorEstado.votoGrupal}`) : null;
   const controlesRevelado = impostorEsDirector()
-    ? `<button class="btn-primary" style="margin-top:14px;" onclick="impostorNuevaRonda()">Nueva ronda</button>
-       <p class="link-chico" onclick="impostorTerminarJuego()">Terminar el juego</p>`
-    : `<p class="tienda-nota" style="margin-top:14px;">El organizador del viaje decide si juegan otra ronda.</p>`;
-  cont.innerHTML = `
-    <div class="hero ${grupoAcerto ? '' : 'impostor-hero-malo'}" style="margin-top:8px;">
-      <h2>${grupoAcerto ? '✅ ¡Lo descubrieron!' : '🎭 El impostor se salvó'}</h2>
-      <p>${votado ? `El grupo votó a ${votado}.` : ''} El impostor era: <strong>${nombresImpostores}</strong>.</p>
-    </div>
-    <p class="tienda-nota">Categoría: ${impostorEstado.categoria} — Palabra secreta: <strong>${impostorEstado.palabra}</strong></p>
-    ${controlesRevelado}`;
+    ? `<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="impostorNuevaRonda()">Nueva ronda</button></div>
+       <div class="g-pie"><span onclick="impostorTerminarJuego()">Terminar el juego</span></div>`
+    : `<p class="im-nota">El organizador del viaje decide si juegan otra ronda.</p>`;
+  cont.innerHTML = gEscenaHTML('espia', `
+    <div class="im-portada">${grupoAcerto ? '✅' : '🎭'}</div>
+    ${gDialogoHTML(grupoAcerto ? '¡Lo descubrieron!' : 'El impostor se salvó', `${votado ? `El grupo votó a ${votado}. ` : ''}El impostor era: <strong>${nombresImpostores}</strong>.`)}
+    <p class="im-nota">Categoría: ${impostorEstado.categoria} · Palabra secreta: <strong>${impostorEstado.palabra}</strong></p>
+    ${controlesRevelado}`);
 }

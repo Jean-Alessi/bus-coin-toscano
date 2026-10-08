@@ -166,16 +166,14 @@ function siguienteValija(){
 function renderValija(){
   const cont = document.getElementById('valija-content');
   if(!cont) return;
+  document.getElementById('view-valija').classList.toggle('juego-inmersivo', valijaFase === 'jugando');
 
   if(valijaFase === 'inicio'){
     document.getElementById('valija-sub').textContent = 'Valija Express';
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>🧳 Valija Express</h2>
-        <p>Tenés 25 segundos por destino para armar la valija: elegí hasta 10 objetos, los que creas que hacen falta para ese viaje.</p>
-        <p>Cada acierto suma 2 monedas. Un error no te resta nada, pero ocupa uno de los 10 lugares — así que pensarlo vale la pena. Si la armás perfecta (10 de 10), sumás 10 de bonus.</p>
-      </div>
-      <button class="btn-primary" onclick="comenzarValija()">Comenzar</button>`;
+    cont.innerHTML = gEscenaHTML('cielo', `
+      <div class="vj-portada">🧳</div>
+      ${gDialogoHTML('Valija Express', 'Tenés 25 segundos por destino para armar la valija: elegí hasta 10 objetos, los que creas que hacen falta para ese viaje.<br><br>Cada acierto suma 2 monedas. Un error no te resta nada, pero ocupa uno de los 10 lugares, así que pensarlo vale la pena. Si la armás perfecta (10 de 10), sumás 10 de bonus.')}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="comenzarValija()">¡Comenzar!</button></div>`);
     return;
   }
 
@@ -184,56 +182,47 @@ function renderValija(){
 
   if(valijaFase === 'resultado'){
     const r = valijaUltimoResultado;
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>${d.emoji} ${d.destino}</h2>
-        <p>${r.aciertos === 10 ? '¡Valija perfecta!' : 'Se acabó el tiempo'}</p>
+    cont.innerHTML = gEscenaHTML('cielo', `
+      <div class="vj-portada">${d.emoji}</div>
+      ${gDialogoHTML(d.destino, r.aciertos === 10 ? '🎉 ¡Valija perfecta!' : '⏰ Se acabó el tiempo')}
+      <div class="vj-stats">
+        <div class="vj-stat"><span class="vj-stat-num">${r.puntaje}</span><span>Puntaje</span></div>
+        <div class="vj-stat"><span class="vj-stat-num">${r.aciertos}/10</span><span>Aciertos</span></div>
+        <div class="vj-stat"><span class="vj-stat-num">${r.errores}</span><span>Errores</span></div>
+        <div class="vj-stat"><span class="vj-stat-num">+${r.bonus}</span><span>Bonus</span></div>
       </div>
-      <div class="valija-resultado-grid">
-        <div class="valija-resultado-item"><span class="valija-resultado-num">${r.puntaje}</span><span>Puntaje</span></div>
-        <div class="valija-resultado-item"><span class="valija-resultado-num">${r.aciertos}/10</span><span>Aciertos</span></div>
-        <div class="valija-resultado-item"><span class="valija-resultado-num">${r.errores}</span><span>Errores</span></div>
-        <div class="valija-resultado-item"><span class="valija-resultado-num">+${r.bonus}</span><span>Bonus</span></div>
-      </div>
-      <p class="tienda-nota">Mirá cómo quedaste parado en la pestaña Ranking.</p>
-      <button class="btn-primary" onclick="siguienteValija()">${valijaIndex < valijaOrden.length - 1 ? 'Siguiente destino' : 'Ver resultado final'}</button>`;
+      <p class="vj-nota">Mirá cómo quedaste parado en la pestaña Ranking.</p>
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="siguienteValija()">${valijaIndex < valijaOrden.length - 1 ? 'Siguiente destino' : 'Ver resultado final'}</button></div>`);
     return;
   }
 
   const urgente = valijaTiempoRestante <= 5;
   const itemsHTML = d.opciones.map(item => {
     const elegido = valijaSeleccionados.has(item);
-    return `<button class="valija-item ${elegido ? 'valija-item-elegido' : ''}" onclick="tocarItemValija('${item.replace(/'/g, "\\'")}')">${item}</button>`;
+    return `<button class="vj-item ${elegido ? 'vj-item-elegido' : ''}" onclick="tocarItemValija('${item.replace(/'/g, "\\'")}')">${item}</button>`;
   }).join('');
   const contenidoHTML = valijaSeleccionados.size
-    ? [...valijaSeleccionados].map(x => `<span class="valija-chip">${x}</span>`).join('')
-    : '<span class="valija-chip valija-chip-vacio">Vacía</span>';
+    ? [...valijaSeleccionados].map(x => `<span class="vj-chip">${x}</span>`).join('')
+    : '<span class="vj-chip vj-chip-vacio">Todavía vacía</span>';
 
-  cont.innerHTML = `
-    <div class="valija-topbar">
-      <div class="valija-topbar-info">
-        <span class="valija-topbar-emoji">${d.emoji}</span>
-        <span class="valija-topbar-destino">${d.destino}</span>
-      </div>
-      <div class="valija-timer ${urgente ? 'valija-timer-urgente' : ''}">${valijaTiempoRestante}</div>
+  cont.innerHTML = gEscenaHTML('cielo', `
+    <div class="vj-top">
+      <div class="vj-destino"><span class="vj-destino-emoji">${d.emoji}</span><span>${d.destino}</span></div>
+      <div class="vj-timer ${urgente ? 'vj-timer-urgente' : ''}" style="--p:${(valijaTiempoRestante / 25) * 100}%"><span>${valijaTiempoRestante}</span></div>
     </div>
-    <p class="valija-consigna">${d.consigna}</p>
-    <div class="valija-visual">
-      <span class="valija-visual-emoji">🧳</span>
-      <div class="valija-contenido">
-        <span class="valija-contenido-badge">${valijaSeleccionados.size}/10</span>
-        ${contenidoHTML}
-      </div>
+    <p class="vj-consigna">${d.consigna}</p>
+    <div class="vj-valija">
+      <span class="vj-valija-emoji">🧳</span>
+      <div class="vj-contenido">${contenidoHTML}</div>
+      <span class="vj-contador">${valijaSeleccionados.size}/10</span>
     </div>
-    <div class="valija-items">${itemsHTML}</div>`;
+    <div class="vj-items">${itemsHTML}</div>`);
 }
 
 function renderResultadoFinalValija(){
   document.getElementById('valija-sub').textContent = 'Valija Express';
-  document.getElementById('valija-content').innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>¡Recorriste los ${valijaOrden.length} destinos!</h2>
-      <p>Mirá tu puesto en el Ranking, o jugá de nuevo con otro orden de destinos.</p>
-    </div>
-    <button class="btn-primary" onclick="iniciarValija()">Jugar de nuevo</button>`;
+  document.getElementById('valija-content').innerHTML = gEscenaHTML('cielo', `
+    <div class="vj-portada">✈️</div>
+    ${gDialogoHTML(`¡Recorriste los ${valijaOrden.length} destinos!`, 'Mirá tu puesto en el Ranking, o jugá de nuevo con otro orden de destinos.')}
+    <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="iniciarValija()">Jugar de nuevo</button></div>`);
 }

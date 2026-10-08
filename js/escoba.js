@@ -306,13 +306,11 @@ function renderEscobaLobby(){
   }).join('') : '<p style="color:var(--gray);font-size:13px;">Todavía no hay mesas. ¡Armá la primera!</p>';
 
   cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>🃏 Escoba de 15</h2>
-      <p>Para 2 jugadores. Jugá una carta y combinala con las de la mesa para sumar 15 y llevártelas — si dejás la mesa vacía, es una escoba y vale un punto extra.</p>
-    </div>
+    ${gEscenaHTML('madera', `
+      ${gDialogoHTML('Escoba de 15', 'Para 2 jugadores. Jugá una carta y combinala con las de la mesa para sumar 15 y llevártelas. Si dejás la mesa vacía, es una escoba y vale un punto extra.')}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="escobaCrearMesa()">Crear mesa nueva</button></div>`)}
     <div class="section-label">Mesas</div>
-    ${listaHTML}
-    <button class="btn-primary" onclick="escobaCrearMesa()">Crear mesa nueva</button>`;
+    ${listaHTML}`;
 }
 
 function renderEscobaMesa(){
@@ -321,10 +319,10 @@ function renderEscobaMesa(){
   if(!mesa){ escobaVolverAlLobby(); return; }
 
   if(mesa.fase === 'esperando'){
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;"><h2>Esperando rival...</h2><p>Compartí la app con alguien más del viaje para que se una a esta mesa.</p></div>
-      <p class="link-chico" onclick="escobaVolverAlLobby()">‹ Volver a la lista de mesas</p>
-      <p class="link-chico" onclick="escobaTerminarMesa('${escobaMesaIdActual}')">Cancelar esta mesa</p>`;
+    cont.innerHTML = gEscenaHTML('madera', `
+      ${gDialogoHTML('Esperando rival...', 'Compartí la app con alguien más del viaje para que se una a esta mesa.')}
+      <div class="m-rival-mano" style="margin:6px 0 10px;"><div class="m-dorso"></div><div class="m-dorso" style="opacity:.3;"></div></div>
+      <div class="g-pie"><span onclick="escobaVolverAlLobby()">‹ Volver a la lista de mesas</span><span onclick="escobaTerminarMesa('${escobaMesaIdActual}')">Cancelar esta mesa</span></div>`);
     return;
   }
 
@@ -332,30 +330,30 @@ function renderEscobaMesa(){
   const otro = escobaOtroJugador(mesa);
   const miMano = (mesa.mano && mesa.mano[String(miAsiento)]) || [];
   const manoOtroLen = (mesa.mano && mesa.mano[otro] || []).length;
+  const misCartas = ((mesa.capturas || {})[String(miAsiento)] || []).length;
+  const misEscobas = (mesa.escobas || {})[String(miAsiento)] || 0;
+  const susCartas = ((mesa.capturas || {})[otro] || []).length;
+  const susEscobas = (mesa.escobas || {})[otro] || 0;
 
-  const cabezeraHTML = `
-    <div class="escoba-marcador">
-      <div>🫲 Vos: ${((mesa.capturas || {})[String(miAsiento)] || []).length} cartas, ${(mesa.escobas || {})[String(miAsiento)] || 0} escobas</div>
-      <div>${mesa.nombres[otro] || 'Rival'}: ${((mesa.capturas || {})[otro] || []).length} cartas, ${(mesa.escobas || {})[otro] || 0} escobas</div>
-    </div>`;
+  const marcadorHTML = `<div class="g-hud">
+    <div class="g-score"><span class="g-score-nombre">${mesa.nombres[otro] || 'Rival'}</span><span class="g-score-puntos" style="font-size:19px;">${susCartas}<small>🃏 ${susEscobas}🧹</small></span></div>
+    <div class="g-score g-score-yo"><span class="g-score-nombre">Vos</span><span class="g-score-puntos" style="font-size:19px;">${misCartas}<small>🃏 ${misEscobas}🧹</small></span></div>
+  </div>`;
 
   if(mesa.fase === 'terminado'){
     const { puntos, ganador } = mesa.resultado;
-    const resultadoTexto = ganador == null ? '¡Empataron!' : (String(ganador) === String(miAsiento) ? '¡Ganaste!' : `Ganó ${mesa.nombres[ganador]}`);
-    cont.innerHTML = `
-      ${cabezeraHTML}
-      <div class="hero" style="margin-top:8px;">
-        <h2>🏁 ${resultadoTexto}</h2>
-        <p>${puntos[String(miAsiento)]} a ${puntos[otro]} puntos.</p>
-      </div>
-      <button class="btn-primary" onclick="escobaTerminarMesa('${escobaMesaIdActual}')">Cerrar esta mesa</button>
-      <p class="link-chico" onclick="escobaVolverAlLobby()">‹ Volver a la lista de mesas</p>`;
+    const resultadoTexto = ganador == null ? '¡Empataron!' : (String(ganador) === String(miAsiento) ? '🏆 ¡Ganaste!' : `Ganó ${mesa.nombres[ganador]}`);
+    cont.innerHTML = gEscenaHTML('madera', `
+      ${marcadorHTML}
+      ${gDialogoHTML(resultadoTexto, `${puntos[String(miAsiento)]} a ${puntos[otro]} puntos.`)}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="escobaTerminarMesa('${escobaMesaIdActual}')">Cerrar esta mesa</button></div>
+      <div class="g-pie"><span onclick="escobaVolverAlLobby()">‹ Volver a la lista de mesas</span></div>`);
     escobaPremiarSiCorresponde(mesa);
     return;
   }
 
-  const mesaCartasHTML = (mesa.mesaCartas || []).map((c, i) => escobaCartaHTML(c, escobaMesaSeleccionada.has(i), soyTurno ? `escobaToggleCartaMesa(${i})` : null)).join('') || '<p style="font-size:12px;">Mesa vacía</p>';
-  const manoHTML = miMano.map((c, i) => escobaCartaHTML(c, escobaCartaSeleccionada === i, soyTurno ? `escobaToggleCartaMano(${i})` : null)).join('');
+  const mesaCartasHTML = (mesa.mesaCartas || []).map((c, i) => naipeHTML(c, 'media', soyTurno ? `escobaToggleCartaMesa(${i})` : null, escobaMesaSeleccionada.has(i))).join('') || '<div class="truco-vacio">Mesa vacía</div>';
+  const manoHTML = miMano.map((c, i) => naipeHTML(c, 'grande', soyTurno ? `escobaToggleCartaMano(${i})` : null, escobaCartaSeleccionada === i)).join('');
   const sumaMesaSola = escobaCartaSeleccionada == null && escobaMesaSeleccionada.size > 0 ? escobaSumaSeleccionMesa(mesa) : null;
   const sumaActual = escobaCartaSeleccionada != null ? escobaSumaSeleccionMesa(mesa) + escobaValor(miMano[escobaCartaSeleccionada].numero) : null;
   const sumaParaMostrar = sumaActual != null ? sumaActual : sumaMesaSola;
@@ -370,32 +368,40 @@ function renderEscobaMesa(){
   let botonAccionHTML = '';
   if(soyTurno){
     if(escobaCartaSeleccionada != null){
-      botonAccionHTML = `<button class="btn-primary" onclick="escobaJugarCarta()" ${escobaJugadaValida(mesa) ? '' : 'disabled'}>${escobaMesaSeleccionada.size ? 'Alzar' : 'Tirar'}</button>`;
+      botonAccionHTML = `<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="escobaJugarCarta()" ${escobaJugadaValida(mesa) ? '' : 'disabled'}>${escobaMesaSeleccionada.size ? 'Alzar' : 'Tirar'}</button></div>`;
     } else if(escobaMesaSeleccionada.size >= 2){
-      botonAccionHTML = `<button class="btn-primary" onclick="escobaAlzarLibreDeMesa()" ${sumaMesaSola === 15 ? '' : 'disabled'}>Alzar de la mesa (sin jugar carta)</button>`;
+      botonAccionHTML = `<div class="g-acciones"><button class="gbtn gbtn-ancho" style="font-size:14px;" onclick="escobaAlzarLibreDeMesa()" ${sumaMesaSola === 15 ? '' : 'disabled'}>Alzar de la mesa (sin jugar carta)</button></div>`;
     }
   }
 
-  cont.innerHTML = `
-    ${cabezeraHTML}
-    <div class="hero" style="margin-top:8px;">
-      <h2>${soyTurno ? 'Tu turno' : `Turno de ${mesa.nombres[otro]}`}</h2>
-      <p>${soyTurno ? 'Tocá una carta tuya y, si querés, cartas de la mesa que sumen 15 con ella. Si ves cartas de la mesa que ya suman 15 entre ellas, las podés alzar gratis antes de jugar tu carta.' : 'Esperá a que juegue su carta.'}</p>
+  const sumaChip = sumaParaMostrar != null ? `<span class="g-chip ${sumaParaMostrar === 15 ? 'g-chip-verde' : ''}">Suma elegida: ${sumaParaMostrar}/15</span>` : '';
+  const ayuda = soyTurno
+    ? (escobaCartaSeleccionada == null ? 'Tocá una carta tuya y, si querés, cartas de la mesa que sumen 15 con ella' : 'Sumá 15 con las de la mesa, o tirá la carta')
+    : 'Esperá a que juegue su carta';
+
+  cont.innerHTML = gEscenaHTML('madera', `
+    ${marcadorHTML}
+    <div class="m-rivales"><div class="m-rival">
+      <div class="m-rival-nombre">${mesa.nombres[otro]}</div>
+      <div class="m-rival-mano">${Array.from({ length: manoOtroLen }).map(() => '<div class="m-dorso"></div>').join('')}</div>
+    </div></div>
+    <div class="m-tapete">
+      <div class="g-chips"><span class="g-chip">Mesa</span>${sumaChip}</div>
+      <div class="truco-jugadas">${mesaCartasHTML}</div>
     </div>
-    <div class="section-label">Cartas de ${mesa.nombres[otro]} (${manoOtroLen})</div>
-    <div class="escoba-fila">${Array.from({ length: manoOtroLen }).map(() => '<div class="escoba-carta escoba-carta-dorso"></div>').join('')}</div>
-    <div class="section-label">Mesa${sumaParaMostrar != null ? ` — suma elegida: ${sumaParaMostrar}/15` : ''}</div>
-    <div class="tapete-mesa"><div class="escoba-fila">${mesaCartasHTML}</div></div>
-    <div class="section-label">Tu mano</div>
-    <div class="escoba-fila">${manoHTML}</div>
+    <div class="m-turno-wrap"><span class="m-turno ${soyTurno ? 'm-turno-mio' : ''}">${soyTurno ? '¡Tu turno!' : `Turno de ${mesa.nombres[otro]}`}</span></div>
+    <p class="g-ayuda">${ayuda}</p>
     ${botonAccionHTML}
-    <p class="link-chico" onclick="escobaTerminarMesa('${escobaMesaIdActual}')">Abandonar esta mesa</p>`;
+    <div class="m-mano">${manoHTML}</div>
+    <div class="g-pie"><span></span><span onclick="escobaTerminarMesa('${escobaMesaIdActual}')">Abandonar mesa</span></div>`);
 }
 
 function renderEscoba(){
   const cont = document.getElementById('escoba-content');
   if(!cont) return;
   document.getElementById('escoba-sub').textContent = escobaMesaIdActual ? 'En una mesa' : 'Elegí o creá una mesa';
-  if(escobaMesaIdActual && escobaMesas[escobaMesaIdActual]) renderEscobaMesa();
+  const enMesa = !!(escobaMesaIdActual && escobaMesas[escobaMesaIdActual]);
+  document.getElementById('view-escoba').classList.toggle('juego-inmersivo', enMesa);
+  if(enMesa) renderEscobaMesa();
   else { escobaMesaIdActual = null; renderEscobaLobby(); }
 }

@@ -298,14 +298,16 @@ function bingoCartonHTML(asiento, titulo, carton, interactivo){
     </div>`;
 }
 
+// El acceso por PIN para ser organizador queda discreto, abajo de todo: un
+// pasajero común no tiene por qué fijarse en él.
 function bingoPinHTML(){
   if(!bingoMostrandoPin){
-    return `<button class="btn-organizador-link" onclick="bingoMostrarPinOrganizador()">👤 ¿Sos el organizador? Entrá acá</button>`;
+    return `<div class="g-pie"><span onclick="bingoMostrarPinOrganizador()">👤 ¿Sos el organizador? Entrá acá</span></div>`;
   }
   return `
     <div class="bingo-pin-box">
       <input type="password" id="bingo-pin-input" class="bingo-input-numero" inputmode="numeric" maxlength="4" placeholder="PIN del organizador">
-      <button class="btn-primary" onclick="bingoIntentarSerOrganizador()">Entrar como organizador</button>
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="bingoIntentarSerOrganizador()">Entrar como organizador</button></div>
       <p id="bingo-pin-error" class="bingo-pin-error"></p>
     </div>`;
 }
@@ -314,9 +316,28 @@ function bingoOrdenAsientos(mapa){
   return Object.keys(mapa).sort((a, b) => Number(a) - Number(b));
 }
 
+function bingoHistorialHTML(sorteados){
+  return sorteados.length
+    ? sorteados.slice().reverse().map((n, i) => `<span class="bingo-chip${i === 0 ? ' bingo-chip-ultimo' : ''}">${n}</span>`).join('')
+    : '<span class="bingo-chip bingo-chip-vacio">Todavía nada</span>';
+}
+
+function bingoBannerFinalHTML(terminado, bolsaAgotada){
+  // Con cartones de 12 números puede pasar que se canten los 100 y nadie
+  // complete el suyo: sin este aviso no había forma de arrancar de nuevo.
+  if(terminado) return gDialogoHTML('🏆 ¡BINGO!', `Ganó ${bingoPasajeros[bingo.ganadorCartonLleno]} (asiento ${bingo.ganadorCartonLleno}) con el cartón lleno.`);
+  if(bolsaAgotada) return gDialogoHTML('Se cantaron los 100 números', 'Nadie completó el cartón esta vez.');
+  return '';
+}
+
+function bingoCerrarSesionOrganizadorHTML(){
+  return `<div class="g-pie"><span onclick="bingoCerrarSesionOrganizador()">Cerrar sesión de organizador</span></div>`;
+}
+
 function renderBingo(){
   const container = document.getElementById('bingo-content');
   if(!container || !bingo) return;
+  document.getElementById('view-bingo').classList.toggle('juego-inmersivo', bingo.fase === 'jugando');
 
   if(bingoEsOrganizador()){
     renderBingoOrganizador(container);
@@ -340,44 +361,32 @@ function renderBingoOrganizador(container){
         </span>
       </div>`;
     }).join('')
-    : '<p style="color:var(--gray);font-size:13px;">Todavía no se anotó nadie.</p>';
+    : '<p style="color:rgba(255,255,255,.8);font-size:13px;">Todavía no se anotó nadie.</p>';
 
   if(bingo.fase === 'cerrado'){
-    container.innerHTML = `
-      <div class="section-label">Panel del organizador</div>
-      <div class="hero" style="margin-top:8px;">
-        <h2>Listo para arrancar</h2>
-        <p>Cuando toqués "Comenzar el bingo" los pasajeros van a poder anotarse.</p>
-      </div>
-      <button class="btn-primary" onclick="bingoAbrirAnotacion()">Comenzar el bingo</button>
-      <p class="link-chico" onclick="bingoCerrarSesionOrganizador()">Cerrar sesión de organizador</p>`;
+    container.innerHTML = gEscenaHTML('casino', `
+      ${gDialogoHTML('🎱 Listo para arrancar', 'Cuando toqués "Comenzar el bingo" los pasajeros van a poder anotarse.')}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="bingoAbrirAnotacion()">Comenzar el bingo</button></div>
+      ${bingoCerrarSesionOrganizadorHTML()}`);
     return;
   }
 
   if(bingo.fase === 'anotando'){
-    container.innerHTML = `
-      <div class="section-label">Panel del organizador</div>
-      <div class="hero" style="margin-top:8px;">
-        <h2>Anotación abierta</h2>
-        <p>${asientos.length} anotado${asientos.length === 1 ? '' : 's'}. Sacá a quien no quieras que juegue, y cuando estén los que quieras, pasá a armar los cartones.</p>
-      </div>
+    container.innerHTML = gEscenaHTML('casino', `
+      ${gDialogoHTML('Anotación abierta', `${asientos.length} anotado${asientos.length === 1 ? '' : 's'}. Sacá a quien no quieras que juegue, y cuando estén los que quieras, pasá a armar los cartones.`)}
       <div class="bingo-roster">${listaHTML}</div>
-      <button class="btn-primary" onclick="bingoAbrirArmado()" ${asientos.length ? '' : 'disabled'}>Empezar a armar cartones</button>
-      <p class="link-chico" onclick="bingoCerrarSesionOrganizador()">Cerrar sesión de organizador</p>`;
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="bingoAbrirArmado()" ${asientos.length ? '' : 'disabled'}>Empezar a armar cartones</button></div>
+      ${bingoCerrarSesionOrganizadorHTML()}`);
     return;
   }
 
   if(bingo.fase === 'armando'){
-    container.innerHTML = `
-      <div class="section-label">Panel del organizador</div>
-      <div class="hero" style="margin-top:8px;">
-        <h2>Armando los cartones</h2>
-        <p>${completos.length} de ${asientos.length} ya completaron su cartón de ${BINGO_CANTIDAD_CARTON} números. El que no llegue a armarlo no juega esta partida.</p>
-      </div>
+    container.innerHTML = gEscenaHTML('casino', `
+      ${gDialogoHTML('Armando los cartones', `${completos.length} de ${asientos.length} ya completaron su cartón de ${BINGO_CANTIDAD_CARTON} números. El que no llegue a armarlo no juega esta partida.`)}
       <div class="bingo-roster">${listaHTML}</div>
-      <button class="btn-primary" onclick="bingoEmpezarJuego()" ${completos.length ? '' : 'disabled'}>Empezar el bingo</button>
-      <p class="link-chico" onclick="bingoAbrirAnotacion()">‹ Volver a la anotación (para que se sume alguien más)</p>
-      <p class="link-chico" onclick="bingoCerrarSesionOrganizador()">Cerrar sesión de organizador</p>`;
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="bingoEmpezarJuego()" ${completos.length ? '' : 'disabled'}>Empezar el bingo</button></div>
+      <div class="g-pie"><span onclick="bingoAbrirAnotacion()">‹ Volver a la anotación (para que se sume alguien más)</span></div>
+      ${bingoCerrarSesionOrganizadorHTML()}`);
     return;
   }
 
@@ -385,37 +394,26 @@ function renderBingoOrganizador(container){
   const terminado = !!bingo.ganadorCartonLleno;
   const bolsa = bingo.bolsa || [];
   const sorteados = bingo.sorteados || [];
-  // Con cartones de 12 números puede pasar que se canten los 100 y nadie
-  // complete el suyo — sin esto, el botón quedaba en "Cantar número"
-  // deshabilitado para siempre, sin ninguna forma de arrancar de nuevo.
   const bolsaAgotada = !terminado && bolsa.length === 0;
-  const historialHTML = sorteados.length
-    ? sorteados.slice().reverse().map((n, i) => `<span class="bingo-chip${i === 0 ? ' bingo-chip-ultimo' : ''}">${n}</span>`).join('')
-    : '<span class="bingo-chip bingo-chip-vacio">Todavía nada</span>';
-  const bannerFinal = terminado
-    ? `<div class="hero" style="margin-top:8px;"><h2>¡BINGO!</h2><p>Ganó ${bingoPasajeros[bingo.ganadorCartonLleno]} (asiento ${bingo.ganadorCartonLleno}) con el cartón lleno.</p></div>`
-    : bolsaAgotada
-      ? `<div class="hero" style="margin-top:8px;"><h2>Se cantaron los 100 números</h2><p>Nadie completó el cartón esta vez.</p></div>`
-      : '';
-  container.innerHTML = `
-    <div class="section-label">Panel del organizador</div>
-    ${bannerFinal}
+  container.innerHTML = gEscenaHTML('casino', `
+    <div class="g-hud"><span class="g-pill">🎱 ${sorteados.length}/${BINGO_NUMEROS.length}</span><span class="g-pill">👥 ${completos.length}</span></div>
+    ${bingoBannerFinalHTML(terminado, bolsaAgotada)}
     <div class="bingo-sorteo">
       <div class="bingo-ultimo">${bingo.ultimaLlamada || '—'}</div>
       ${terminado || bolsaAgotada
-        ? `<button class="btn-primary" onclick="bingoConfirmarJugarDeNuevo()">Jugar de nuevo</button>`
-        : `<button class="btn-primary" onclick="bingoSortear()" ${bolsa.length === 0 ? 'disabled' : ''}>Cantar número</button>`}
+        ? `<button class="gbtn gbtn-ancho" onclick="bingoConfirmarJugarDeNuevo()">Jugar de nuevo</button>`
+        : `<button class="gbtn gbtn-ancho" onclick="bingoSortear()" ${bolsa.length === 0 ? 'disabled' : ''}>Cantar número</button>`}
     </div>
-    <div class="section-label">Ya salieron (${sorteados.length}/${BINGO_NUMEROS.length})</div>
-    <div class="bingo-historial">${historialHTML}</div>
+    <div class="section-label">Ya salieron</div>
+    <div class="bingo-historial">${bingoHistorialHTML(sorteados)}</div>
     <div class="section-label">Pasajeros (${completos.length} de ${asientos.length} con cartón)</div>
     <div class="bingo-roster">${listaHTML}</div>
-    <p class="link-chico" onclick="bingoCerrarSesionOrganizador()">Cerrar sesión de organizador</p>`;
+    ${bingoCerrarSesionOrganizadorHTML()}`);
 }
 
 function renderBingoPasajero(container){
   if(!miAsiento || !miNombre){
-    container.innerHTML = `<p style="color:var(--gray);font-size:13px;">Volvé al inicio y completá tu nombre y asiento para jugar.</p>`;
+    container.innerHTML = gEscenaHTML('casino', gDialogoHTML('Falta un paso', 'Volvé al inicio y completá tu nombre y asiento para jugar.'));
     return;
   }
 
@@ -424,36 +422,27 @@ function renderBingoPasajero(container){
   const tengoCartonCompleto = !!(miCarton && miCarton.nombres && miCarton.nombres.length === BINGO_CANTIDAD_CARTON);
 
   if(bingo.fase === 'cerrado'){
-    container.innerHTML = `
-      ${bingoPinHTML()}
-      <div class="hero" style="margin-top:8px;">
-        <h2>🎱 Bingo</h2>
-        <p>Todavía no arrancó. Esperá a que el organizador abra la anotación.</p>
-      </div>`;
+    container.innerHTML = gEscenaHTML('casino', `
+      ${gDialogoHTML('🎱 Bingo', 'Todavía no arrancó. Esperá a que el organizador abra la anotación.')}
+      ${bingoPinHTML()}`);
     return;
   }
 
   if(bingo.fase === 'anotando'){
-    container.innerHTML = `
-      ${bingoPinHTML()}
-      <div class="hero" style="margin-top:8px;">
-        <h2>${anotado ? '¡Ya te anotaste!' : 'Se abrió el bingo'}</h2>
-        <p>${anotado ? 'Esperá a que el organizador abra armar los cartones.' : `Anotate para jugar con el asiento ${miAsiento}.`}</p>
-      </div>
-      ${anotado
-        ? `<button class="btn-ghost" style="width:100%;" onclick="bingoSalirDelBingo()">Salir del bingo</button>`
-        : `<button class="btn-primary" onclick="bingoAnotarme()">Anotarme al bingo</button>`}`;
+    container.innerHTML = gEscenaHTML('casino', `
+      ${gDialogoHTML(anotado ? '¡Ya te anotaste!' : 'Se abrió el bingo', anotado ? 'Esperá a que el organizador abra armar los cartones.' : `Anotate para jugar con el asiento ${miAsiento}.`)}
+      <div class="g-acciones">${anotado
+        ? `<button class="gbtn gbtn-no gbtn-ancho" onclick="bingoSalirDelBingo()">Salir del bingo</button>`
+        : `<button class="gbtn gbtn-ancho" onclick="bingoAnotarme()">Anotarme al bingo</button>`}</div>
+      ${bingoPinHTML()}`);
     return;
   }
 
   if(bingo.fase === 'armando'){
     if(!anotado){
-      container.innerHTML = `
-        ${bingoPinHTML()}
-        <div class="hero" style="margin-top:8px;">
-          <h2>No te anotaste a tiempo</h2>
-          <p>La anotación para esta partida ya cerró. Esperá a que el organizador abra la próxima.</p>
-        </div>`;
+      container.innerHTML = gEscenaHTML('casino', `
+        ${gDialogoHTML('No te anotaste a tiempo', 'La anotación para esta partida ya cerró. Esperá a que el organizador abra la próxima.')}
+        ${bingoPinHTML()}`);
       return;
     }
     if(!tengoCartonCompleto){
@@ -461,60 +450,43 @@ function renderBingoPasajero(container){
         const marcado = bingoSeleccion.includes(n);
         return `<div class="bingo-nombre-item ${marcado ? 'bingo-nombre-elegido' : ''}" onclick="bingoToggleNumero('${n}')">${n}</div>`;
       };
-      container.innerHTML = `
-        ${bingoPinHTML()}
-        <div class="hero" style="margin-top:8px;">
-          <h2>Armá tu cartón</h2>
-          <p>Elegí exactamente ${BINGO_CANTIDAD_CARTON} números del 00 al 99. Vas a jugar con el asiento ${miAsiento}. Este va a ser tu cartón para todo el viaje, en todas las partidas.</p>
-        </div>
-        <div class="section-label">Elegidos: ${bingoSeleccion.length}/${BINGO_CANTIDAD_CARTON}</div>
+      container.innerHTML = gEscenaHTML('casino', `
+        ${gDialogoHTML('Armá tu cartón', `Elegí exactamente ${BINGO_CANTIDAD_CARTON} números del 00 al 99. Vas a jugar con el asiento ${miAsiento}. Este va a ser tu cartón para todo el viaje, en todas las partidas.`)}
+        <div class="g-hud"><span class="g-pill">Elegidos ${bingoSeleccion.length}/${BINGO_CANTIDAD_CARTON}</span></div>
         <div class="bingo-lista-nombres">${BINGO_NUMEROS.map(itemNumero).join('')}</div>
-        <button class="btn-primary" onclick="bingoConfirmarCarton()" ${bingoSeleccion.length === BINGO_CANTIDAD_CARTON ? '' : 'disabled'}>Confirmar mi cartón</button>`;
+        <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="bingoConfirmarCarton()" ${bingoSeleccion.length === BINGO_CANTIDAD_CARTON ? '' : 'disabled'}>Confirmar mi cartón</button></div>
+        ${bingoPinHTML()}`);
       return;
     }
     const asientos = Object.keys(bingoPasajeros);
     const completos = asientos.filter(a => bingoCartones[a] && bingoCartones[a].nombres && bingoCartones[a].nombres.length === BINGO_CANTIDAD_CARTON);
-    container.innerHTML = `
-      ${bingoPinHTML()}
-      <div class="hero" style="margin-top:8px;">
-        <h2>Ya armaste tu cartón</h2>
-        <p>Esperando a que el organizador arranque (${completos.length}/${asientos.length} ya están listos).</p>
-      </div>
-      ${bingoCartonHTML(String(miAsiento), `Tu cartón (asiento ${miAsiento})`, miCarton, false)}`;
+    container.innerHTML = gEscenaHTML('casino', `
+      ${gDialogoHTML('Ya armaste tu cartón', `Esperando a que el organizador arranque (${completos.length}/${asientos.length} ya están listos).`)}
+      ${bingoCartonHTML(String(miAsiento), `Tu cartón (asiento ${miAsiento})`, miCarton, false)}
+      ${bingoPinHTML()}`);
     return;
   }
 
   // fase 'jugando'
   if(!tengoCartonCompleto){
-    container.innerHTML = `
-      ${bingoPinHTML()}
-      <div class="hero" style="margin-top:8px;">
-        <h2>Esta vuelta no jugás</h2>
-        <p>${anotado ? 'No llegaste a armar tu cartón a tiempo.' : 'No te anotaste para esta partida.'} Esperá a que el organizador arranque otra.</p>
-      </div>`;
+    container.innerHTML = gEscenaHTML('casino', `
+      ${gDialogoHTML('Esta vuelta no jugás', `${anotado ? 'No llegaste a armar tu cartón a tiempo.' : 'No te anotaste para esta partida.'} Esperá a que el organizador arranque otra.`)}
+      ${bingoPinHTML()}`);
     return;
   }
   const terminado = !!bingo.ganadorCartonLleno;
   const bolsaAgotada = !terminado && (bingo.bolsa || []).length === 0;
   const sorteados = bingo.sorteados || [];
-  const historialHTML = sorteados.length
-    ? sorteados.slice().reverse().map((n, i) => `<span class="bingo-chip${i === 0 ? ' bingo-chip-ultimo' : ''}">${n}</span>`).join('')
-    : '<span class="bingo-chip bingo-chip-vacio">Todavía nada</span>';
-  const bannerFinal = terminado
-    ? `<div class="hero" style="margin-top:8px;"><h2>¡BINGO!</h2><p>Ganó ${bingoPasajeros[bingo.ganadorCartonLleno]} (asiento ${bingo.ganadorCartonLleno}) con el cartón lleno.</p></div>`
-    : bolsaAgotada
-      ? `<div class="hero" style="margin-top:8px;"><h2>Se cantaron los 100 números</h2><p>Nadie completó el cartón esta vez.</p></div>`
-      : '';
-  container.innerHTML = `
-    ${bingoPinHTML()}
-    <div class="section-label">Tu asiento es el ${miAsiento}</div>
-    ${bannerFinal}
+  container.innerHTML = gEscenaHTML('casino', `
+    <div class="g-hud"><span class="g-pill">🎱 ${sorteados.length}/${BINGO_NUMEROS.length}</span><span class="g-pill">💺 ${miAsiento}</span></div>
+    ${bingoBannerFinalHTML(terminado, bolsaAgotada)}
     <div class="bingo-sorteo">
       <div class="bingo-ultimo">${bingo.ultimaLlamada || '—'}</div>
       <p class="bingo-espera">${terminado || bolsaAgotada ? 'Esperá a que el organizador arranque otra partida.' : 'El organizador va cantando los números.'}</p>
     </div>
-    <div class="section-label">Ya salieron (${sorteados.length}/${BINGO_NUMEROS.length})</div>
-    <div class="bingo-historial">${historialHTML}</div>
+    <div class="section-label">Ya salieron</div>
+    <div class="bingo-historial">${bingoHistorialHTML(sorteados)}</div>
     ${miCarton ? bingoCartonHTML(String(miAsiento), `Tu cartón (asiento ${miAsiento})`, miCarton, !terminado && !bolsaAgotada) : ''}
-    ${!terminado && !bolsaAgotada ? '<p class="bingo-espera">Tocá tus números a medida que van saliendo.</p>' : ''}`;
+    ${!terminado && !bolsaAgotada ? '<p class="bingo-espera" style="text-align:center;margin-top:8px;">Tocá tus números a medida que van saliendo.</p>' : ''}
+    ${bingoPinHTML()}`);
 }

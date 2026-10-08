@@ -192,6 +192,7 @@ function iniciarTrivia(){
 // el resultado), vuelve a la lista de temas; si ya estás en la lista de
 // temas, sale de Trivia hacia el menú de Juegos.
 function triviaVolver(){
+  triviaSesionId++;
   if(temaActual === null){
     showView('juegos');
   } else {
@@ -200,22 +201,47 @@ function triviaVolver(){
   }
 }
 
+// Colores de cada tema (degradé de la tarjeta).
+const TEMA_COLORES = {
+  cultura: ['#FFB347', '#FF5E62'],
+  deportes: ['#43E97B', '#18A58A'],
+  viajes: ['#4FB8FF', '#2563EB'],
+  historia: ['#F6C453', '#B7791F'],
+  animales: ['#A8E063', '#4C9A2A'],
+  cine_musica: ['#C471F5', '#8B3DCC'],
+};
+
+// Si te vas del juego mientras se espera la próxima pregunta, ese cambio
+// pendiente ya no corresponde: este número invalida los "setTimeout" viejos.
+let triviaSesionId = 0;
+let triviaAciertos = 0;
+
 function renderSeleccionTema(){
+  triviaSesionId++;
   document.getElementById('trivia-sub').textContent = 'Elegí un tema';
   const cont = document.getElementById('trivia-content');
   cont.innerHTML = `
-    <div class="section-label">Temas</div>
-    ${Object.keys(TEMAS).map(id => {
-      const t = TEMAS[id];
-      return `<div class="card" onclick="elegirTema('${id}')">
-        <div class="icon">${icono(t.icono)}</div>
-        <div class="txt"><h3>${t.nombre}</h3><p>${t.preguntas.length} preguntas</p></div>
-      </div>`;
-    }).join('')}`;
+    <div class="escena escena-neon tv-escena">
+      <div class="tv-top"><span class="g-pill">🪙 <span class="js-monedas">${monedasCoin}</span></span></div>
+      <div class="g-dialogo"><div class="g-dialogo-titulo">¿Sobre qué querés jugar?</div><div class="g-dialogo-sub">20 preguntas por partida · +5 monedas por acierto</div></div>
+      <div class="tv-temas">
+        ${Object.keys(TEMAS).map(id => {
+          const t = TEMAS[id];
+          const [c1, c2] = TEMA_COLORES[id] || ['#A07BFF', '#6B43E0'];
+          return `<button class="tv-tema" style="background:linear-gradient(180deg,${c1},${c2});" onclick="elegirTema('${id}')">
+            <span class="tv-tema-icono">${icono(t.icono)}</span>
+            <span class="tv-tema-nombre">${t.nombre}</span>
+            <span class="tv-tema-sub">${t.preguntas.length} preguntas</span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
 }
 
 function elegirTema(id){
+  triviaSesionId++;
   temaActual = id;
+  triviaAciertos = 0;
   preguntasSesion = barajar(TEMAS[id].preguntas).slice(0, PREGUNTAS_POR_SESION).map(barajarOpciones);
   qIndex = 0;
   renderPregunta();
@@ -226,23 +252,30 @@ function renderPregunta(){
   document.getElementById('trivia-sub').textContent = `${TEMAS[temaActual].nombre} — Pregunta ${qIndex + 1} de ${preguntasSesion.length}`;
   const cont = document.getElementById('trivia-content');
   cont.innerHTML = `
-    <div class="progress-bar"><div class="progress-fill" style="width:${((qIndex + 1) / preguntasSesion.length) * 100}%"></div></div>
-    <div class="question-box">
-      <div class="qnum">${p.cat}</div>
-      <h3>${p.text}</h3>
-    </div>
-    <div id="q-options">${p.opciones.map((op, i) => `<div class="option" onclick="responder(${i})">${op}</div>`).join('')}</div>`;
+    <div class="escena escena-neon tv-escena">
+      <div class="tv-top">
+        <span class="g-pill">🪙 <span class="js-monedas">${monedasCoin}</span></span>
+        <span class="g-pill">${qIndex + 1}/${preguntasSesion.length}</span>
+      </div>
+      <div class="g-barra"><div class="g-barra-relleno" style="width:${((qIndex + 1) / preguntasSesion.length) * 100}%"></div></div>
+      <span class="tv-categoria">${p.cat}</span>
+      <div class="tv-pregunta">${p.text}</div>
+      <div id="q-options">${p.opciones.map((op, i) => `<button class="tv-opcion tv-opcion-${i % 3}" onclick="responder(${i})">${op}</button>`).join('')}</div>
+    </div>`;
 }
 
 function responder(i){
   const p = preguntasSesion[qIndex];
-  const opts = document.querySelectorAll('.option');
-  opts.forEach((o, idx) => {
+  const sesion = triviaSesionId;
+  document.querySelectorAll('.tv-opcion').forEach((o, idx) => {
     o.onclick = null;
-    if(idx === p.correcta) o.classList.add('correct');
-    else if(idx === i) o.classList.add('wrong');
+    o.disabled = true;
+    if(idx === p.correcta) o.classList.add('tv-ok');
+    else if(idx === i) o.classList.add('tv-mal');
+    else o.classList.add('tv-off');
   });
   if(i === p.correcta){
+    triviaAciertos++;
     reproducirTono('correcto');
     ganarMonedas(5);
     mostrarToast('+5 monedas por acertar', 'gain');
@@ -251,6 +284,7 @@ function responder(i){
     mostrarToast('Esa no era... ¡a la próxima!');
   }
   setTimeout(() => {
+    if(sesion !== triviaSesionId) return;
     if(qIndex < preguntasSesion.length - 1){
       qIndex++;
       renderPregunta();
@@ -262,12 +296,19 @@ function responder(i){
 
 function renderResultadoSesion(){
   document.getElementById('trivia-sub').textContent = 'Elegí un tema';
+  const total = preguntasSesion.length;
   const cont = document.getElementById('trivia-content');
   cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>¡Terminaste ${TEMAS[temaActual].nombre}!</h2>
-      <p>Podés jugar este tema de nuevo o elegir otro.</p>
-    </div>
-    <button class="btn-primary" onclick="elegirTema('${temaActual}')">Jugar de nuevo este tema</button>
-    <button class="btn-ghost" onclick="renderSeleccionTema()">Elegir otro tema</button>`;
+    <div class="escena escena-neon tv-escena">
+      <div class="tv-top"><span class="g-pill">🪙 <span class="js-monedas">${monedasCoin}</span></span></div>
+      <div class="tv-resultado-trofeo">${triviaAciertos >= total * 0.7 ? '🏆' : triviaAciertos >= total * 0.4 ? '🥈' : '🎯'}</div>
+      <div class="g-dialogo">
+        <div class="g-dialogo-titulo">¡Terminaste ${TEMAS[temaActual].nombre}!</div>
+        <div class="g-dialogo-sub">Acertaste ${triviaAciertos} de ${total} · ganaste ${triviaAciertos * 5} monedas</div>
+      </div>
+      <div class="g-acciones">
+        <button class="gbtn gbtn-ancho" onclick="elegirTema('${temaActual}')">Jugar de nuevo</button>
+        <button class="gbtn gbtn-no gbtn-ancho" style="font-size:15px;" onclick="renderSeleccionTema()">Elegir otro tema</button>
+      </div>
+    </div>`;
 }

@@ -335,31 +335,7 @@ function chinchonPremiarSiCorresponde(mesa){
 }
 
 function chinchonCartaHTML(carta, seleccionada, onclick){
-  if(carta.comodin){
-    return `<button class="escoba-carta escoba-carta-comodin ${seleccionada ? 'escoba-carta-seleccionada' : ''}" ${onclick ? `onclick="${onclick}"` : 'disabled'}>
-      <span class="escoba-carta-numero" style="font-size:20px;">★</span>
-      <span style="font-size:9px;font-weight:700;">Comodín</span>
-    </button>`;
-  }
-  return `<button class="escoba-carta escoba-carta-${carta.palo} ${seleccionada ? 'escoba-carta-seleccionada' : ''}" ${onclick ? `onclick="${onclick}"` : 'disabled'}>
-    <span class="escoba-carta-numero">${carta.numero === 10 ? 'Sota' : carta.numero === 11 ? 'Caballo' : carta.numero === 12 ? 'Rey' : carta.numero}</span>
-    <span class="escoba-carta-palo">${escobaIconoPalo(carta.palo)}</span>
-  </button>`;
-}
-
-// Las cartas del rival en abanico (boca abajo), como se ven en una mesa
-// real, en vez de una fila plana. Cada una se rota y se corre un poco según
-// qué tan lejos está del centro de la mano.
-function chinchonAbanicoHTML(cantidad){
-  const medio = (cantidad - 1) / 2;
-  const cartas = Array.from({ length: cantidad }).map((_, i) => {
-    const offset = i - medio;
-    const rot = offset * 9;
-    const dx = offset * 24;
-    const dy = Math.abs(offset) * 5;
-    return `<div class="escoba-carta escoba-carta-dorso" style="position:absolute; left:50%; top:0; margin-left:-25px; transform:translate(${dx}px, ${dy}px) rotate(${rot}deg); z-index:${i};"></div>`;
-  }).join('');
-  return `<div class="abanico-cartas">${cartas}</div>`;
+  return naipeHTML(carta, 'media', onclick, seleccionada);
 }
 
 function renderChinchonLobby(){
@@ -381,16 +357,14 @@ function renderChinchonLobby(){
   }).join('') : '<p style="color:var(--gray);font-size:13px;">Todavía no hay mesas. ¡Armá la primera!</p>';
 
   cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>🂡 Chinchón</h2>
-      <p>De 2 a 4 jugadores. Armá grupos (mismo número, distinto palo) y escaleras (3+ seguidas del mismo palo) para bajar tus puntos. Cerrá cuando te quede como mucho 1 carta suelta.</p>
-    </div>
-    <div class="section-label">¿Con cuántos jugadores?</div>
-    <div class="chip-row" style="margin-bottom:14px;">
-      ${[2, 3, 4].map(n => `<div class="chip ${chinchonCapacidadElegida === n ? 'selected' : ''}" onclick="chinchonElegirCapacidad(${n})">${n}</div>`).join('')}
-    </div>
-    <button class="btn-primary" onclick="chinchonCrearMesa()">Crear mesa nueva</button>
-    <div class="section-label" style="margin-top:16px;">Mesas</div>
+    ${gEscenaHTML('madera', `
+      ${gDialogoHTML('Chinchón', 'De 2 a 4 jugadores. Armá grupos (mismo número, distinto palo) y escaleras (3+ seguidas del mismo palo) para bajar tus puntos. Cerrá cuando te quede como mucho 1 carta suelta.')}
+      <div class="g-dialogo-sub" style="text-align:center;margin-bottom:6px;font-weight:700;">¿Con cuántos jugadores?</div>
+      <div class="g-acciones g-acciones-3">
+        ${[2, 3, 4].map(n => `<button class="gbtn ${chinchonCapacidadElegida === n ? 'gbtn-sel' : 'gbtn-no'}" onclick="chinchonElegirCapacidad(${n})">${n}</button>`).join('')}
+      </div>
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="chinchonCrearMesa()">Crear mesa nueva</button></div>`)}
+    <div class="section-label">Mesas</div>
     ${listaHTML}`;
 }
 
@@ -400,27 +374,25 @@ function renderChinchonMesa(){
   if(!mesa){ chinchonVolverAlLobby(); return; }
 
   if(mesa.fase === 'esperando'){
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;"><h2>Esperando jugadores...</h2><p>${mesa.jugadores.length} de ${mesa.capacidad}. Compartí la app para que se sumen los que falten.</p></div>
-      <p class="link-chico" onclick="chinchonVolverAlLobby()">‹ Volver a la lista de mesas</p>
-      <p class="link-chico" onclick="chinchonTerminarMesa('${chinchonMesaIdActual}')">Cancelar esta mesa</p>`;
+    cont.innerHTML = gEscenaHTML('madera', `
+      ${gDialogoHTML('Esperando jugadores...', `${mesa.jugadores.length} de ${mesa.capacidad}. Compartí la app para que se sumen los que falten.`)}
+      <div class="m-rival-mano" style="margin:6px 0 10px;">${Array.from({ length: mesa.capacidad }).map((_, i) => `<div class="m-dorso" style="${i < mesa.jugadores.length ? '' : 'opacity:.3;'}"></div>`).join('')}</div>
+      <div class="g-pie"><span onclick="chinchonVolverAlLobby()">‹ Volver a la lista de mesas</span><span onclick="chinchonTerminarMesa('${chinchonMesaIdActual}')">Cancelar esta mesa</span></div>`);
     return;
   }
 
-  const marcadorHTML = `<div class="escoba-marcador">${mesa.jugadores.map(a =>
-    `<div>${String(a) === String(miAsiento) ? '🫲 Vos' : mesa.nombres[a]}: ${(mesa.puntajeTotal && mesa.puntajeTotal[a]) || 0} puntos</div>`
-  ).join('')}</div>`;
+  const marcadorHTML = `<div class="g-hud g-hud-compacto">${mesa.jugadores.map(a => {
+    const yo = String(a) === String(miAsiento);
+    return `<div class="g-score ${yo ? 'g-score-yo' : ''}"><span class="g-score-nombre">${yo ? 'Vos' : mesa.nombres[a]}</span><span class="g-score-puntos">${(mesa.puntajeTotal && mesa.puntajeTotal[a]) || 0}<small> pts</small></span></div>`;
+  }).join('')}</div>`;
 
   if(mesa.fase === 'terminado'){
     const ganador = mesa.ganadorFinal;
-    cont.innerHTML = `
+    cont.innerHTML = gEscenaHTML('madera', `
       ${marcadorHTML}
-      <div class="hero" style="margin-top:8px;">
-        <h2>🏁 ${String(ganador) === String(miAsiento) ? '¡Ganaste!' : `Ganó ${mesa.nombres[ganador]}`}</h2>
-        <p>Terminó con menos puntos acumulados (a ${CHINCHON_META_PUNTOS} se termina el juego).</p>
-      </div>
-      <button class="btn-primary" onclick="chinchonTerminarMesa('${chinchonMesaIdActual}')">Cerrar esta mesa</button>
-      <p class="link-chico" onclick="chinchonVolverAlLobby()">‹ Volver a la lista de mesas</p>`;
+      ${gDialogoHTML(String(ganador) === String(miAsiento) ? '🏆 ¡Ganaste!' : `Ganó ${mesa.nombres[ganador]}`, `Terminó con menos puntos acumulados (a ${CHINCHON_META_PUNTOS} se termina el juego).`)}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="chinchonTerminarMesa('${chinchonMesaIdActual}')">Cerrar esta mesa</button></div>
+      <div class="g-pie"><span onclick="chinchonVolverAlLobby()">‹ Volver a la lista de mesas</span></div>`);
     chinchonPremiarSiCorresponde(mesa);
     return;
   }
@@ -432,57 +404,60 @@ function renderChinchonMesa(){
   const puedeLevantar = soyTurno && !mesa.robado;
   const mazoLen = (mesa.mazo || []).length;
 
-  // Se toca directamente el mazo o el descarte sobre el tapete, como en
-  // Escoba, en vez de botones aparte.
-  const mazoHTML = `<div style="text-align:center;">
-    <button class="escoba-carta escoba-carta-dorso" ${puedeLevantar && mazoLen ? `onclick="chinchonLevantarDelMazo()"` : 'disabled'}></button>
-    <div style="font-size:10px;color:#EAF3EC;">Mazo (${mazoLen})</div>
+  // Se toca directamente el mazo o el descarte sobre el tapete, como en una
+  // mesa real, en vez de botones aparte.
+  const mazoActivo = puedeLevantar && mazoLen;
+  const mazoHTML = `<div class="truco-jugada">
+    <button class="m-dorso-media ${mazoActivo ? 'm-dorso-activo' : ''}" ${mazoActivo ? `onclick="chinchonLevantarDelMazo()"` : 'disabled'} aria-label="Levantar del mazo"></button>
+    <div class="truco-jugada-nombre">Mazo (${mazoLen})</div>
   </div>`;
-  const descarteHTML = descarteTope ? `<div style="text-align:center;">
+  const descarteHTML = descarteTope ? `<div class="truco-jugada">
     ${chinchonCartaHTML(descarteTope, false, puedeLevantar ? 'chinchonAlzarDescarte()' : null)}
-    <div style="font-size:10px;color:#EAF3EC;">Descarte</div>
-  </div>` : `<p style="font-size:12px;">Sin descarte todavía</p>`;
+    <div class="truco-jugada-nombre">Descarte</div>
+  </div>` : `<div class="truco-vacio">Sin descarte todavía</div>`;
 
   let accionesHTML = '';
   if(soyTurno && mesa.robado){
     accionesHTML = `
-      <button class="btn-primary" onclick="chinchonDescartar()" ${chinchonCartaSeleccionada == null ? 'disabled' : ''}>Descartarme</button>
-      ${puedoCerrar ? `<button class="btn-ghost" onclick="chinchonCerrar()">🏁 Cerrar la mano</button>` : ''}`;
+      <div class="g-acciones">
+        <button class="gbtn" onclick="chinchonDescartar()" ${chinchonCartaSeleccionada == null ? 'disabled' : ''}>Descartarme</button>
+        ${puedoCerrar ? `<button class="gbtn gbtn-rojo gbtn-chico-texto" onclick="chinchonCerrar()">🏁 Cerrar la mano</button>` : ''}
+      </div>`;
   }
 
   const otros = mesa.jugadores.filter(a => a !== String(miAsiento));
-  const otrosAbanicoHTML = otros.map(a => {
+  const otrosHTML = `<div class="m-rivales m-rivales-chicos">${otros.map(a => {
     const cant = (mesa.mano[a] || []).length;
-    return `<div class="section-label">Cartas de ${mesa.nombres[a]} (${cant})</div>${chinchonAbanicoHTML(cant)}`;
-  }).join('');
+    return `<div class="m-rival"><div class="m-rival-nombre">${mesa.nombres[a]}</div><div class="m-rival-mano">${Array.from({ length: cant }).map(() => '<div class="m-dorso"></div>').join('')}</div></div>`;
+  }).join('')}</div>`;
 
   const manoHTML = miMano.map((c, i) => chinchonModoOrden
     ? chinchonCartaHTML(c, chinchonOrdenElegido === i, `chinchonOrdenarTocar(${i})`)
     : chinchonCartaHTML(c, chinchonCartaSeleccionada === i, soyTurno && mesa.robado ? `chinchonToggleCarta(${i})` : null)
   ).join('');
 
-  cont.innerHTML = `
+  const turnoTxt = soyTurno ? (mesa.robado ? '¡Elegí qué descartar!' : '¡Levantá del mazo o del descarte!') : `Turno de ${mesa.nombres[mesa.turno]}`;
+  const ayuda = soyTurno ? (mesa.robado ? 'Tocá la carta que querés tirar' : 'Tocá el mazo o el descarte para levantar') : 'Esperá tu turno';
+
+  cont.innerHTML = gEscenaHTML('madera', `
     ${marcadorHTML}
-    <div class="hero" style="margin-top:8px;">
-      <h2>${soyTurno ? (mesa.robado ? 'Elegí qué descartar' : 'Tu turno: tocá el mazo o el descarte') : `Turno de ${mesa.nombres[mesa.turno]}`}</h2>
-      <p>Mano ${mesa.manoNumero}</p>
+    ${otrosHTML}
+    <div class="m-tapete">
+      <div class="g-chips"><span class="g-chip">Mano ${mesa.manoNumero}</span></div>
+      <div class="truco-jugadas">${mazoHTML}${descarteHTML}</div>
     </div>
-    ${otrosAbanicoHTML}
-    <div class="section-label">Mesa</div>
-    <div class="tapete-mesa"><div class="escoba-fila">${mazoHTML}${descarteHTML}</div></div>
+    <div class="m-turno-wrap"><span class="m-turno ${soyTurno ? 'm-turno-mio' : ''}">${turnoTxt}</span></div>
     ${accionesHTML}
-    <div class="section-label" style="display:flex; justify-content:space-between; align-items:center;">
-      <span>Tu mano</span>
-      <span class="link-chico" style="margin:0;" onclick="chinchonToggleModoOrden()">${chinchonModoOrden ? '✅ Listo' : '🔀 Ordenar mis cartas'}</span>
-    </div>
-    <div class="escoba-fila">${manoHTML}</div>
-    <p class="link-chico" onclick="chinchonTerminarMesa('${chinchonMesaIdActual}')">Abandonar esta mesa</p>`;
+    <div class="m-mano m-mano-solapada">${manoHTML}</div>
+    <div class="g-pie"><span onclick="chinchonToggleModoOrden()">${chinchonModoOrden ? '✅ Listo' : '🔀 Ordenar mis cartas'}</span><span onclick="chinchonTerminarMesa('${chinchonMesaIdActual}')">Abandonar mesa</span></div>`);
 }
 
 function renderChinchon(){
   const cont = document.getElementById('chinchon-content');
   if(!cont) return;
   document.getElementById('chinchon-sub').textContent = chinchonMesaIdActual ? 'En una mesa' : 'Elegí o creá una mesa';
-  if(chinchonMesaIdActual && chinchonMesas[chinchonMesaIdActual]) renderChinchonMesa();
+  const enMesa = !!(chinchonMesaIdActual && chinchonMesas[chinchonMesaIdActual]);
+  document.getElementById('view-chinchon').classList.toggle('juego-inmersivo', enMesa);
+  if(enMesa) renderChinchonMesa();
   else { chinchonMesaIdActual = null; renderChinchonLobby(); }
 }

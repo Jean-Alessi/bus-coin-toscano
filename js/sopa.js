@@ -208,18 +208,17 @@ function sopaCeldaHTML(fila, col, tamano){
   const clases = ['sopa-celda'];
   if(encontrada) clases.push('sopa-celda-encontrada');
   if(seleccionada) clases.push('sopa-celda-seleccionada');
-  return `<button class="${clases.join(' ')}" data-fila="${fila}" data-col="${col}" style="width:${tamano}px;height:${tamano}px;font-size:${Math.round(tamano*0.42)}px;">${letra}</button>`;
+  return `<button class="${clases.join(' ')}" data-fila="${fila}" data-col="${col}">${letra}</button>`;
 }
 
 function renderSopaNiveles(){
   const cont = document.getElementById('sopa-content');
-  cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>🔎 Sopa de letras</h2>
-      <p>Destinos y cosas del micro y del viaje, escondidos en la grilla. Arrastrá el dedo desde la primera letra hasta la última para marcar una palabra (o tocá una y después la otra, sin arrastrar).</p>
-    </div>
-    <div class="section-label">Elegí un nivel</div>
-    ${Object.keys(SOPA_NOMBRE_NIVEL).map(n => `<button class="btn-primary" style="margin-bottom:10px;" onclick="sopaElegirNivel('${n}')">${SOPA_NOMBRE_NIVEL[n]}</button>`).join('')}`;
+  cont.innerHTML = gEscenaHTML('papel', `
+    ${gDialogoHTML('🔎 Sopa de letras', 'Destinos y cosas del micro y del viaje, escondidos en la grilla. Arrastrá el dedo desde la primera letra hasta la última para marcar una palabra (o tocá una y después la otra, sin arrastrar).')}
+    <div class="g-dialogo-sub" style="text-align:center;margin:6px 0;font-weight:800;">Elegí un nivel</div>
+    <div class="g-acciones">
+      ${Object.keys(SOPA_NOMBRE_NIVEL).map(n => `<button class="gbtn gbtn-ancho" onclick="sopaElegirNivel('${n}')">${SOPA_NOMBRE_NIVEL[n]}</button>`).join('')}
+    </div>`);
 }
 
 function renderSopaJuego(){
@@ -236,21 +235,20 @@ function renderSopaJuego(){
 
   const completo = sopaEncontradas.size === sopaPuzzle.palabras.length;
 
-  cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>${completo ? '¡Completaste la sopa!' : `Nivel ${SOPA_NOMBRE_NIVEL[sopaNivel]}`}</h2>
-      <p>${completo ? 'Encontraste las ' + sopaPuzzle.palabras.length + ' palabras.' : `Encontradas ${sopaEncontradas.size} de ${sopaPuzzle.palabras.length}`}</p>
-    </div>
-    <div class="sopa-grilla">${filasHTML}</div>
+  cont.innerHTML = gEscenaHTML('papel', `
+    <div class="g-hud"><span class="g-pill">${SOPA_NOMBRE_NIVEL[sopaNivel]}</span><span class="g-pill">🔎 ${sopaEncontradas.size}/${sopaPuzzle.palabras.length}</span><span class="g-pill">🪙 <span class="js-monedas">${monedasCoin}</span></span></div>
+    ${completo ? gDialogoHTML('🎉 ¡Completaste la sopa!', `Encontraste las ${sopaPuzzle.palabras.length} palabras.`) : ''}
+    <div class="sopa-grilla" style="--cols:${sopaPuzzle.size}">${filasHTML}</div>
     <div class="sopa-lista-palabras">${listaHTML}</div>
-    ${completo ? `<button class="btn-primary" onclick="sopaOtroPuzzle()">Jugar otra sopa</button>` : ''}
-    <p class="link-chico" onclick="sopaVolverANiveles()">‹ Cambiar de nivel</p>`;
+    ${completo ? `<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="sopaOtroPuzzle()">Jugar otra sopa</button></div>` : ''}
+    <div class="g-pie"><span onclick="sopaVolverANiveles()">‹ Cambiar de nivel</span></div>`);
 }
 
 function renderSopa(){
   const cont = document.getElementById('sopa-content');
   if(!cont) return;
   document.getElementById('sopa-sub').textContent = sopaNivel ? `Nivel ${SOPA_NOMBRE_NIVEL[sopaNivel]}` : 'Elegí un nivel';
+  document.getElementById('view-sopa').classList.toggle('juego-inmersivo', !!(sopaNivel && sopaPuzzle));
   if(sopaNivel && sopaPuzzle) renderSopaJuego();
   else renderSopaNiveles();
 }

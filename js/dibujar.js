@@ -179,7 +179,7 @@ function dibujarPremiarSiCorresponde(){
 
 function dibujarListaAnotadosHTML(){
   const asientos = dibujarOrdenAsientos(dibujarAnotados);
-  if(!asientos.length) return '<p style="color:var(--gray);font-size:13px;">Todavía no se anotó nadie.</p>';
+  if(!asientos.length) return '<p class="db-nota">Todavía no se anotó nadie.</p>';
   return `<div class="bingo-roster">${asientos.map(a => `
     <div class="bingo-roster-item"><span>Asiento ${a} — ${dibujarAnotados[a]}</span></div>`).join('')}</div>`;
 }
@@ -252,6 +252,7 @@ function renderDibujar(){
 
   document.getElementById('dibujar-sub').textContent =
     dibujarEstado.fase === 'lobby' ? 'Para grupos chicos, no todo el micro' : 'Turno en curso';
+  document.getElementById('view-dibujar').classList.toggle('juego-inmersivo', dibujarEstado.fase !== 'lobby');
 
   if(dibujarEstado.fase === 'lobby'){
     const anotado = miAsiento && dibujarAnotados[String(miAsiento)] != null;
@@ -259,21 +260,19 @@ function renderDibujar(){
     const asientos = dibujarOrdenAsientos(dibujarAnotados);
     let controlHTML = '';
     if(soyDirector){
-      controlHTML = `<button class="btn-primary" onclick="dibujarEmpezarRonda()" ${asientos.length >= DIBUJAR_MIN_JUGADORES ? '' : 'disabled'}>Empezar (${asientos.length}/${DIBUJAR_MIN_JUGADORES})</button>`;
+      controlHTML = `<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="dibujarEmpezarRonda()" ${asientos.length >= DIBUJAR_MIN_JUGADORES ? '' : 'disabled'}>Empezar (${asientos.length}/${DIBUJAR_MIN_JUGADORES})</button></div>`;
     } else if(anotado){
-      controlHTML = `<p class="tienda-nota">Sos parte del grupo. El organizador del viaje arranca cuando quiera.</p>`;
+      controlHTML = `<p class="db-nota">Sos parte del grupo. El organizador del viaje arranca cuando quiera.</p>`;
     }
-    cont.innerHTML = `
-      ${soyDirector ? '' : bingoPinHTML()}
-      <div class="hero" style="margin-top:8px;">
-        <h2>🎨 Dibujar y Adivinar</h2>
-        <p>Se juega con el grupo con el que viajás (mínimo ${DIBUJAR_MIN_JUGADORES}). Por turnos, uno dibuja con el dedo una palabra secreta y el resto adivina escribiendo.</p>
-      </div>
-      ${anotado
-        ? `<button class="btn-ghost" style="width:100%;" onclick="dibujarSalirDelGrupo()">Salir del grupo</button>`
-        : `<button class="btn-primary" onclick="dibujarAnotarme()">Anotarme a este grupo</button>`}
+    cont.innerHTML = gEscenaHTML('lienzo', `
+      <div class="db-portada">🎨</div>
+      ${gDialogoHTML('Dibujar y Adivinar', `Se juega con el grupo con el que viajás (mínimo ${DIBUJAR_MIN_JUGADORES}). Por turnos, uno dibuja con el dedo una palabra secreta y el resto adivina escribiendo.`)}
+      <div class="g-acciones">${anotado
+        ? `<button class="gbtn gbtn-no gbtn-ancho" onclick="dibujarSalirDelGrupo()">Salir del grupo</button>`
+        : `<button class="gbtn gbtn-ancho" onclick="dibujarAnotarme()">Anotarme a este grupo</button>`}</div>
       ${dibujarListaAnotadosHTML()}
-      ${controlHTML}`;
+      ${controlHTML}
+      ${soyDirector ? '' : bingoPinHTML()}`);
     dibujarCanvas = null;
     dibujarCtx = null;
     return;
@@ -284,26 +283,26 @@ function renderDibujar(){
   const soyDibujante = String(miAsiento) === String(asientoTurno);
   const nombreDibujante = dibujarAnotados[asientoTurno] || `Asiento ${asientoTurno}`;
   const intentosHTML = Object.values(dibujarIntentos || {}).slice(-6).reverse().map(i => `
-    <div class="dibujar-intento ${i.correcto ? 'dibujar-intento-correcto' : ''}">${i.correcto ? '✅' : '💬'} ${i.nombre}: ${i.correcto ? '¡' + i.texto + '!' : i.texto}</div>
-  `).join('') || '<p style="color:var(--gray);font-size:12px;">Nadie escribió todavía.</p>';
+    <div class="dibujar-intento ${i.correcto ? 'dibujar-intento-correcto' : ''}">${i.correcto ? '✅' : '💬'} <strong>${i.nombre}:</strong> ${i.correcto ? '¡' + i.texto + '!' : i.texto}</div>
+  `).join('') || '<p class="db-nota">Nadie escribió todavía.</p>';
 
   const encabezado = soyDibujante
-    ? `<div class="hero" style="margin-top:8px;"><h2>Te toca dibujar</h2><p>Categoría: ${dibujarEstado.categoria}. Tu palabra: <strong>${dibujarEstado.palabra}</strong></p></div>`
-    : `<div class="hero" style="margin-top:8px;"><h2>${nombreDibujante} está dibujando</h2><p>Categoría: ${dibujarEstado.categoria}. Escribí qué creés que es.</p></div>`;
+    ? `<div class="db-banner db-banner-yo"><span class="db-banner-sup">Te toca dibujar · ${dibujarEstado.categoria}</span><span class="db-banner-palabra">${dibujarEstado.palabra}</span></div>`
+    : `<div class="db-banner"><span class="db-banner-sup">${dibujarEstado.categoria}</span><span class="db-banner-palabra">${nombreDibujante} está dibujando</span></div>`;
 
   let controlesHTML = '';
   if(dibujarEstado.adivinada){
     const nombreGanador = dibujarAnotados[dibujarEstado.ganador] || `Asiento ${dibujarEstado.ganador}`;
     controlesHTML = `
-      <div class="hero" style="margin-top:8px;"><h2>✅ ¡${nombreGanador} adivinó!</h2><p>Era: <strong>${dibujarEstado.palabra}</strong></p></div>
-      ${dibujarEsDirector() ? `<button class="btn-primary" onclick="dibujarSiguienteTurno()">Siguiente turno</button>` : `<p class="tienda-nota">Esperá a que el organizador pase al siguiente turno.</p>`}
-      <p class="link-chico" onclick="dibujarTerminarJuego()">Terminar el juego</p>`;
+      ${gDialogoHTML(`✅ ¡${nombreGanador} adivinó!`, `Era: <strong>${dibujarEstado.palabra}</strong>`)}
+      ${dibujarEsDirector() ? `<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="dibujarSiguienteTurno()">Siguiente turno</button></div>` : `<p class="db-nota">Esperá a que el organizador pase al siguiente turno.</p>`}
+      <div class="g-pie"><span onclick="dibujarTerminarJuego()">Terminar el juego</span></div>`;
   } else if(!soyDibujante){
     controlesHTML = `
-      <input type="text" id="dibujar-adivinanza-input" class="bingo-input-numero" style="width:100%;" placeholder="¿Qué es?" maxlength="40" onkeydown="if(event.key==='Enter') dibujarAdivinar()">
-      <button class="btn-primary" onclick="dibujarAdivinar()">Adivinar</button>`;
+      <input type="text" id="dibujar-adivinanza-input" class="db-input" placeholder="¿Qué es?" maxlength="40" onkeydown="if(event.key==='Enter') dibujarAdivinar()">
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="dibujarAdivinar()">Adivinar</button></div>`;
   } else if(dibujarEsDirector()){
-    controlesHTML = `<p class="link-chico" onclick="dibujarSiguienteTurno()">Nadie adivinó, pasar de turno</p>`;
+    controlesHTML = `<div class="g-pie"><span onclick="dibujarSiguienteTurno()">Nadie adivinó, pasar de turno</span></div>`;
   }
 
   const herramientasHTML = (soyDibujante && !dibujarEstado.adivinada) ? `
@@ -313,15 +312,15 @@ function renderDibujar(){
           <button class="dibujar-color-swatch ${dibujarColorActual === c.valor ? 'dibujar-color-swatch-selected' : ''}" style="background:${c.valor};" onclick="dibujarElegirColor('${c.valor}')" title="${c.nombre}" aria-label="${c.nombre}"></button>
         `).join('')}
       </div>
-      <button class="btn-ghost dibujar-btn-borrar" onclick="dibujarBorrarTodo()">🗑️ Borrar todo</button>
+      <button class="gbtn gbtn-no dibujar-btn-borrar" onclick="dibujarBorrarTodo()">🗑️ Borrar</button>
     </div>` : '';
 
-  cont.innerHTML = `
+  cont.innerHTML = gEscenaHTML('lienzo', `
     ${encabezado}
     <canvas id="dibujar-canvas" class="dibujar-canvas" width="300" height="300"></canvas>
     ${herramientasHTML}
     <div class="dibujar-intentos">${intentosHTML}</div>
-    ${controlesHTML}`;
+    ${controlesHTML}`);
 
   dibujarCanvas = document.getElementById('dibujar-canvas');
   dibujarCtx = dibujarCanvas.getContext('2d');

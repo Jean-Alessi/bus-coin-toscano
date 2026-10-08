@@ -373,6 +373,7 @@ function tutiOrdenAsientos(mapa){
 function renderTutifruti(){
   const cont = document.getElementById('tutifruti-content');
   if(!cont || !tuti) return;
+  document.getElementById('view-tutifruti').classList.toggle('juego-inmersivo', tuti.fase === 'jugando');
   document.getElementById('tutifruti-sub').textContent =
     tuti.fase === 'lobby' ? 'Contra el resto del viaje' :
     tuti.fase === 'sorteando' ? 'Sorteando la letra...' :
@@ -388,22 +389,22 @@ function renderTutifruti(){
 function tutiUsadasHTML(){
   const usadas = (tuti && tuti.usadas) || [];
   if(!usadas.length) return '';
-  return `<p class="tienda-nota">Letras que ya salieron: ${usadas.join(', ')}</p>`;
+  return `<p class="tf-nota">Letras que ya salieron: ${usadas.join(', ')}</p>`;
 }
 
-// Quién cortó la ronda no siempre es quien más puntaje termina sacando —
+// Quién cortó la ronda no siempre es quien más puntaje termina sacando:
 // cortar rápido no significa contestar mejor. Se muestra aparte para que
 // quede claro quién la gritó, aunque el orden de la lista sea por puntaje.
 function tutiCortadoPorHTML(){
   const cortadoPor = tuti && tuti.cortadoPor;
-  if(!cortadoPor) return '<p>Se acabó el tiempo — nadie llegó a tocar "¡Basta!".</p>';
+  if(!cortadoPor) return 'Se acabó el tiempo: nadie llegó a tocar "¡Basta!".';
   const quien = String(cortadoPor.asiento) === String(miAsiento) ? 'Vos' : cortadoPor.nombre;
-  return `<p>¡Basta! lo cortó <strong>${quien}</strong>.</p>`;
+  return `¡Basta! lo cortó <strong>${quien}</strong>.`;
 }
 
 function tutiListaAnotadosHTML(conBotonSacar){
   const asientos = tutiOrdenAsientos(tutiAnotados);
-  if(!asientos.length) return '<p style="color:var(--gray);font-size:13px;">Todavía no se anotó nadie.</p>';
+  if(!asientos.length) return '<p class="tf-nota">Todavía no se anotó nadie.</p>';
   return `<div class="bingo-roster">${asientos.map(a => `
     <div class="bingo-roster-item">
       <span>Asiento ${a} — ${tutiAnotados[a]}</span>
@@ -411,105 +412,88 @@ function tutiListaAnotadosHTML(conBotonSacar){
     </div>`).join('')}</div>`;
 }
 
+function tutiCabeceraJuegoHTML(restante){
+  const urgente = restante <= 5;
+  return `<div class="tf-top">
+    <div class="tf-letra">${tuti.letra}</div>
+    <div class="tf-top-txt"><span>Con la letra</span><strong>${tuti.letra}</strong></div>
+    <div class="tf-timer ${urgente ? 'valija-timer-urgente' : ''}" id="tuti-timer">${restante}</div>
+  </div>`;
+}
+
 function renderTutifrutiOrganizador(cont){
   if(tuti.fase === 'lobby'){
     const asientos = Object.keys(tutiAnotados);
-    cont.innerHTML = `
-      <div class="section-label">Panel del organizador</div>
-      <div class="hero" style="margin-top:8px;">
-        <h2>🔤 Tutti Frutti</h2>
-        <p>Categorías: ${TUTI_CATEGORIAS.join(', ')}. Los pasajeros se anotan acá abajo; arrancá cuando estén todos.</p>
-      </div>
+    cont.innerHTML = gEscenaHTML('papel', `
+      ${gDialogoHTML('🔤 Tutti Frutti', `Categorías: ${TUTI_CATEGORIAS.join(', ')}. Los pasajeros se anotan acá abajo; arrancá cuando estén todos.`)}
       ${tutiListaAnotadosHTML(true)}
-      <button class="btn-primary" onclick="tutiIniciarSorteo()" ${asientos.length ? '' : 'disabled'}>Cerrar anotación y sortear letra</button>`;
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" style="font-size:15px;" onclick="tutiIniciarSorteo()" ${asientos.length ? '' : 'disabled'}>Cerrar anotación y sortear letra</button></div>`);
     return;
   }
 
   if(tuti.fase === 'sorteando'){
     tutiAsegurarSorteoAnimado();
-    cont.innerHTML = `
-      <div class="section-label">Panel del organizador</div>
-      <p class="tienda-nota">Mirá el cartel y pará cuando quieras — esa letra es la de la ronda.</p>
+    cont.innerHTML = gEscenaHTML('papel', `
+      ${gDialogoHTML('Sorteando la letra', 'Mirá el cartel y pará cuando quieras: esa letra es la de la ronda.')}
       <div class="tuti-sorteo">
         <div class="tuti-sorteo-letra" id="tuti-sorteo-letra">${tutiLetraSorteo || '?'}</div>
-        <button class="btn-primary" onclick="tutiPararSorteo()">¡Parar acá!</button>
+        <button class="gbtn gbtn-rojo gbtn-ancho" style="width:100%;" onclick="tutiPararSorteo()">¡Parar acá!</button>
       </div>
-      ${tutiUsadasHTML()}`;
+      ${tutiUsadasHTML()}`);
     return;
   }
 
   if(tuti.fase === 'jugando'){
-    const restante = tutiTiempoRestante();
-    const urgente = restante <= 5;
-    cont.innerHTML = `
-      <div class="section-label">Panel del organizador</div>
-      <div class="valija-topbar">
-        <div class="valija-topbar-info">
-          <span class="valija-topbar-emoji">🔤</span>
-          <span class="valija-topbar-destino">Con la letra ${tuti.letra}</span>
-        </div>
-        <div class="valija-timer ${urgente ? 'valija-timer-urgente' : ''}" id="tuti-timer">${restante}</div>
-      </div>
-      <p class="tienda-nota">Los pasajeros están completando sus categorías. Cortá cuando quieras.</p>
-      <button class="btn-primary tuti-basta" onclick="tutiBasta()">¡BASTA!</button>
-      <p class="link-chico" onclick="tutiTerminarJuego()">Terminar el juego</p>`;
+    cont.innerHTML = gEscenaHTML('papel', `
+      ${tutiCabeceraJuegoHTML(tutiTiempoRestante())}
+      <p class="tf-nota">Los pasajeros están completando sus categorías. Cortá cuando quieras.</p>
+      <div class="g-acciones"><button class="gbtn gbtn-rojo gbtn-ancho tuti-basta" onclick="tutiBasta()">¡BASTA!</button></div>
+      <div class="g-pie"><span onclick="tutiTerminarJuego()">Terminar el juego</span></div>`);
     return;
   }
 
   // fase === 'resultados'
   const { puntos, detalle } = tutiCalcularPuntajes();
   const asientos = Object.keys(tutiRespuestas).sort((a,b) => (puntos[b]||0) - (puntos[a]||0));
-  cont.innerHTML = `
-    <div class="section-label">Panel del organizador</div>
-    <div class="hero" style="margin-top:8px;">
-      <h2>Letra ${tuti.letra}</h2>
-      <p>Categorías: ${(tuti.categorias || []).join(', ')}</p>
-      ${tutiCortadoPorHTML()}
-    </div>
+  cont.innerHTML = gEscenaHTML('papel', `
+    ${gDialogoHTML(`Letra ${tuti.letra}`, `Categorías: ${(tuti.categorias || []).join(', ')}<br>${tutiCortadoPorHTML()}`)}
     <div class="tuti-resultados">${tutiFilasResultadosHTML(asientos, puntos, detalle)}</div>
-    <button class="btn-primary" onclick="tutiIniciarSorteo()">Sortear letra para otra ronda</button>
+    <div class="g-acciones"><button class="gbtn gbtn-ancho" style="font-size:15px;" onclick="tutiIniciarSorteo()">Sortear letra para otra ronda</button></div>
     ${tutiUsadasHTML()}
-    <p class="link-chico" onclick="tutiTerminarJuego()">Terminar el juego</p>`;
+    <div class="g-pie"><span onclick="tutiTerminarJuego()">Terminar el juego</span></div>`);
 }
 
-// El pasajero puede anotarse en cualquier momento, esté la fase que esté —
+// El pasajero puede anotarse en cualquier momento, esté la fase que esté:
 // antes solo se podía anotar en el lobby, y si abría Tutti Frutti mientras
 // ya había una ronda en curso o en resultados, se quedaba sin ninguna forma
 // de sumarse para la próxima.
 function tutiAnotarseHTML(anotado, mensajeSiYaAnotado){
-  if(anotado) return mensajeSiYaAnotado ? `<p class="tienda-nota">${mensajeSiYaAnotado}</p>` : '';
-  return `<button class="btn-primary" onclick="tutiAnotarme()">Anotarme para jugar</button>`;
+  if(anotado) return mensajeSiYaAnotado ? `<p class="tf-nota">${mensajeSiYaAnotado}</p>` : '';
+  return `<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="tutiAnotarme()">Anotarme para jugar</button></div>`;
 }
 
 function renderTutifrutiPasajero(cont){
   const anotado = !!(miAsiento && tutiAnotados[String(miAsiento)] != null);
 
   if(tuti.fase === 'lobby'){
-    cont.innerHTML = `
-      ${bingoPinHTML()}
-      <div class="hero" style="margin-top:8px;">
-        <h2>🔤 Tutti Frutti</h2>
-        <p>Categorías: ${TUTI_CATEGORIAS.join(', ')}. Sale una letra al azar y competís contra el resto de los pasajeros de este viaje: si a alguien más se le ocurre la misma palabra, vale menos.</p>
-      </div>
+    cont.innerHTML = gEscenaHTML('papel', `
+      ${gDialogoHTML('🔤 Tutti Frutti', `Categorías: ${TUTI_CATEGORIAS.join(', ')}. Sale una letra al azar y competís contra el resto de los pasajeros de este viaje: si a alguien más se le ocurre la misma palabra, vale menos.`)}
       ${tutiAnotarseHTML(anotado, 'Ya estás anotado. Esperá a que el organizador arranque la ronda.')}
-      ${tutiListaAnotadosHTML(false)}`;
+      ${tutiListaAnotadosHTML(false)}
+      ${bingoPinHTML()}`);
     return;
   }
 
   if(tuti.fase === 'sorteando'){
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>🎲 Sorteando la letra...</h2>
-        <p>El organizador está eligiendo con qué letra arranca esta ronda.</p>
-      </div>
+    cont.innerHTML = gEscenaHTML('papel', `
+      ${gDialogoHTML('🎲 Sorteando la letra...', 'El organizador está eligiendo con qué letra arranca esta ronda.')}
       ${tutiAnotarseHTML(anotado, 'Ya estás anotado.')}
-      ${tutiUsadasHTML()}`;
+      ${tutiUsadasHTML()}`);
     return;
   }
 
   if(tuti.fase === 'jugando'){
     const restante = tutiTiempoRestante();
-    const urgente = restante <= 5;
     const categoriasHTML = (tuti.categorias || []).map(cat => {
       const valor = tutiMisRespuestas[cat] || '';
       return `
@@ -518,18 +502,12 @@ function renderTutifrutiPasajero(cont){
           <input type="text" value="${valor.replace(/"/g,'&quot;')}" placeholder="${tuti.letra}..." oninput="tutiActualizarRespuesta('${cat}', this.value)">
         </div>`;
     }).join('');
-    cont.innerHTML = `
-      <div class="valija-topbar">
-        <div class="valija-topbar-info">
-          <span class="valija-topbar-emoji">🔤</span>
-          <span class="valija-topbar-destino">Con la letra ${tuti.letra}</span>
-        </div>
-        <div class="valija-timer ${urgente ? 'valija-timer-urgente' : ''}" id="tuti-timer">${restante}</div>
-      </div>
+    cont.innerHTML = gEscenaHTML('papel', `
+      ${tutiCabeceraJuegoHTML(restante)}
       <div class="tuti-categorias">${categoriasHTML}</div>
-      <button class="btn-primary tuti-basta" id="tuti-basta-btn" onclick="tutiBasta()" ${tutiPasajeroCompletoTodo() ? '' : 'disabled'}>¡BASTA!</button>
-      <p class="tienda-nota">Completá las 6 categorías para poder tocar "¡Basta!" — corta la ronda para todos, así ganás por rapidez.</p>
-      ${anotado ? '' : `<p class="tienda-nota">Podés jugar esta ronda igual, pero anotate para que el organizador sepa que seguís en las próximas.</p>${tutiAnotarseHTML(anotado)}`}`;
+      <div class="g-acciones"><button class="gbtn gbtn-rojo gbtn-ancho tuti-basta" id="tuti-basta-btn" onclick="tutiBasta()" ${tutiPasajeroCompletoTodo() ? '' : 'disabled'}>¡BASTA!</button></div>
+      <p class="tf-nota">Completá las 6 categorías para poder tocar "¡Basta!". Corta la ronda para todos, así ganás por rapidez.</p>
+      ${anotado ? '' : `<p class="tf-nota">Podés jugar esta ronda igual, pero anotate para que el organizador sepa que seguís en las próximas.</p>${tutiAnotarseHTML(anotado)}`}`);
     return;
   }
 
@@ -538,15 +516,11 @@ function renderTutifrutiPasajero(cont){
   tutiSumarMisMonedasSiCorresponde(puntos);
   const asientos = Object.keys(tutiRespuestas).sort((a,b) => (puntos[b]||0) - (puntos[a]||0));
 
-  cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>Letra ${tuti.letra}</h2>
-      <p>Categorías: ${(tuti.categorias || []).join(', ')}</p>
-      ${tutiCortadoPorHTML()}
-    </div>
+  cont.innerHTML = gEscenaHTML('papel', `
+    ${gDialogoHTML(`Letra ${tuti.letra}`, `Categorías: ${(tuti.categorias || []).join(', ')}<br>${tutiCortadoPorHTML()}`)}
     <div class="tuti-resultados">${tutiFilasResultadosHTML(asientos, puntos, detalle)}</div>
     ${tutiAnotarseHTML(anotado)}
-    <p class="tienda-nota">Esperá a que el organizador arranque otra ronda.</p>`;
+    <p class="tf-nota">Esperá a que el organizador arranque otra ronda.</p>`);
 }
 
 function tutiFilasResultadosHTML(asientos, puntos, detalle){

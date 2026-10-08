@@ -12,14 +12,10 @@ const EMOJIS_DISPONIBLES = ['😊', '😎', '🤩', '😜', '🥳', '😇', '�
 // necesitan un grupo (así sea todo el micro o unos pocos asientos).
 const TARJETAS_SOLO = [
   { icon: "trivia", title: "Trivia", sub: "Elegí un tema y sumá puntos", view: "trivia" },
-  { icon: "interrogacion", title: "Acertijos", sub: "Pensá en grupo antes de rendirte", view: "acertijos" },
-  { icon: "rompecabezas", title: "Pensamiento lateral", sub: "Resolvé el caso a puro sí o no", view: "pensamiento" },
   { icon: "libro", title: "Ahorcado", sub: "Adiviná la palabra letra por letra", view: "ahorcado" },
-  { icon: "lupa", title: "4+1", sub: "4 imágenes, 1 palabra", view: "cuatrouno" },
   { icon: "valija", title: "Valija Express", sub: "25 segundos para armar la valija", view: "valija" },
   { icon: "cartas", title: "Memoria", sub: "Encontrá los pares, cada nivel más grande", view: "memoria" },
   { icon: "sudoku", title: "Sudoku", sub: "Sin cronómetro, elegí tu nivel", view: "sudoku" },
-  { icon: "patrones", title: "Patrones", sub: "Descubrí la regla y completá la secuencia", view: "patrones" },
   { icon: "sopaletras", title: "Sopa de letras", sub: "Destinos y cosas del viaje, escondidos en la grilla", view: "sopa" },
 ];
 
@@ -27,7 +23,6 @@ const TARJETAS_GRUPO = [
   { icon: "letraA", title: "Tutti Frutti", sub: "Una letra, contra el resto del viaje", view: "tutifruti" },
   { icon: "espia", title: "El Impostor", sub: "Para tu grupo, no todo el micro", view: "impostor" },
   { icon: "bingo", title: "Bingo", sub: "Números del 00 al 99, con su significado", view: "bingo" },
-  { icon: "rayo", title: "Trivia en Vivo", sub: "Todo el micro responde junto, estilo Kahoot", view: "triviavivo" },
   { icon: "lapiz", title: "Cadáver Exquisito", sub: "Una historia armada entre todos, a ciegas", view: "cuento" },
   { icon: "pincel", title: "Dibujar y Adivinar", sub: "Uno dibuja con el dedo, el resto adivina", view: "dibujar" },
   { icon: "naipe", title: "Escoba de 15", sub: "De a 2, sumá 15 para llevarte las cartas", view: "escoba" },
@@ -543,6 +538,7 @@ function gastarMonedas(cantidad){
 function actualizarMonedasEnPantalla(){
   const el = document.getElementById('monedas-coin-count');
   if(el) el.textContent = monedasCoin;
+  document.querySelectorAll('.js-monedas').forEach(e => { e.textContent = monedasCoin; });
 }
 
 // Suma o resta monedas jugando (positivo si acertaste, negativo si no);

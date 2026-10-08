@@ -389,17 +389,21 @@ function buscolorProgramarRevisionCatch(ms){
 // una carta de la mano que no combina.
 function buscolorCartaHTML(carta, seleccionada, onclick, soloVista){
   const claseColor = carta.color ? `buscolor-carta-${carta.color}` : 'buscolor-carta-negra';
-  let contenido;
-  if(carta.tipo === 'numero') contenido = `<span class="buscolor-carta-simbolo">${carta.numero}</span>`;
-  else if(carta.tipo === 'saltar') contenido = `<span class="buscolor-carta-simbolo">🚫</span>`;
-  else if(carta.tipo === 'reversa') contenido = `<span class="buscolor-carta-simbolo">🔁</span>`;
-  else if(carta.tipo === '+2') contenido = `<span class="buscolor-carta-simbolo">+2</span>`;
-  else if(carta.tipo === 'comodin') contenido = `<span class="buscolor-carta-comodin-icono"></span>`;
-  else contenido = `<span class="buscolor-carta-comodin-icono"></span><span class="buscolor-carta-mas4">+4</span>`;
+  let marca, centro;
+  if(carta.tipo === 'numero'){ marca = carta.numero; centro = `<span class="buscolor-carta-simbolo">${carta.numero}</span>`; }
+  else if(carta.tipo === 'saltar'){ marca = '🚫'; centro = `<span class="buscolor-carta-simbolo">🚫</span>`; }
+  else if(carta.tipo === 'reversa'){ marca = '🔁'; centro = `<span class="buscolor-carta-simbolo">🔁</span>`; }
+  else if(carta.tipo === '+2'){ marca = '+2'; centro = `<span class="buscolor-carta-simbolo">+2</span>`; }
+  else if(carta.tipo === 'comodin'){ marca = '★'; centro = `<span class="buscolor-carta-comodin-icono"></span>`; }
+  else { marca = '+4'; centro = `<span class="buscolor-carta-comodin-icono"></span><span class="buscolor-carta-mas4">+4</span>`; }
   const clases = `buscolor-carta ${claseColor} ${seleccionada ? 'buscolor-carta-seleccionada' : ''} ${soloVista ? 'buscolor-carta-vista' : ''}`;
   const atributos = onclick ? `onclick="${onclick}"` : (soloVista ? '' : 'disabled');
   const etiqueta = soloVista ? 'div' : 'button';
-  return `<${etiqueta} class="${clases}" ${atributos}>${contenido}</${etiqueta}>`;
+  return `<${etiqueta} class="${clases}" ${atributos}>
+    <span class="bc-esq bc-esq-1">${marca}</span>
+    <span class="bc-oval">${centro}</span>
+    <span class="bc-esq bc-esq-2">${marca}</span>
+  </${etiqueta}>`;
 }
 
 function renderBuscolorLobby(){
@@ -421,16 +425,14 @@ function renderBuscolorLobby(){
   }).join('') : '<p style="color:var(--gray);font-size:13px;">Todavía no hay mesas. ¡Armá la primera!</p>';
 
   cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>🎨 BusColor</h2>
-      <p>De 2 a 6 jugadores. Jugá una carta que combine en color, número o símbolo con la de arriba. El primero en quedarse sin cartas gana.</p>
-    </div>
-    <div class="section-label">¿Con cuántos jugadores?</div>
-    <div class="chip-row" style="margin-bottom:14px;">
-      ${[2, 3, 4, 5, 6].map(n => `<div class="chip ${buscolorCapacidadElegida === n ? 'selected' : ''}" onclick="buscolorElegirCapacidad(${n})">${n}</div>`).join('')}
-    </div>
-    <button class="btn-primary" onclick="buscolorCrearMesa()">Crear mesa nueva</button>
-    <div class="section-label" style="margin-top:16px;">Mesas</div>
+    ${gEscenaHTML('grafito', `
+      ${gDialogoHTML('BusColor', 'De 2 a 6 jugadores. Jugá una carta que combine en color, número o símbolo con la de arriba. El primero en quedarse sin cartas gana.')}
+      <div class="g-dialogo-sub" style="text-align:center;margin-bottom:6px;font-weight:700;">¿Con cuántos jugadores?</div>
+      <div class="g-acciones" style="grid-template-columns:repeat(5,1fr);">
+        ${[2, 3, 4, 5, 6].map(n => `<button class="gbtn ${buscolorCapacidadElegida === n ? 'gbtn-sel' : 'gbtn-no'}" onclick="buscolorElegirCapacidad(${n})">${n}</button>`).join('')}
+      </div>
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="buscolorCrearMesa()">Crear mesa nueva</button></div>`)}
+    <div class="section-label">Mesas</div>
     ${listaHTML}`;
 }
 
@@ -440,28 +442,26 @@ function renderBuscolorMesa(){
   if(!mesa){ buscolorVolverAlLobby(); return; }
 
   if(mesa.fase === 'esperando'){
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;"><h2>Esperando jugadores...</h2><p>${mesa.jugadores.length} de ${mesa.capacidad}. Compartí la app para que se sumen los que falten.</p></div>
-      <p class="link-chico" onclick="buscolorVolverAlLobby()">‹ Volver a la lista de mesas</p>
-      <p class="link-chico" onclick="buscolorTerminarMesa('${buscolorMesaIdActual}')">Cancelar esta mesa</p>`;
+    cont.innerHTML = gEscenaHTML('grafito', `
+      ${gDialogoHTML('Esperando jugadores...', `${mesa.jugadores.length} de ${mesa.capacidad}. Compartí la app para que se sumen los que falten.`)}
+      <div class="m-rival-mano" style="margin:6px 0 10px;">${Array.from({ length: mesa.capacidad }).map((_, i) => `<div class="m-dorso" style="${i < mesa.jugadores.length ? '' : 'opacity:.3;'}"></div>`).join('')}</div>
+      <div class="g-pie"><span onclick="buscolorVolverAlLobby()">‹ Volver a la lista de mesas</span><span onclick="buscolorTerminarMesa('${buscolorMesaIdActual}')">Cancelar esta mesa</span></div>`);
     return;
   }
 
-  const marcadorHTML = `<div class="escoba-marcador">${mesa.jugadores.map(a => {
+  const marcadorHTML = `<div class="g-hud g-hud-varios">${mesa.jugadores.map(a => {
     const flag = (mesa.ultimaCarta || {})[a];
     const badge = flag && !flag.avisada ? ' 🔔' : '';
-    return `<div>${String(a) === String(miAsiento) ? '🫲 Vos' : mesa.nombres[a]}: ${((mesa.mano || {})[a] || []).length} cartas${badge}</div>`;
+    const yo = String(a) === String(miAsiento);
+    return `<div class="g-score ${yo ? 'g-score-yo' : ''}"><span class="g-score-nombre">${yo ? 'Vos' : mesa.nombres[a]}</span><span class="g-score-puntos" style="font-size:20px;">${((mesa.mano || {})[a] || []).length}<small>🂠${badge}</small></span></div>`;
   }).join('')}</div>`;
 
   if(mesa.fase === 'terminado'){
-    cont.innerHTML = `
+    cont.innerHTML = gEscenaHTML('grafito', `
       ${marcadorHTML}
-      <div class="hero" style="margin-top:8px;">
-        <h2>🏁 ${String(mesa.ganador) === String(miAsiento) ? '¡Ganaste!' : `Ganó ${mesa.nombres[mesa.ganador]}`}</h2>
-        <p>Se quedó sin cartas primero.</p>
-      </div>
-      <button class="btn-primary" onclick="buscolorTerminarMesa('${buscolorMesaIdActual}')">Cerrar esta mesa</button>
-      <p class="link-chico" onclick="buscolorVolverAlLobby()">‹ Volver a la lista de mesas</p>`;
+      ${gDialogoHTML(String(mesa.ganador) === String(miAsiento) ? '🏆 ¡Ganaste!' : `Ganó ${mesa.nombres[mesa.ganador]}`, 'Se quedó sin cartas primero.')}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="buscolorTerminarMesa('${buscolorMesaIdActual}')">Cerrar esta mesa</button></div>
+      <div class="g-pie"><span onclick="buscolorVolverAlLobby()">‹ Volver a la lista de mesas</span></div>`);
     buscolorPremiarSiCorresponde(mesa);
     return;
   }
@@ -473,32 +473,32 @@ function renderBuscolorMesa(){
   const mazoLen = (mesa.mazo || []).length;
 
   if(soyTurno && buscolorEligiendoIndice != null){
-    cont.innerHTML = `
+    cont.innerHTML = gEscenaHTML('grafito', `
       ${marcadorHTML}
-      <div class="hero" style="margin-top:8px;"><h2>Elegí de qué color sigue</h2><p>Jugaste un comodín: elegí el color con el que continúa la mesa.</p></div>
+      ${gDialogoHTML('Elegí de qué color sigue', 'Jugaste un comodín: elegí el color con el que continúa la mesa.')}
       <div class="buscolor-elegir-color">
         ${BUSCOLOR_COLORES.map(c => `<button style="background:${BUSCOLOR_COLOR_HEX[c]};" onclick="buscolorElegirColorComodin('${c}')" title="${BUSCOLOR_COLOR_NOMBRE[c]}"></button>`).join('')}
-      </div>`;
+      </div>`);
     return;
   }
 
   const mazoSeVePuedeUsar = puedeLevantar && mazoLen;
-  const mazoHTML = `<div style="text-align:center;">
-    <button class="escoba-carta escoba-carta-dorso" style="${mazoSeVePuedeUsar ? '' : 'opacity:.4;filter:grayscale(.6);cursor:not-allowed;'}" ${mazoSeVePuedeUsar ? `onclick="buscolorLevantar()"` : 'disabled'}></button>
-    <div style="font-size:10px;color:#EAF3EC;">Mazo (${mazoLen})</div>
+  const mazoHTML = `<div class="truco-jugada">
+    <button class="m-dorso-media ${mazoSeVePuedeUsar ? 'm-dorso-activo' : ''}" style="width:62px;height:92px;" ${mazoSeVePuedeUsar ? `onclick="buscolorLevantar()"` : 'disabled'} aria-label="Levantar del mazo"></button>
+    <div class="truco-jugada-nombre">Mazo (${mazoLen})</div>
   </div>`;
-  const descarteHTML = descarteTope ? `<div style="text-align:center;">
+  const descarteHTML = descarteTope ? `<div class="truco-jugada">
     ${buscolorCartaHTML(descarteTope, false, null, true)}
-    <div style="font-size:10px;color:#EAF3EC;">Descarte</div>
-  </div>` : '<p style="font-size:12px;">Sin descarte todavía</p>';
+    <div class="truco-jugada-nombre">Descarte</div>
+  </div>` : '<div class="truco-vacio">Sin descarte todavía</div>';
 
-  const colorActualHTML = `<div class="buscolor-color-actual"><span class="buscolor-color-punto" style="background:${BUSCOLOR_COLOR_HEX[mesa.colorActual]};"></span>Color actual: ${BUSCOLOR_COLOR_NOMBRE[mesa.colorActual]}</div>`;
+  const colorActualHTML = `<span class="g-chip"><span class="buscolor-color-punto" style="background:${BUSCOLOR_COLOR_HEX[mesa.colorActual]};"></span> Color: ${BUSCOLOR_COLOR_NOMBRE[mesa.colorActual]}</span>`;
 
   const hayJugada = miMano.some(c => buscolorPuedeJugarCarta(c, mesa));
 
   let accionesHTML = '';
   if(soyTurno && mesa.robado){
-    accionesHTML = `<button class="btn-primary" onclick="buscolorPasarTurno()">🚫 Pasar turno, no tengo con qué jugar</button>`;
+    accionesHTML = `<div class="g-acciones"><button class="gbtn gbtn-ancho gbtn-no" style="font-size:14px;" onclick="buscolorPasarTurno()">🚫 Pasar turno, no tengo con qué jugar</button></div>`;
   }
 
   // El aviso de "última carta" y la posibilidad de agarrar a un rival que se
@@ -506,24 +506,22 @@ function renderBuscolorMesa(){
   let ultimaCartaHTML = '';
   const miFlag = (mesa.ultimaCarta || {})[String(miAsiento)];
   if(miFlag && !miFlag.avisada){
-    ultimaCartaHTML += `<button class="btn-primary" style="background:#8E44AD;border-color:#8E44AD;margin-bottom:8px;" onclick="buscolorCantarUltimaCarta()">🔔 ¡Avisar "Última carta"!</button>`;
+    ultimaCartaHTML += `<div class="g-acciones"><button class="gbtn gbtn-ancho gbtn-violeta" onclick="buscolorCantarUltimaCarta()">🔔 ¡Avisar "Última carta"!</button></div>`;
   }
   Object.keys(mesa.ultimaCarta || {}).filter(a => a !== String(miAsiento) && mesa.ultimaCarta[a] && !mesa.ultimaCarta[a].avisada).forEach(a => {
     const flag = mesa.ultimaCarta[a];
     const faltan = 3000 - (Date.now() - (flag.momento || 0));
     if(faltan <= 0){
-      ultimaCartaHTML += `<button class="btn-ghost" style="margin-bottom:8px;" onclick="buscolorAtraparOlvido('${a}')">😅 ¡${mesa.nombres[a]} se olvidó de avisar! Agarralo (+2)</button>`;
+      ultimaCartaHTML += `<div class="g-acciones"><button class="gbtn gbtn-ancho gbtn-rojo" style="font-size:13px;" onclick="buscolorAtraparOlvido('${a}')">😅 ¡${mesa.nombres[a]} se olvidó de avisar! Agarralo (+2)</button></div>`;
     } else {
       buscolorProgramarRevisionCatch(faltan);
     }
   });
 
-  // Antes había un abanico grande de cartas por cada rival, uno debajo del
-  // otro: con 5-6 jugadores eso obligaba a scrollear un montón para llegar a
-  // la mesa. Ahora es una fila compacta de chips (nombre + cuánto le queda),
-  // que además resalta de un vistazo a quién le toca jugar.
+  // Fila compacta de rivales (nombre + cuánto le queda), que además resalta
+  // de un vistazo a quién le toca jugar.
   const otros = mesa.jugadores.filter(a => a !== String(miAsiento));
-  const otrosAbanicoHTML = otros.length ? `
+  const otrosHTML = otros.length ? `
     <div class="buscolor-rivales">
       ${otros.map(a => {
         const cant = ((mesa.mano || {})[a] || []).length;
@@ -531,9 +529,8 @@ function renderBuscolorMesa(){
         const badge = flag && !flag.avisada ? ' 🔔' : '';
         const esSuTurno = String(mesa.turno) === a;
         return `<div class="buscolor-rival-chip ${esSuTurno ? 'buscolor-rival-chip-turno' : ''}">
-          <span class="buscolor-rival-dorso">🂠</span>
           <span class="buscolor-rival-nombre">${mesa.nombres[a]}</span>
-          <span class="buscolor-rival-cant">${cant}${badge}</span>
+          <span class="buscolor-rival-cant">${cant} 🂠${badge}</span>
         </div>`;
       }).join('')}
     </div>` : '';
@@ -547,39 +544,36 @@ function renderBuscolorMesa(){
 
   let mensajeTurno;
   if(!soyTurno) mensajeTurno = `Turno de ${mesa.nombres[mesa.turno]}`;
-  else if(hayJugada) mensajeTurno = 'Tu turno';
-  else if(!mesa.robado) mensajeTurno = 'Tu turno — sin jugada';
-  else mensajeTurno = 'Tu turno — seguís sin jugada';
+  else if(hayJugada) mensajeTurno = '¡Tu turno!';
+  else if(!mesa.robado) mensajeTurno = 'Tu turno: sin jugada';
+  else mensajeTurno = 'Tu turno: seguís sin jugada';
 
   let mensajeAyuda;
-  if(!soyTurno) mensajeAyuda = 'Tocá una carta tuya que combine, o tocá el mazo para levantar.';
-  else if(hayJugada) mensajeAyuda = 'Tocá una carta tuya que combine, o tocá el mazo para levantar.';
-  else if(!mesa.robado) mensajeAyuda = 'Ninguna de tus cartas combina. Tocá el mazo para levantar una.';
-  else mensajeAyuda = 'Levantaste y seguís sin ninguna que combine. Tocá "Pasar turno" para seguir.';
+  if(!soyTurno) mensajeAyuda = 'Esperá a que juegue.';
+  else if(hayJugada) mensajeAyuda = 'Tocá una carta que combine, o el mazo para levantar.';
+  else if(!mesa.robado) mensajeAyuda = 'Ninguna combina. Tocá el mazo para levantar una.';
+  else mensajeAyuda = 'Seguís sin ninguna que combine. Tocá "Pasar turno".';
 
-  cont.innerHTML = `
-    ${marcadorHTML}
-    <div class="hero" style="margin-top:8px;">
-      <h2>${mensajeTurno}</h2>
-      <p>${mensajeAyuda}</p>
+  cont.innerHTML = gEscenaHTML('grafito', `
+    ${otrosHTML}
+    <div class="m-tapete m-tapete-grafito">
+      <div class="g-chips">${colorActualHTML}</div>
+      <div class="truco-jugadas">${mazoHTML}${descarteHTML}</div>
     </div>
+    <div class="m-turno-wrap"><span class="m-turno ${soyTurno ? 'm-turno-mio' : ''}">${mensajeTurno}</span></div>
+    <p class="g-ayuda">${mensajeAyuda}</p>
     ${ultimaCartaHTML}
-    ${otrosAbanicoHTML}
-    <div class="section-label">Mesa</div>
-    <div class="tapete-mesa tapete-mesa-buscolor">
-      <div class="escoba-fila">${mazoHTML}${descarteHTML}</div>
-      <p>${colorActualHTML}</p>
-    </div>
     ${accionesHTML}
-    <div class="section-label">Tu mano</div>
-    <div class="escoba-fila">${manoHTML}</div>
-    <p class="link-chico" onclick="buscolorTerminarMesa('${buscolorMesaIdActual}')">Abandonar esta mesa</p>`;
+    <div class="bc-mano">${manoHTML}</div>
+    <div class="g-pie"><span></span><span onclick="buscolorTerminarMesa('${buscolorMesaIdActual}')">Abandonar mesa</span></div>`);
 }
 
 function renderBuscolor(){
   const cont = document.getElementById('buscolor-content');
   if(!cont) return;
   document.getElementById('buscolor-sub').textContent = buscolorMesaIdActual ? 'En una mesa' : 'Elegí o creá una mesa';
-  if(buscolorMesaIdActual && buscolorMesas[buscolorMesaIdActual]) renderBuscolorMesa();
+  const enMesa = !!(buscolorMesaIdActual && buscolorMesas[buscolorMesaIdActual]);
+  document.getElementById('view-buscolor').classList.toggle('juego-inmersivo', enMesa);
+  if(enMesa) renderBuscolorMesa();
   else { buscolorMesaIdActual = null; renderBuscolorLobby(); }
 }

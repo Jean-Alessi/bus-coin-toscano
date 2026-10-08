@@ -51,7 +51,7 @@ function ahorcadoDibujo(errores){
     '<line x1="15" y1="17" x2="17" y2="20"/>',
   ];
   const visibles = partes.slice(0, 1 + Math.min(errores, AHORCADO_ERRORES_MAX));
-  return `<svg viewBox="0 0 24 24" width="90" height="90" fill="none" stroke="#0F2A4D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${visibles.join('')}</svg>`;
+  return `<svg viewBox="0 0 24 24" width="130" height="130" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${visibles.join('')}</svg>`;
 }
 
 function adivinarLetraAhorcado(letra){
@@ -95,53 +95,48 @@ function renderAhorcado(){
   document.getElementById('ahorcado-sub').textContent = `Palabra ${ahorcadoIndex + 1} de ${ahorcadoOrden.length}`;
   const cont = document.getElementById('ahorcado-content');
 
-  const blancos = palabra.split('')
-    .map(l => (ahorcadoLetrasAdivinadas.has(l) || ahorcadoFase !== 'jugando') ? l : '_')
-    .join(' ');
+  const slots = palabra.split('').map(l => {
+    const visible = ahorcadoLetrasAdivinadas.has(l) || ahorcadoFase !== 'jugando';
+    const perdida = visible && ahorcadoFase === 'perdido' && !ahorcadoLetrasAdivinadas.has(l);
+    return `<span class="ah-slot${perdida ? ' ah-slot-perdida' : ''}">${visible ? l : ''}</span>`;
+  }).join('');
 
   const letras = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
   const tecladoHTML = letras.map(l => {
     const usada = ahorcadoLetrasAdivinadas.has(l);
-    let clase = 'ahorcado-tecla';
-    if(usada) clase += palabra.includes(l) ? ' ahorcado-tecla-correcta' : ' ahorcado-tecla-incorrecta';
+    let clase = 'ah-tecla';
+    if(usada) clase += palabra.includes(l) ? ' ah-tecla-ok' : ' ah-tecla-mal';
     const deshabilitada = usada || ahorcadoFase !== 'jugando';
     return `<button class="${clase}" ${deshabilitada ? 'disabled' : ''} onclick="adivinarLetraAhorcado('${l}')">${l}</button>`;
   }).join('');
 
+  const vidas = '❤️'.repeat(AHORCADO_ERRORES_MAX - ahorcadoErrores) + '🖤'.repeat(ahorcadoErrores);
+
   let abajoHTML = '';
   if(ahorcadoFase === 'ganado'){
     abajoHTML = `
-      <div class="acertijo-respuesta">
-        <div class="section-label">¡Bien!</div>
-        <p>${palabra}</p>
-      </div>
-      <button class="btn-primary" onclick="siguienteAhorcado()">Siguiente palabra</button>`;
+      ${gDialogoHTML('🎉 ¡Bien!', 'La adivinaste: +2 monedas')}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="siguienteAhorcado()">Siguiente palabra</button></div>`;
   } else if(ahorcadoFase === 'perdido'){
     abajoHTML = `
-      <div class="acertijo-respuesta acertijo-respuesta-neutra">
-        <div class="section-label">Era</div>
-        <p>${palabra}</p>
-      </div>
-      <button class="btn-primary" onclick="siguienteAhorcado()">Siguiente palabra</button>`;
+      ${gDialogoHTML('Se acabaron los intentos', `Era <b>${palabra}</b>`)}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="siguienteAhorcado()">Siguiente palabra</button></div>`;
   }
 
-  cont.innerHTML = `
-    <div class="progress-bar"><div class="progress-fill" style="width:${((ahorcadoIndex + 1) / ahorcadoOrden.length) * 100}%"></div></div>
-    <div class="question-box" style="text-align:center;">
-      <div class="ahorcado-dibujo">${ahorcadoDibujo(ahorcadoErrores)}</div>
-      <div class="ahorcado-palabra">${blancos}</div>
-      <div class="ahorcado-vidas">Errores: ${ahorcadoErrores} / ${AHORCADO_ERRORES_MAX}</div>
+  cont.innerHTML = gEscenaHTML('pizarra', `
+    <div class="g-hud"><span class="g-pill">📝 ${ahorcadoIndex + 1}/${ahorcadoOrden.length}</span><span class="g-pill">🪙 <span class="js-monedas">${monedasCoin}</span></span></div>
+    <div class="ah-tablero">
+      <div class="ah-dibujo">${ahorcadoDibujo(ahorcadoErrores)}</div>
+      <div class="ah-vidas">${vidas}</div>
+      <div class="ah-palabra">${slots}</div>
     </div>
     ${abajoHTML}
-    <div class="ahorcado-teclado">${tecladoHTML}</div>`;
+    <div class="ah-teclado">${tecladoHTML}</div>`);
 }
 
 function renderResultadoAhorcado(){
   document.getElementById('ahorcado-sub').textContent = 'Ahorcado';
-  document.getElementById('ahorcado-content').innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>¡Terminaste la ronda!</h2>
-      <p>¿Jugamos otra tanda de palabras?</p>
-    </div>
-    <button class="btn-primary" onclick="iniciarAhorcado()">Jugar de nuevo</button>`;
+  document.getElementById('ahorcado-content').innerHTML = gEscenaHTML('pizarra', `
+    ${gDialogoHTML('🏁 ¡Terminaste la ronda!', '¿Jugamos otra tanda de palabras?')}
+    <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="iniciarAhorcado()">Jugar de nuevo</button></div>`);
 }

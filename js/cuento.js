@@ -129,7 +129,7 @@ function cuentoArmarHistoria(){
 
 function cuentoListaAnotadosHTML(){
   const asientos = cuentoOrdenAsientos(cuentoAnotados);
-  if(!asientos.length) return '<p style="color:var(--gray);font-size:13px;">Todavía no se anotó nadie.</p>';
+  if(!asientos.length) return '<p class="cu-nota">Todavía no se anotó nadie.</p>';
   return `<div class="bingo-roster">${asientos.map(a => `
     <div class="bingo-roster-item"><span>Asiento ${a} — ${cuentoAnotados[a]}</span></div>`).join('')}</div>`;
 }
@@ -147,21 +147,19 @@ function renderCuento(){
     const asientos = cuentoOrdenAsientos(cuentoAnotados);
     let controlHTML = '';
     if(soyDirector){
-      controlHTML = `<button class="btn-primary" onclick="cuentoEmpezar()" ${asientos.length >= CUENTO_MIN_JUGADORES ? '' : 'disabled'}>Empezar el cuento (${asientos.length}/${CUENTO_MIN_JUGADORES})</button>`;
+      controlHTML = `<div class="g-acciones"><button class="gbtn gbtn-ancho" style="font-size:15px;" onclick="cuentoEmpezar()" ${asientos.length >= CUENTO_MIN_JUGADORES ? '' : 'disabled'}>Empezar el cuento (${asientos.length}/${CUENTO_MIN_JUGADORES})</button></div>`;
     } else if(anotado){
-      controlHTML = `<p class="tienda-nota">Sos parte del grupo. El organizador del viaje arranca cuando quiera.</p>`;
+      controlHTML = `<p class="cu-nota">Sos parte del grupo. El organizador del viaje arranca cuando quiera.</p>`;
     }
-    cont.innerHTML = `
-      ${soyDirector ? '' : bingoPinHTML()}
-      <div class="hero" style="margin-top:8px;">
-        <h2>📖 Cadáver Exquisito</h2>
-        <p>Se juega con el grupo con el que viajás (mínimo ${CUENTO_MIN_JUGADORES}). Cada uno responde una sola pregunta sin ver las demás — al final se arma toda la historia junta, y suele salir así de rara.</p>
-      </div>
-      ${anotado
-        ? `<button class="btn-ghost" style="width:100%;" onclick="cuentoSalirDelGrupo()">Salir del grupo</button>`
-        : `<button class="btn-primary" onclick="cuentoAnotarme()">Anotarme a este grupo</button>`}
+    cont.innerHTML = gEscenaHTML('libro', `
+      <div class="cu-portada">📖</div>
+      ${gDialogoHTML('Cadáver Exquisito', `Se juega con el grupo con el que viajás (mínimo ${CUENTO_MIN_JUGADORES}). Cada uno responde una sola pregunta sin ver las demás. Al final se arma toda la historia junta, y suele salir así de rara.`)}
+      <div class="g-acciones">${anotado
+        ? `<button class="gbtn gbtn-no gbtn-ancho" onclick="cuentoSalirDelGrupo()">Salir del grupo</button>`
+        : `<button class="gbtn gbtn-ancho" onclick="cuentoAnotarme()">Anotarme a este grupo</button>`}</div>
       ${cuentoListaAnotadosHTML()}
-      ${controlHTML}`;
+      ${controlHTML}
+      ${soyDirector ? '' : bingoPinHTML()}`);
     return;
   }
 
@@ -170,32 +168,34 @@ function renderCuento(){
     const soyDelTurno = String(miAsiento) === String(asientoTurno);
     const nombreDelTurno = cuentoAnotados[asientoTurno] || `Asiento ${asientoTurno}`;
     const pregunta = CUENTO_PREGUNTAS[cuentoEstado.turno];
+    const progreso = `<div class="g-hud"><span class="g-pill">✍️ ${cuentoEstado.turno + 1}/${CUENTO_PREGUNTAS.length}</span></div>`;
     if(soyDelTurno){
-      cont.innerHTML = `
-        <div class="hero" style="margin-top:8px;">
-          <h2>Te toca a vos</h2>
-          <p>${pregunta}</p>
+      cont.innerHTML = gEscenaHTML('libro', `
+        ${progreso}
+        <div class="cu-hoja">
+          <div class="cu-hoja-sup">Te toca a vos</div>
+          <div class="cu-pregunta">${pregunta}</div>
+          <input type="text" id="cuento-respuesta-input" class="cu-input" placeholder="Escribí tu respuesta..." maxlength="80" onkeydown="if(event.key==='Enter') cuentoEnviarRespuesta()">
         </div>
-        <input type="text" id="cuento-respuesta-input" class="bingo-input-numero" style="width:100%;" placeholder="Tu respuesta" maxlength="80" onkeydown="if(event.key==='Enter') cuentoEnviarRespuesta()">
-        <button class="btn-primary" onclick="cuentoEnviarRespuesta()">Enviar</button>`;
+        <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="cuentoEnviarRespuesta()">Enviar</button></div>`);
     } else {
-      cont.innerHTML = `
-        <div class="hero" style="margin-top:8px;">
-          <h2>✍️ Escribiendo...</h2>
-          <p>Le toca a ${nombreDelTurno}. Nadie ve las respuestas de los demás hasta el final.</p>
-        </div>`;
+      cont.innerHTML = gEscenaHTML('libro', `
+        ${progreso}
+        <div class="cu-portada">✍️</div>
+        ${gDialogoHTML('Escribiendo...', `Le toca a ${nombreDelTurno}. Nadie ve las respuestas de los demás hasta el final.`)}`);
     }
     return;
   }
 
   // fase 'revelado'
-  cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>📖 La historia quedó así...</h2>
-      <p>${cuentoArmarHistoria()}</p>
+  cont.innerHTML = gEscenaHTML('libro', `
+    <div class="cu-portada">📖</div>
+    <div class="cu-hoja cu-hoja-historia">
+      <div class="cu-hoja-sup">La historia quedó así...</div>
+      <p class="cu-historia">${cuentoArmarHistoria()}</p>
     </div>
     ${cuentoEsDirector()
-      ? `<button class="btn-primary" onclick="cuentoNuevoCuento()">Nuevo cuento</button>
-         <p class="link-chico" onclick="cuentoTerminarJuego()">Terminar el juego</p>`
-      : `<p class="tienda-nota" style="margin-top:14px;">El organizador del viaje decide si arman otro cuento.</p>`}`;
+      ? `<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="cuentoNuevoCuento()">Nuevo cuento</button></div>
+         <div class="g-pie"><span onclick="cuentoTerminarJuego()">Terminar el juego</span></div>`
+      : `<p class="cu-nota">El organizador del viaje decide si arman otro cuento.</p>`}`);
 }

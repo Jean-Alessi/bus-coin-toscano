@@ -12,6 +12,7 @@ let memoriaCartas = [];
 let memoriaVolteadas = []; // índices boca arriba sin resolver todavía (0, 1 o 2 mientras se revisa)
 let memoriaBloqueado = false; // true mientras se muestran dos cartas que no combinan, antes de darlas vuelta
 let memoriaIntentos = 0;
+let memoriaFlipIdx = -1; // carta que se acaba de dar vuelta (para animarla una sola vez)
 let memoriaFase = 'jugando'; // 'jugando' | 'nivel-completo' | 'juego-completo'
 
 function iniciarMemoria(){
@@ -36,6 +37,7 @@ function tocarCartaMemoria(i){
   if(memoriaCartas[i].resuelta || memoriaVolteadas.includes(i)) return;
 
   memoriaVolteadas.push(i);
+  memoriaFlipIdx = i;
   if(memoriaVolteadas.length < 2){
     renderMemoria();
     return;
@@ -74,35 +76,38 @@ function renderMemoria(){
   const cont = document.getElementById('memoria-content');
   if(!cont) return;
   document.getElementById('memoria-sub').textContent = `Nivel ${memoriaNivel + 1} de ${MEMORIA_NIVELES.length} · ${MEMORIA_NIVELES[memoriaNivel]} pares`;
+  document.getElementById('view-memoria').classList.toggle('juego-inmersivo', memoriaFase === 'jugando');
 
   if(memoriaFase === 'nivel-completo'){
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>¡Nivel ${memoriaNivel + 1} completo!</h2>
-        <p>Lo lograste en ${memoriaIntentos} intentos. El próximo nivel tiene el doble de cartas.</p>
-      </div>
-      <button class="btn-primary" onclick="siguienteNivelMemoria()">Siguiente nivel</button>`;
+    cont.innerHTML = gEscenaHTML('menta', `
+      <div class="mem-portada">⭐</div>
+      ${gDialogoHTML(`¡Nivel ${memoriaNivel + 1} completo!`, `Lo lograste en ${memoriaIntentos} intentos. El próximo nivel tiene el doble de cartas.`)}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="siguienteNivelMemoria()">Siguiente nivel</button></div>`);
     return;
   }
 
   if(memoriaFase === 'juego-completo'){
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>¡Completaste los ${MEMORIA_NIVELES.length} niveles!</h2>
-        <p>Mirá cómo quedaste parado en el Ranking, o jugá de nuevo desde el nivel 1.</p>
-      </div>
-      <button class="btn-primary" onclick="iniciarMemoria()">Jugar de nuevo</button>`;
+    cont.innerHTML = gEscenaHTML('menta', `
+      <div class="mem-portada">🏆</div>
+      ${gDialogoHTML(`¡Completaste los ${MEMORIA_NIVELES.length} niveles!`, 'Mirá cómo quedaste parado en el Ranking, o jugá de nuevo desde el nivel 1.')}
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="iniciarMemoria()">Jugar de nuevo</button></div>`);
     return;
   }
 
+  const pares = MEMORIA_NIVELES[memoriaNivel];
+  const resueltas = memoriaCartas.filter(c => c.resuelta).length / 2;
   const cartasHTML = memoriaCartas.map((c, i) => {
     const volteada = c.resuelta || memoriaVolteadas.includes(i);
-    const clase = 'memoria-carta' + (volteada ? ' memoria-carta-volteada' : '') + (c.resuelta ? ' memoria-carta-resuelta' : '');
-    const contenido = c.emoji === MEMORIA_LOGO ? '<img src="icons/icon-192.png" alt="Logo" class="memoria-logo-img">' : c.emoji;
+    let clase = 'mem-carta';
+    if(volteada) clase += ' mem-carta-cara';
+    if(c.resuelta) clase += ' mem-carta-resuelta';
+    if(i === memoriaFlipIdx) clase += ' mem-flip';
+    const contenido = c.emoji === MEMORIA_LOGO ? '<img src="icons/icon-192.png" alt="Logo" class="mem-logo-img">' : c.emoji;
     return `<button class="${clase}" onclick="tocarCartaMemoria(${i})">${volteada ? contenido : ''}</button>`;
   }).join('');
+  memoriaFlipIdx = -1;
 
-  cont.innerHTML = `
-    <p class="tienda-nota">Intentos: ${memoriaIntentos}</p>
-    <div class="memoria-grid">${cartasHTML}</div>`;
+  cont.innerHTML = gEscenaHTML('menta', `
+    <div class="g-hud"><span class="g-pill">🎯 ${memoriaIntentos}</span><span class="g-pill">✅ ${resueltas}/${pares}</span><span class="g-pill">🪙 <span class="js-monedas">${monedasCoin}</span></span></div>
+    <div class="mem-grid mem-grid-${pares}">${cartasHTML}</div>`);
 }

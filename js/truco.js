@@ -432,16 +432,15 @@ function renderTrucoLobby(){
   }).join('') : '<p style="color:var(--gray);font-size:13px;">Todavía no hay mesas. ¡Armá la primera!</p>';
 
   cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>🂮 Truco</h2>
-      <p>Con envido, sin flor. De a 2 se juega 1 vs 1 a 15 puntos; de a 4 o 6 se arman equipos (2 vs 2 o 3 vs 3) a 30 puntos.</p>
+    <div class="escena escena-madera">
+      ${gDialogoHTML('Truco', 'Con envido, sin flor. De a 2 se juega 1 vs 1 a 15 puntos; de a 4 o 6 hay equipos (2 vs 2 o 3 vs 3) a 30 puntos.')}
+      <div class="g-dialogo-sub" style="text-align:center;margin-bottom:6px;font-weight:700;">¿Con cuántos jugadores?</div>
+      <div class="g-acciones g-acciones-3">
+        ${[2, 4, 6].map(n => `<button class="gbtn ${trucoCapacidadElegida === n ? 'gbtn-sel' : 'gbtn-no'}" onclick="trucoElegirCapacidad(${n})">${n}</button>`).join('')}
+      </div>
+      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="trucoCrearMesa()">Crear mesa nueva</button></div>
     </div>
-    <div class="section-label">¿Con cuántos jugadores?</div>
-    <div class="chip-row" style="margin-bottom:14px;">
-      ${[2, 4, 6].map(n => `<div class="chip ${trucoCapacidadElegida === n ? 'selected' : ''}" onclick="trucoElegirCapacidad(${n})">${n}</div>`).join('')}
-    </div>
-    <button class="btn-primary" onclick="trucoCrearMesa()">Crear mesa nueva</button>
-    <div class="section-label" style="margin-top:16px;">Mesas</div>
+    <div class="section-label">Mesas</div>
     ${listaHTML}`;
 }
 
@@ -452,29 +451,39 @@ function trucoBannerPendiente(mesa){
     const p = mesa.pendienteTruco;
     const nombreNivel = TRUCO_NOMBRE_NIVEL[p.nivelPedido];
     if(miEquipo === p.equipoCantador){
-      return `<div class="hero" style="margin-top:8px;"><h2>Cantaste ${nombreNivel}</h2><p>Esperando que el equipo rival responda...</p></div>`;
+      return gDialogoHTML(`¡Cantaste ${nombreNivel}!`, 'Esperando que el equipo rival responda...');
     }
     const proximoNivel = TRUCO_NOMBRE_NIVEL[p.nivelPedido + 1];
-    return `
-      <div class="hero" style="margin-top:8px;"><h2>${mesa.nombres[p.cantadoPor]} cantó ${nombreNivel}</h2><p>¿Querés?</p></div>
-      <button class="btn-primary" onclick="trucoResponderTruco('quiero')">Quiero</button>
-      ${proximoNivel ? `<button class="btn-ghost" onclick="trucoResponderTruco('escalar')">¡${proximoNivel}!</button>` : ''}
-      <p class="link-chico" onclick="trucoResponderTruco('no_quiero')">No quiero</p>`;
+    return gDialogoHTML(`¡${mesa.nombres[p.cantadoPor]} cantó ${nombreNivel}!`, '¿Querés?') + `
+      <div class="g-acciones">
+        <button class="gbtn gbtn-quiero" onclick="trucoResponderTruco('quiero')">Quiero</button>
+        <button class="gbtn gbtn-no" onclick="trucoResponderTruco('no_quiero')">No quiero</button>
+        ${proximoNivel ? `<button class="gbtn gbtn-rojo gbtn-ancho" onclick="trucoResponderTruco('escalar')">¡${proximoNivel}!</button>` : ''}
+      </div>`;
   }
 
   if(mesa.pendienteEnvido){
     const p = mesa.pendienteEnvido;
     const nombreTipo = TRUCO_NOMBRE_ENVIDO[p.tipo];
     if(miEquipo === p.equipoCantador){
-      return `<div class="hero" style="margin-top:8px;"><h2>Cantaste ${nombreTipo}</h2><p>Esperando que el equipo rival responda...</p></div>`;
+      return gDialogoHTML(`¡Cantaste ${nombreTipo}!`, 'Esperando que el equipo rival responda...');
     }
-    return `
-      <div class="hero" style="margin-top:8px;"><h2>${mesa.nombres[p.cantadoPor]} cantó ${nombreTipo}</h2><p>¿Querés?</p></div>
-      <button class="btn-primary" onclick="trucoResponderEnvido('quiero')">Quiero</button>
-      <p class="link-chico" onclick="trucoResponderEnvido('no_quiero')">No quiero</p>`;
+    return gDialogoHTML(`¡${mesa.nombres[p.cantadoPor]} cantó ${nombreTipo}!`, '¿Querés?') + `
+      <div class="g-acciones">
+        <button class="gbtn gbtn-quiero" onclick="trucoResponderEnvido('quiero')">Quiero</button>
+        <button class="gbtn gbtn-no" onclick="trucoResponderEnvido('no_quiero')">No quiero</button>
+      </div>`;
   }
 
   return null;
+}
+
+function trucoMarcadorHTML(mesa, miEquipo, companeros, rivales){
+  const rivalEquipo = trucoOtroEquipo(miEquipo);
+  return `<div class="g-hud">
+    <div class="g-score"><span class="g-score-nombre" title="${rivales.join(', ')}">${rivales.length > 1 ? 'Rivales' : rivales[0]}</span><span class="g-score-puntos">${mesa.puntajeEquipos[rivalEquipo] || 0}<small>/${mesa.metaPuntos}</small></span></div>
+    <div class="g-score g-score-yo"><span class="g-score-nombre" title="${companeros.length ? 'Tu equipo: vos y ' + companeros.join(', ') : 'Vos'}">${companeros.length ? 'Tu equipo' : 'Vos'}</span><span class="g-score-puntos">${mesa.puntajeEquipos[miEquipo] || 0}<small>/${mesa.metaPuntos}</small></span></div>
+  </div>`;
 }
 
 function renderTrucoMesa(){
@@ -484,32 +493,28 @@ function renderTrucoMesa(){
 
   if(mesa.fase === 'esperando'){
     cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;"><h2>Esperando jugadores...</h2><p>${mesa.jugadores.length} de ${mesa.capacidad}. Compartí la app para que se sumen los que falten.</p></div>
-      <p class="link-chico" onclick="trucoVolverAlLobby()">‹ Volver a la lista de mesas</p>
-      <p class="link-chico" onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Cancelar esta mesa</p>`;
+      <div class="escena escena-madera">
+        ${gDialogoHTML('Esperando jugadores...', `${mesa.jugadores.length} de ${mesa.capacidad}. Compartí la app para que se sumen los que falten.`)}
+        <div class="m-rival-mano" style="margin:6px 0 10px;">${Array.from({ length: mesa.capacidad }).map((_, i) => `<div class="m-dorso" style="${i < mesa.jugadores.length ? '' : 'opacity:.3;'}"></div>`).join('')}</div>
+        <div class="g-pie"><span onclick="trucoVolverAlLobby()">‹ Volver a la lista de mesas</span><span onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Cancelar esta mesa</span></div>
+      </div>`;
     return;
   }
 
   const miEquipo = trucoEquipoDe(mesa.jugadores, miAsiento);
-  const rivalEquipo = trucoOtroEquipo(miEquipo);
   const companeros = trucoCompaneros(mesa, miAsiento).map(a => mesa.nombres[a]);
   const rivales = trucoRivales(mesa, miAsiento).map(a => mesa.nombres[a]);
-
-  const marcadorHTML = `<div class="escoba-marcador">
-    <div>🫲 Tu equipo${companeros.length ? ` (con ${companeros.join(', ')})` : ''}: ${mesa.puntajeEquipos[miEquipo] || 0} / ${mesa.metaPuntos}</div>
-    <div>Rival (${rivales.join(', ')}): ${mesa.puntajeEquipos[rivalEquipo] || 0} / ${mesa.metaPuntos}</div>
-  </div>`;
+  const marcadorHTML = trucoMarcadorHTML(mesa, miEquipo, companeros, rivales);
 
   if(mesa.fase === 'terminado'){
     const gano = mesa.ganadorFinal === miEquipo;
     cont.innerHTML = `
-      ${marcadorHTML}
-      <div class="hero" style="margin-top:8px;">
-        <h2>🏁 ${gano ? '¡Ganó tu equipo!' : 'Ganó el equipo rival'}</h2>
-        <p>${mesa.puntajeEquipos.A} a ${mesa.puntajeEquipos.B} puntos (a ${mesa.metaPuntos} se termina).</p>
-      </div>
-      <button class="btn-primary" onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Cerrar esta mesa</button>
-      <p class="link-chico" onclick="trucoVolverAlLobby()">‹ Volver a la lista de mesas</p>`;
+      <div class="escena escena-madera">
+        ${marcadorHTML}
+        ${gDialogoHTML(`${gano ? '🏆 ¡Ganó tu equipo!' : 'Ganó el equipo rival'}`, `${mesa.puntajeEquipos.A} a ${mesa.puntajeEquipos.B} puntos (a ${mesa.metaPuntos} se termina).`)}
+        <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Cerrar esta mesa</button></div>
+        <div class="g-pie"><span onclick="trucoVolverAlLobby()">‹ Volver a la lista de mesas</span></div>
+      </div>`;
     trucoPremiarSiCorresponde(mesa);
     return;
   }
@@ -518,73 +523,73 @@ function renderTrucoMesa(){
   const miMano = (mesa.mano && mesa.mano[String(miAsiento)]) || [];
   const soyTurno = !mesa.pendienteTruco && !mesa.pendienteEnvido && String(mesa.turno) === String(miAsiento);
 
-  const otrosDorsoHTML = mesa.jugadores.filter(a => a !== String(miAsiento)).map(a => {
-    const cant = (mesa.mano && mesa.mano[a] || []).length;
-    return `<div class="section-label">Cartas de ${mesa.nombres[a]} (${cant})</div>
-      <div class="escoba-fila">${Array.from({ length: cant }).map(() => '<div class="escoba-carta escoba-carta-dorso"></div>').join('')}</div>`;
-  }).join('');
+  const nombreDe = asiento => String(asiento) === String(miAsiento) ? 'Vos' : mesa.nombres[asiento];
 
-  const trickHTML = (mesa.trickJugadas || []).map(j => `
-    <div style="text-align:center;">
-      ${escobaCartaHTML(j.carta, false, null)}
-      <div style="font-size:10px;color:#EAF3EC;">${String(j.asiento) === String(miAsiento) ? 'Vos' : mesa.nombres[j.asiento]}</div>
-    </div>`).join('') || '<p style="font-size:12px;">Nadie jugó todavía en esta ronda.</p>';
+  const asientosCompaneros = trucoCompaneros(mesa, miAsiento);
+  const rivalesHTML = `<div class="m-rivales">${mesa.jugadores.filter(a => a !== String(miAsiento)).map(a => {
+    const cant = ((mesa.mano && mesa.mano[a]) || []).length;
+    return `<div class="m-rival">
+      <div class="m-rival-nombre">${mesa.nombres[a]}${asientosCompaneros.includes(a) ? ' 🤝' : ''}</div>
+      <div class="m-rival-mano">${Array.from({ length: cant }).map(() => '<div class="m-dorso"></div>').join('')}</div>
+    </div>`;
+  }).join('')}</div>`;
+
+  const jugadasHTML = (mesa.trickJugadas || []).map(j => `
+    <div class="truco-jugada">${naipeHTML(j.carta, 'media')}<div class="truco-jugada-nombre">${nombreDe(j.asiento)}</div></div>`).join('')
+    || '<div class="truco-vacio">Nadie jugó todavía en esta ronda</div>';
 
   // Sin esto, apenas se resuelve una ronda las cartas jugadas desaparecían
   // del todo y no quedaba forma de ver qué se tiró antes en esta mano — igual
   // que en la mesa real, donde las cartas ya jugadas quedan a la vista.
-  const historialHTML = (mesa.historialTricks || []).map((trick, ti) => {
+  const rondasHTML = (mesa.historialTricks || []).map((trick, ti) => {
     const resultado = (mesa.tricksResultados || [])[ti];
-    const textoResultado = resultado == null ? 'Empataron (parda)' : resultado === miEquipo ? 'Ganó tu equipo' : 'Ganó el rival';
-    return `
-      <div class="section-label">Ronda ${ti + 1} — ${textoResultado}</div>
-      <div class="tapete-mesa"><div class="escoba-fila">${trick.map(j => `
-        <div style="text-align:center;">
-          ${escobaCartaHTML(j.carta, false, null)}
-          <div style="font-size:10px;color:#EAF3EC;">${String(j.asiento) === String(miAsiento) ? 'Vos' : mesa.nombres[j.asiento]}</div>
-        </div>`).join('')}</div></div>`;
+    const clase = resultado == null ? 'parda' : resultado === miEquipo ? 'gane' : 'perdi';
+    const simbolo = resultado == null ? '=' : resultado === miEquipo ? '✓' : '✗';
+    const texto = resultado == null ? 'Empataron (parda)' : resultado === miEquipo ? 'Ganó tu equipo' : 'Ganó el rival';
+    return `<div class="truco-ronda truco-ronda-${clase}" title="Ronda ${ti + 1}: ${texto}">${trick.map(j => naipeHTML(j.carta, 'mini')).join('')}<span class="truco-ronda-res">${simbolo}</span></div>`;
   }).join('');
+
+  const chips = [`<span class="g-chip">Mano ${mesa.manoNumero} · ronda ${(mesa.trickNumero || 0) + 1}/3</span>`];
+  if(mesa.truco && mesa.truco.nivel) chips.push(`<span class="g-chip g-chip-rojo">${TRUCO_NOMBRE_NIVEL[mesa.truco.nivel]}${mesa.truco.estado === 'aceptado' ? ' querido' : ''} · vale ${TRUCO_PUNTOS_QUERIDO[mesa.truco.nivel]}</span>`);
+  if(mesa.envido && mesa.envido.estado === 'resuelto') chips.push(`<span class="g-chip">${TRUCO_NOMBRE_ENVIDO[mesa.envido.tipo]}: ${mesa.envido.resultado.ganador === miEquipo ? 'ganaste' : 'ganó el rival'} (+${mesa.envido.resultado.puntos})</span>`);
 
   let accionesHTML = '';
   if(soyTurno){
-    const chipsEnvido = trucoEnvidoDisponible(mesa) ? `
-      <div class="chip-row" style="margin-bottom:10px;">
-        <div class="chip" onclick="trucoCantarEnvido('envido')">Envido</div>
-        <div class="chip" onclick="trucoCantarEnvido('real_envido')">Real Envido</div>
-        <div class="chip" onclick="trucoCantarEnvido('falta_envido')">Falta Envido</div>
+    const envidoBtns = trucoEnvidoDisponible(mesa) ? `
+      <div class="g-acciones g-acciones-3">
+        <button class="gbtn gbtn-chico" onclick="trucoCantarEnvido('envido')">Envido</button>
+        <button class="gbtn gbtn-chico" onclick="trucoCantarEnvido('real_envido')">Real Envido</button>
+        <button class="gbtn gbtn-chico" onclick="trucoCantarEnvido('falta_envido')">Falta Envido</button>
       </div>` : '';
     const nombreProximoTruco = TRUCO_NOMBRE_NIVEL[(mesa.truco.nivel || 0) + 1];
-    const chipTruco = nombreProximoTruco ? `<button class="btn-ghost" style="margin-bottom:10px;" onclick="trucoCantarTruco()">¡${nombreProximoTruco}!</button>` : '';
-    accionesHTML = chipsEnvido + chipTruco;
+    const trucoBtn = nombreProximoTruco ? `<div class="g-acciones"><button class="gbtn gbtn-rojo gbtn-ancho" onclick="trucoCantarTruco()">¡${nombreProximoTruco}!</button></div>` : '';
+    accionesHTML = envidoBtns + trucoBtn;
   }
 
-  const envidoResuelto = mesa.envido && mesa.envido.estado === 'resuelto' ? `<p style="font-size:12px;color:var(--gray);">${TRUCO_NOMBRE_ENVIDO[mesa.envido.tipo]}: ganó el equipo ${mesa.envido.resultado.ganador === miEquipo ? 'tuyo' : 'rival'} (+${mesa.envido.resultado.puntos}).</p>` : '';
-  const trucoEstadoTxt = mesa.truco && mesa.truco.nivel ? `<p style="font-size:12px;color:var(--gray);">En juego: ${TRUCO_NOMBRE_NIVEL[mesa.truco.nivel]}${mesa.truco.estado === 'aceptado' ? ' (querido)' : ''} — vale ${TRUCO_PUNTOS_QUERIDO[mesa.truco.nivel]} puntos.</p>` : '';
+  const turnoHTML = `<div class="m-turno-wrap"><span class="m-turno ${soyTurno ? 'm-turno-mio' : ''}">${soyTurno ? '¡Tu turno!' : `Turno de ${mesa.nombres[mesa.turno]}`}</span></div>`;
 
   cont.innerHTML = `
-    ${marcadorHTML}
-    ${bannerPendiente || `
-      <div class="hero" style="margin-top:8px;">
-        <h2>${soyTurno ? 'Tu turno' : `Turno de ${mesa.nombres[mesa.turno]}`}</h2>
-        <p>Mano ${mesa.manoNumero}, ronda ${(mesa.trickNumero || 0) + 1} de 3.</p>
+    <div class="escena escena-madera">
+      ${marcadorHTML}
+      ${rivalesHTML}
+      <div class="m-tapete">
+        <div class="g-chips">${chips.join('')}${rondasHTML}</div>
+        <div class="truco-jugadas">${jugadasHTML}</div>
       </div>
-      ${accionesHTML}`}
-    ${envidoResuelto}
-    ${trucoEstadoTxt}
-    ${otrosDorsoHTML}
-    ${historialHTML}
-    <div class="section-label">${(mesa.historialTricks || []).length ? 'Ronda actual' : 'Mesa (esta ronda)'}</div>
-    <div class="tapete-mesa"><div class="escoba-fila">${trickHTML}</div></div>
-    <div class="section-label">Tu mano</div>
-    <div class="escoba-fila">${miMano.map((c, i) => escobaCartaHTML(c, false, soyTurno ? `trucoJugarCarta(${i})` : null)).join('')}</div>
-    <p class="link-chico" onclick="trucoIrseAlMazo()">🏳️ Irme al mazo</p>
-    <p class="link-chico" onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Abandonar esta mesa</p>`;
+      ${bannerPendiente || `${turnoHTML}${accionesHTML}`}
+      <div class="m-mano">${miMano.map((c, i) => naipeHTML(c, 'grande', soyTurno ? `trucoJugarCarta(${i})` : null)).join('')}</div>
+      <div class="g-pie"><span onclick="trucoIrseAlMazo()">🏳️ Irme al mazo</span><span onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Abandonar mesa</span></div>
+    </div>`;
 }
 
 function renderTruco(){
   const cont = document.getElementById('truco-content');
   if(!cont) return;
   document.getElementById('truco-sub').textContent = trucoMesaIdActual ? 'En una mesa' : 'Elegí o creá una mesa';
-  if(trucoMesaIdActual && trucoMesas[trucoMesaIdActual]) renderTrucoMesa();
+  const enMesa = !!(trucoMesaIdActual && trucoMesas[trucoMesaIdActual]);
+  // Dentro de una mesa el título sobra: ese espacio es para que entren las
+  // cartas y los botones en una sola pantalla.
+  document.getElementById('view-truco').classList.toggle('truco-en-mesa', enMesa);
+  if(enMesa) renderTrucoMesa();
   else { trucoMesaIdActual = null; renderTrucoLobby(); }
 }
