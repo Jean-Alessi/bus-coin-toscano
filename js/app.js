@@ -407,11 +407,11 @@ function renderHome(){
   document.getElementById('home-viaje').textContent = `Viaje ${codigoViaje} · copiar link`;
   // Los juegos ya están en la pestaña Juegos y el ranking en su propia
   // pestaña; Inicio se queda solo con el logo (más publicidad) y la
-  // raspadita del día, sin repetir lo que ya está a un toque de distancia.
+  // ruleta del día, sin repetir lo que ya está a un toque de distancia.
   document.getElementById('home-content').innerHTML = `
     <div class="home-logo-banner"><img src="logo-empresa.png" alt="Logo"></div>
     ${pwaInstalarHTML()}
-    ${raspaditaHTML()}`;
+    ${ruletaHTML()}`;
 }
 
 // Con tantos juegos la lista se hacía larga para escanear de un vistazo, así
