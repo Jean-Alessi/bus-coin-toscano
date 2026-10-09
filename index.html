@@ -24,13 +24,14 @@
 
     <!-- CÓDIGO DE VIAJE -->
     <div class="view active" id="view-codigo-viaje">
-      <div class="hero">
-        <h2 id="marca-bienvenida">¡Bienvenido a bordo! 🚌 Arrancamos esta nueva experiencia con Busmac</h2>
+      <div class="escena escena-cielo entrada-escena">
+        <div class="entrada-portada"><img src="icons/icon-192.png" alt="Bus Coin"></div>
+        <div class="g-dialogo"><div class="g-dialogo-titulo" id="marca-bienvenida">¡Bienvenido a bordo! 🚌 Arrancamos esta nueva experiencia con Busmac</div></div>
+        <input type="text" id="codigo-viaje-input" class="entrada-input" placeholder="Código del viaje" autocomplete="off" oninput="actualizarBotonCodigoViaje()">
+        <p class="entrada-nota">¡Vamos a divertirnos! Solicitá el código de acceso al administrador del viaje.</p>
+        <div class="g-acciones"><button class="gbtn gbtn-ancho" id="btn-continuar-codigo" disabled onclick="confirmarCodigoViaje()">Continuar</button></div>
+        <p id="codigo-viaje-error" class="bingo-pin-error"></p>
       </div>
-      <input type="text" id="codigo-viaje-input" class="bingo-input-numero" style="width:100%; text-transform:uppercase;" placeholder="Código del viaje" oninput="actualizarBotonCodigoViaje()">
-      <p style="color:var(--gray); font-size:14px; margin:10px 0 18px;">¡Vamos a divertirnos! Solicitá el código de acceso al administrador del viaje.</p>
-      <button class="btn-primary" id="btn-continuar-codigo" disabled onclick="confirmarCodigoViaje()">Continuar</button>
-      <p id="codigo-viaje-error" class="bingo-pin-error"></p>
       <!-- Oculto por defecto: un pasajero no tiene nada que hacer acá. Se
            muestra solo, si este celular ya organizó antes o tiene sesión de
            agencia (ver organizadorActualizarVisibilidad en app.js), o
@@ -49,24 +50,26 @@
 
     <!-- ONBOARDING -->
     <div class="view" id="view-onboard">
-      <div id="lista-pasajeros-onboard"></div>
-      <div class="hero">
-        <h2>¡Sumate al viaje!</h2>
-        <p>Contanos quién sos para arrancar a jugar.</p>
+      <div class="escena escena-cielo entrada-escena">
+        <div id="lista-pasajeros-onboard"></div>
+        <div class="g-dialogo">
+          <div class="g-dialogo-titulo">¡Sumate al viaje!</div>
+          <div class="g-dialogo-sub">Contanos quién sos para arrancar a jugar.</div>
+        </div>
+        <div class="section-label">¿Y vos, cómo te llamás?</div>
+        <input type="text" id="mi-nombre-input" class="entrada-input entrada-input-normal" placeholder="Tu nombre o apodo" oninput="actualizarBotonContinuar()">
+        <div class="section-label">¿En qué asiento vas?</div>
+        <input type="number" id="mi-asiento-input" class="entrada-input entrada-input-normal" min="1" placeholder="Número de asiento" oninput="actualizarBotonContinuar()">
+        <div class="section-label">¿Sos mayor de 12 años?</div>
+        <div class="chip-row" id="mi-mayor-de-12-chips" style="margin-bottom:14px;">
+          <div class="chip" onclick="elegirMayorDe12(true)">Sí</div>
+          <div class="chip" onclick="elegirMayorDe12(false)">No</div>
+        </div>
+        <button class="btn-continuar-logo" id="btn-continuar" disabled onclick="goHome()">
+          <img src="icons/icon-192.png" alt="Bus Coin" class="btn-continuar-logo-img">
+          <span>Tocá para continuar</span>
+        </button>
       </div>
-      <div class="section-label">¿Y vos, cómo te llamás?</div>
-      <input type="text" id="mi-nombre-input" class="bingo-input-numero" style="width:100%;" placeholder="Tu nombre o apodo" oninput="actualizarBotonContinuar()">
-      <div class="section-label">¿En qué asiento vas?</div>
-      <input type="number" id="mi-asiento-input" class="bingo-input-numero" style="width:100%;" min="1" placeholder="Número de asiento" oninput="actualizarBotonContinuar()">
-      <div class="section-label">¿Sos mayor de 12 años?</div>
-      <div class="chip-row" id="mi-mayor-de-12-chips" style="margin-bottom:14px;">
-        <div class="chip" onclick="elegirMayorDe12(true)">Sí</div>
-        <div class="chip" onclick="elegirMayorDe12(false)">No</div>
-      </div>
-      <button class="btn-continuar-logo" id="btn-continuar" disabled onclick="goHome()">
-        <img src="icons/icon-192.png" alt="Bus Coin" class="btn-continuar-logo-img">
-        <span>Tocá para continuar</span>
-      </button>
     </div>
 
     <!-- HOME -->

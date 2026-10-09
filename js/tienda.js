@@ -154,16 +154,15 @@ function renderPremiosViaje(){
     const editorHTML = esOrganizador ? `
       <div class="section-label">Editá los premios de este viaje</div>
       ${premiosState.lista.map((p, i) => `<input type="text" id="premio-input-${i}" class="bingo-input-numero" style="width:100%;" placeholder="Ej: ${PREMIOS_DEFAULT[i]}" value="${(p || '').replace(/"/g, '&quot;')}">`).join('')}
-      <button class="btn-ghost" onclick="guardarListaPremios()">Guardar premios</button>
-      <button class="btn-primary" onclick="habilitarEleccionPremios()">Habilitar elección de premios</button>` : '';
+      <div class="g-acciones">
+        <button class="gbtn gbtn-no gbtn-ancho" style="font-size:15px;" onclick="guardarListaPremios()">Guardar premios</button>
+        <button class="gbtn gbtn-ancho" style="font-size:15px;" onclick="habilitarEleccionPremios()">Habilitar elección de premios</button>
+      </div>` : '';
 
-    cont.innerHTML = `
-      <div class="premios-hero">
-        <div class="premios-hero-titulo">🏆 Premios de este viaje</div>
-        <p>Jugá y sumá monedas en los juegos. Al terminar el viaje, del 1° al 4° puesto del ranking eligen premio, en orden.</p>
-      </div>
+    cont.innerHTML = gEscenaHTML('oro', `
+      ${gDialogoHTML('🏆 Premios de este viaje', 'Jugá y sumá monedas en los juegos. Al terminar el viaje, del 1° al 4° puesto del ranking eligen premio, en orden.')}
       ${premiosGridHTML(null)}
-      ${editorHTML}`;
+      ${editorHTML}`);
     return;
   }
 
@@ -206,21 +205,18 @@ function renderPremiosViaje(){
   if(turnoAsiento != null && String(turnoAsiento) === String(miAsiento) && premiosState.elecciones[String(miAsiento)] == null){
     const disponibles = premiosState.lista.map((p, i) => ({ p, i })).filter(o => elegidosPorIndice[o.i] == null);
     miTurnoHTML = `
-      <div class="hero premios-tu-turno" style="margin-top:8px;">
-        <h2>🎉 ¡Te tocó elegir!</h2>
-        <p>${disponibles.length === 1 ? 'Te queda el último premio disponible.' : 'Elegí el premio que quieras de los que quedan.'}</p>
-      </div>
-      ${disponibles.map(o => `<button class="btn-primary" style="margin-top:8px;" onclick="elegirPremio(${o.i})">${o.p}</button>`).join('')}`;
+      <div class="premios-tu-turno">${gDialogoHTML('🎉 ¡Te tocó elegir!', disponibles.length === 1 ? 'Te queda el último premio disponible.' : 'Elegí el premio que quieras de los que quedan.')}</div>
+      <div class="g-acciones" style="grid-template-columns:1fr;">${disponibles.map(o => `<button class="gbtn gbtn-ancho" style="font-size:16px;" onclick="elegirPremio(${o.i})">${o.p}</button>`).join('')}</div>`;
   }
 
   const terminado = premiosCantidadElegida() >= orden.length;
 
-  cont.innerHTML = `
+  cont.innerHTML = gEscenaHTML('oro', `
     <div class="section-label">Elección de premios</div>
     <div class="podio">${podioHTML}</div>
     ${cuartoPuesto}
     ${miTurnoHTML}
     ${premiosGridHTML(elegidosPorIndice)}
     ${terminado ? '<p class="tienda-nota">🎊 Ya eligieron todos. ¡Felicitaciones a los ganadores!</p>' : ''}
-    ${esOrganizador && !terminado ? '<p class="link-chico" onclick="premiosFinalizarIgual()">Finalizar el viaje igual, aunque falten elegir premios</p>' : ''}`;
+    ${esOrganizador && !terminado ? '<p class="link-chico" onclick="premiosFinalizarIgual()">Finalizar el viaje igual, aunque falten elegir premios</p>' : ''}`);
 }

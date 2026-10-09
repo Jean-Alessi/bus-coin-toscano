@@ -393,12 +393,15 @@ function goHome(){
 
 function renderTarjetas(lista, contenedorId){
   const container = document.getElementById(contenedorId);
+  const categoria = contenedorId.split('-').pop();
+  const claseColor = categoria === 'solo' ? 'juego-tile-solo' : categoria === 'grupoCartas' ? 'juego-tile-cartas' : 'juego-tile-grupo';
+  container.classList.add('juego-tiles');
   lista.forEach(c=>{
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.onclick = ()=> showView(c.view);
-    div.innerHTML = `<div class="icon">${icono(c.icon)}</div><div class="txt"><h3>${c.title}</h3><p>${c.sub}</p></div>`;
-    container.appendChild(div);
+    const boton = document.createElement('button');
+    boton.className = `juego-tile ${claseColor}`;
+    boton.onclick = ()=> showView(c.view);
+    boton.innerHTML = `<span class="juego-tile-icono">${icono(c.icon)}</span><span class="juego-tile-nombre">${c.title}</span><span class="juego-tile-sub">${c.sub}</span>`;
+    container.appendChild(boton);
   });
 }
 
@@ -408,10 +411,10 @@ function renderHome(){
   // Los juegos ya están en la pestaña Juegos y el ranking en su propia
   // pestaña; Inicio se queda solo con el logo (más publicidad) y la
   // ruleta del día, sin repetir lo que ya está a un toque de distancia.
-  document.getElementById('home-content').innerHTML = `
+  document.getElementById('home-content').innerHTML = gEscenaHTML('cielo', `
     <div class="home-logo-banner"><img src="logo-empresa.png" alt="Logo"></div>
     ${pwaInstalarHTML()}
-    ${ruletaHTML()}`;
+    ${ruletaHTML()}`);
 }
 
 // Con tantos juegos la lista se hacía larga para escanear de un vistazo, así
@@ -460,7 +463,7 @@ function renderCategoriasEnListas(vista){
 }
 
 function renderJuegos(){
-  document.getElementById('juegos-content').innerHTML = categoriasJuegosHTML('juegos');
+  document.getElementById('juegos-content').innerHTML = gEscenaHTML('neon', categoriasJuegosHTML('juegos'), 'juegos-escena');
   renderCategoriasEnListas('juegos');
 }
 
@@ -511,13 +514,38 @@ function renderRanking(){
   const filas = Object.keys(rankingPuntos)
     .map(asiento => ({ asiento, nombre: rankingPuntos[asiento].nombre, pts: rankingPuntos[asiento].pts, me: asiento === String(miAsiento) }))
     .sort((a,b)=> b.pts - a.pts);
-  list.innerHTML = filas.length ? '' : '<p style="color:var(--gray);font-size:13px;">Todavía nadie sumó puntos.</p>';
-  filas.forEach((r,i)=>{
-    const div = document.createElement('div');
-    div.className = 'rank-row' + (r.me ? ' me' : '');
-    div.innerHTML = `<div class="rank-num">${MEDALLAS_RANKING[i] || i+1}</div><div class="rank-avatar">${r.nombre.slice(0,2).toUpperCase()}</div><div class="rank-name">${r.me ? 'Vos' : r.nombre} <span class="rank-asiento">· asiento ${r.asiento}</span></div><div class="rank-pts">${r.pts} pts</div>`;
-    list.appendChild(div);
-  });
+  if(!filas.length){
+    list.innerHTML = gEscenaHTML('noche', gDialogoHTML('🏆 Todavía nadie sumó puntos', 'Jugá y sumá monedas para aparecer acá.'));
+    return;
+  }
+
+  const iniciales = nombre => String(nombre || '?').slice(0, 2).toUpperCase();
+  const miPuesto = filas.findIndex(r => r.me);
+  // Podio: el 1° al centro y más alto, el 2° a su izquierda y el 3° a su derecha.
+  const lugares = [{ pos: 1, clase: 'rk-2' }, { pos: 0, clase: 'rk-1' }, { pos: 2, clase: 'rk-3' }];
+  const podioHTML = lugares.filter(l => filas[l.pos]).map(l => {
+    const r = filas[l.pos];
+    return `<div class="rk-puesto ${l.clase} ${r.me ? 'rk-yo' : ''}">
+      ${l.pos === 0 ? '<div class="rk-corona">👑</div>' : ''}
+      <div class="rk-avatar">${iniciales(r.nombre)}</div>
+      <div class="rk-nombre">${r.me ? 'Vos' : r.nombre}</div>
+      <div class="rk-pts">${r.pts} pts</div>
+      <div class="rk-base"><span>${MEDALLAS_RANKING[l.pos]}</span></div>
+    </div>`;
+  }).join('');
+
+  const restoHTML = filas.slice(3).map((r, i) => `
+    <div class="rk-fila ${r.me ? 'rk-fila-yo' : ''}">
+      <span class="rk-fila-num">${i + 4}</span>
+      <span class="rk-fila-avatar">${iniciales(r.nombre)}</span>
+      <span class="rk-fila-nombre">${r.me ? 'Vos' : r.nombre}<small>asiento ${r.asiento}</small></span>
+      <span class="rk-fila-pts">${r.pts} pts</span>
+    </div>`).join('');
+
+  list.innerHTML = gEscenaHTML('noche', `
+    ${miPuesto >= 0 ? `<div class="g-hud"><span class="g-pill">Tu puesto: ${miPuesto + 1}°</span><span class="g-pill">🪙 ${filas[miPuesto].pts}</span></div>` : ''}
+    <div class="rk-podio">${podioHTML}</div>
+    ${restoHTML ? `<div class="rk-resto">${restoHTML}</div>` : ''}`);
 }
 
 function totalMonedas(){

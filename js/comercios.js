@@ -137,6 +137,7 @@ function comerciosUrlCanje(comercioId){
 
 function comerciosFilaHTML(id, c){
   return `<button class="comercio-fila" onclick="comerciosVerCodigo('${id}')">
+    <span class="comercio-fila-icono">🏷️</span>
     <div class="comercio-fila-txt">
       <h3>${c.nombre}</h3>
       <p>${c.descuento}</p>
@@ -163,18 +164,15 @@ function renderComercios(){
       </div>` : '';
     const confirmadoHTML = comerciosMiCanjeConfirmado ? `
       <div class="comercio-confirmado-banner">✅ El comercio confirmó tu compra. ¡Sumaste ${COMERCIOS_PUNTOS_POR_CANJE} puntos en el ranking!</div>` : '';
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>${c.nombre}</h2>
-        <p>${c.descuento}</p>
-      </div>
+    cont.innerHTML = gEscenaHTML('menta', `
+      ${gDialogoHTML(c.nombre, c.descuento)}
       ${confirmadoHTML}
       <div class="comercio-qr-box">
         <div id="comercio-qr-canvas"></div>
         <p class="comercio-qr-nota">${comerciosMiCanjeConfirmado ? 'Ya quedó confirmado, no hace falta mostrarlo de nuevo.' : `Mostrale esta pantalla al comercio: la escanean con su celular, te confirman el descuento y sumás ${COMERCIOS_PUNTOS_POR_CANJE} puntos.`}</p>
       </div>
       ${flyerHTML}
-      <p class="link-chico" onclick="comerciosVolverALista()">‹ Volver a la lista</p>`;
+      <div class="g-pie"><span onclick="comerciosVolverALista()">‹ Volver a la lista</span></div>`);
     const qrCont = document.getElementById('comercio-qr-canvas');
     if(qrCont && window.QRCode){
       qrCont.innerHTML = '';
@@ -184,12 +182,10 @@ function renderComercios(){
   }
 
   if(!comerciosDestinoViaje){
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>🏪 Comercios adheridos</h2>
-        <p>Aprovechá los descuentos en nuestros comercios adheridos.</p>
-      </div>
-      <p style="color:var(--gray);font-size:13px;">Este viaje todavía no tiene un destino cargado, así que por ahora no hay comercios para mostrar.</p>`;
+    cont.innerHTML = gEscenaHTML('menta', `
+      <div class="cm-portada">🏪</div>
+      ${gDialogoHTML('Comercios adheridos', 'Aprovechá los descuentos en nuestros comercios adheridos.')}
+      <p class="cm-nota">Este viaje todavía no tiene un destino cargado, así que por ahora no hay comercios para mostrar.</p>`);
     return;
   }
 
@@ -198,12 +194,10 @@ function renderComercios(){
     .filter(c => c.activo);
 
   if(!entradas.length){
-    cont.innerHTML = `
-      <div class="hero" style="margin-top:8px;">
-        <h2>🏪 Comercios adheridos</h2>
-        <p>Aprovechá los descuentos en nuestros comercios adheridos.</p>
-      </div>
-      <p style="color:var(--gray);font-size:13px;">Todavía no hay comercios cargados para ${comerciosDestinoViaje}. ¡Volvé a mirar más adelante!</p>`;
+    cont.innerHTML = gEscenaHTML('menta', `
+      <div class="cm-portada">🏪</div>
+      ${gDialogoHTML('Comercios adheridos', 'Aprovechá los descuentos en nuestros comercios adheridos.')}
+      <p class="cm-nota">Todavía no hay comercios cargados para ${comerciosDestinoViaje}. ¡Volvé a mirar más adelante!</p>`);
     return;
   }
 
@@ -225,13 +219,11 @@ function renderComercios(){
     <div class="section-label">${rubro}</div>
     ${porRubro[rubro].map(c => comerciosFilaHTML(c.id, c)).join('')}`).join('');
 
-  cont.innerHTML = `
-    <div class="hero" style="margin-top:8px;">
-      <h2>🏪 Comercios en ${comerciosDestinoViaje}</h2>
-      <p>Aprovechá los descuentos en nuestros comercios adheridos. Tocá uno para ver tu código y mostrárselo cuando compres.</p>
-    </div>
+  cont.innerHTML = gEscenaHTML('menta', `
+    <div class="cm-portada">🏪</div>
+    ${gDialogoHTML(`Comercios en ${comerciosDestinoViaje}`, 'Aprovechá los descuentos en nuestros comercios adheridos. Tocá uno para ver tu código y mostrárselo cuando compres.')}
     ${oficialHTML}
-    ${restoHTML}`;
+    ${restoHTML}`);
 }
 
 // ---- Pantalla de confirmación para el comercio (no pasa por el resto de la
