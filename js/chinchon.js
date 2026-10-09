@@ -94,6 +94,20 @@ function chinchonPuedeCerrar(mano){
   return chinchonMejorParticion(mano).sueltas.length <= 1;
 }
 
+// En el juego real se corta después de levantar una carta: tenés 8, tirás una
+// boca abajo para cortar y las 7 que quedan tienen que estar ligadas (a lo
+// sumo 1 suelta). Antes se revisaba la mano de 8 como si fueran 7, así que
+// nunca se podía cortar.
+function chinchonPuedeCerrarDescartando(mano, indiceDescarte){
+  if(!mano || mano.length !== 8 || indiceDescarte == null || indiceDescarte < 0 || indiceDescarte >= mano.length) return false;
+  return chinchonPuedeCerrar(mano.filter((_, i) => i !== indiceDescarte));
+}
+
+function chinchonExisteCierre(mano){
+  if(!mano || mano.length !== 8) return false;
+  return mano.some((_, i) => chinchonPuedeCerrarDescartando(mano, i));
+}
+
 let chinchonMesas = {};
 let chinchonMesaIdActual = null;
 let chinchonCartaSeleccionada = null;
@@ -273,8 +287,12 @@ function chinchonCerrar(){
   const mesa = chinchonMesaActual();
   if(!mesa || mesa.fase !== 'jugando' || String(mesa.turno) !== String(miAsiento) || !mesa.robado) return;
   const miMano = mesa.mano[String(miAsiento)];
-  if(!chinchonPuedeCerrar(miMano)) return;
-  chinchonCerrarMano(mesa, String(miAsiento), {}, mesa.descarte || []);
+  const indice = chinchonCartaSeleccionada;
+  if(!chinchonPuedeCerrarDescartando(miMano, indice)) return;
+  const cartaDescartada = miMano[indice];
+  const manoFinal = miMano.filter((_, i) => i !== indice);
+  chinchonCartaSeleccionada = null;
+  chinchonCerrarMano(mesa, String(miAsiento), { [String(miAsiento)]: manoFinal }, (mesa.descarte || []).concat([cartaDescartada]));
 }
 
 // Cierra la mano actual (por corte de alguien, o porque se acabó el mazo) y
@@ -400,7 +418,8 @@ function renderChinchonMesa(){
   const soyTurno = String(mesa.turno) === String(miAsiento);
   const miMano = (mesa.mano && mesa.mano[String(miAsiento)]) || [];
   const descarteTope = (mesa.descarte || [])[(mesa.descarte || []).length - 1];
-  const puedoCerrar = soyTurno && mesa.robado && chinchonPuedeCerrar(miMano);
+  const hayCierre = soyTurno && mesa.robado && chinchonExisteCierre(miMano);
+  const puedoCerrar = hayCierre && chinchonPuedeCerrarDescartando(miMano, chinchonCartaSeleccionada);
   const puedeLevantar = soyTurno && !mesa.robado;
   const mazoLen = (mesa.mazo || []).length;
 
@@ -421,8 +440,9 @@ function renderChinchonMesa(){
     accionesHTML = `
       <div class="g-acciones">
         <button class="gbtn" onclick="chinchonDescartar()" ${chinchonCartaSeleccionada == null ? 'disabled' : ''}>Descartarme</button>
-        ${puedoCerrar ? `<button class="gbtn gbtn-rojo gbtn-chico-texto" onclick="chinchonCerrar()">🏁 Cerrar la mano</button>` : ''}
-      </div>`;
+        ${hayCierre ? `<button class="gbtn gbtn-rojo gbtn-chico-texto" onclick="chinchonCerrar()" ${puedoCerrar ? '' : 'disabled'}>🏁 Cortar</button>` : ''}
+      </div>
+      ${hayCierre && !puedoCerrar ? '<p class="g-ayuda">¡Podés cortar! Elegí la carta que tirás para cortar</p>' : ''}`;
   }
 
   const otros = mesa.jugadores.filter(a => a !== String(miAsiento));
@@ -448,7 +468,7 @@ function renderChinchonMesa(){
     </div>
     <div class="m-turno-wrap"><span class="m-turno ${soyTurno ? 'm-turno-mio' : ''}">${turnoTxt}</span></div>
     ${accionesHTML}
-    <div class="m-mano m-mano-solapada">${manoHTML}</div>
+    <div class="m-mano m-mano-solapada" style="--solape:${miMano.length > 7 ? 29 : 20}px">${manoHTML}</div>
     <div class="g-pie"><span onclick="chinchonToggleModoOrden()">${chinchonModoOrden ? '✅ Listo' : '🔀 Ordenar mis cartas'}</span><span onclick="chinchonTerminarMesa('${chinchonMesaIdActual}')">Abandonar mesa</span></div>`);
 }
 

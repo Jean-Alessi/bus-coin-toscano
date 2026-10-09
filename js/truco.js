@@ -288,11 +288,23 @@ function trucoJugarCarta(indice){
   trucoRefMesas().child(trucoMesaIdActual).update(updates);
 }
 
+// Quién puede cantar truco / retruco / vale cuatro. Al principio, cualquiera.
+// Una vez que el rival dijo "quiero", el siguiente nivel solo lo puede cantar
+// ESE equipo (el que quiso): quien cantó y fue aceptado no puede subirse solo
+// su propia apuesta. Así se van alternando: truco (A) -> retruco (B) ->
+// vale cuatro (A).
+function trucoPuedeCantarTruco(mesa, asiento){
+  const nivel = (mesa.truco && mesa.truco.nivel) || 0;
+  if(nivel >= 3) return false;
+  if(nivel === 0) return true;
+  return mesa.truco.puedeSubir === trucoEquipoDe(mesa.jugadores, asiento);
+}
+
 function trucoCantarTruco(){
   const mesa = trucoMesaActual();
   if(!mesa || mesa.fase !== 'jugando' || mesa.pendienteTruco || mesa.pendienteEnvido) return;
   if(String(mesa.turno) !== String(miAsiento)) return;
-  if((mesa.truco.nivel || 0) >= 3) return;
+  if(!trucoPuedeCantarTruco(mesa, miAsiento)) return;
   const nivelPedido = (mesa.truco.nivel || 0) + 1;
   trucoRefMesas().child(trucoMesaIdActual).update({
     pendienteTruco: { nivelPedido, cantadoPor: String(miAsiento), equipoCantador: trucoEquipoDe(mesa.jugadores, miAsiento) },
@@ -315,7 +327,7 @@ function trucoResponderTruco(accion){
   }
   if(accion === 'quiero'){
     trucoRefMesas().child(trucoMesaIdActual).update({
-      truco: { nivel: p.nivelPedido, estado: 'aceptado' }, pendienteTruco: null,
+      truco: { nivel: p.nivelPedido, estado: 'aceptado', puedeSubir: miEquipo }, pendienteTruco: null,
     });
     return;
   }
@@ -561,9 +573,11 @@ function renderTrucoMesa(){
         <button class="gbtn gbtn-chico" onclick="trucoCantarEnvido('real_envido')">Real Envido</button>
         <button class="gbtn gbtn-chico" onclick="trucoCantarEnvido('falta_envido')">Falta Envido</button>
       </div>` : '';
-    const nombreProximoTruco = TRUCO_NOMBRE_NIVEL[(mesa.truco.nivel || 0) + 1];
+    const nombreProximoTruco = trucoPuedeCantarTruco(mesa, miAsiento) ? TRUCO_NOMBRE_NIVEL[(mesa.truco.nivel || 0) + 1] : null;
     const trucoBtn = nombreProximoTruco ? `<div class="g-acciones"><button class="gbtn gbtn-rojo gbtn-ancho" onclick="trucoCantarTruco()">¡${nombreProximoTruco}!</button></div>` : '';
-    accionesHTML = envidoBtns + trucoBtn;
+    const nivelActual = (mesa.truco && mesa.truco.nivel) || 0;
+    const avisoSubir = (!nombreProximoTruco && nivelActual > 0 && nivelActual < 3) ? '<p class="g-ayuda">Ahora solo el rival puede subir el truco</p>' : '';
+    accionesHTML = envidoBtns + trucoBtn + avisoSubir;
   }
 
   const turnoHTML = `<div class="m-turno-wrap"><span class="m-turno ${soyTurno ? 'm-turno-mio' : ''}">${soyTurno ? '¡Tu turno!' : `Turno de ${mesa.nombres[mesa.turno]}`}</span></div>`;

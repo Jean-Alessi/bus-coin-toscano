@@ -31,7 +31,7 @@ function naipeHTML(carta, tam, onclick, seleccionada){
     if(carta.numero >= 10){
       centro = `<div class="tcarta-figura"><span class="tcarta-figura-emoji">${NAIPE_FIGURA[carta.numero]}</span>${escobaIconoPalo(carta.palo, Math.round(22 * f))}</div>`;
     } else {
-      const base = carta.numero === 1 ? 46 : carta.numero <= 3 ? 24 : carta.numero === 7 ? 15 : 19;
+      const base = carta.numero === 1 ? 46 : carta.numero <= 3 ? 24 : carta.numero === 7 ? 15 : carta.numero >= 8 && carta.numero <= 9 ? 12 : 19;
       centro = `<div class="tcarta-pips tcarta-pips-${carta.numero}">${Array.from({ length: carta.numero }).map(() => escobaIconoPalo(carta.palo, Math.round(base * f))).join('')}</div>`;
     }
     cuerpo = `<span class="tcarta-esquina tcarta-esquina-1">${carta.numero}</span>
