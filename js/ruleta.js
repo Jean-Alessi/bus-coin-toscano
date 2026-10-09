@@ -74,6 +74,8 @@ function ruletaGirar(){
     rueda.style.transform = `rotate(${ruletaAngulo}deg)`;
   }
 
+  ruletaTictac(rueda, paso);
+
   setTimeout(() => {
     ruletaGirando = false;
     const estado = ruletaEstadoDeHoy();
@@ -87,6 +89,32 @@ function ruletaGirar(){
     const vistaActiva = document.querySelector('.view.active');
     if(vistaActiva && vistaActiva.id === 'view-home') renderHome();
   }, RULETA_DURACION_MS + 150);
+}
+
+// Tic-tac de la rueda: mientras gira, suena un "clac" cada vez que el puntero
+// pasa de un casillero al siguiente (se lee el ángulo real de la rueda en
+// cada cuadro, así el ritmo se va frenando junto con ella).
+function ruletaTictac(rueda, paso){
+  if(!rueda || !sonidoActivado) return;
+  const leer = () => {
+    const m = getComputedStyle(rueda).transform;
+    if(!m || m === 'none') return 0;
+    const [a, b] = m.match(/matrix(([^)]+))/)[1].split(',').map(Number);
+    return Math.atan2(b, a) * 180 / Math.PI;
+  };
+  let anterior = Math.floor((((-leer() % 360) + 360) % 360) / paso);
+  let ultimoTic = 0;
+  const fin = performance.now() + RULETA_DURACION_MS + 100;
+  const cuadro = ahora => {
+    const actual = Math.floor((((-leer() % 360) + 360) % 360) / paso);
+    if(actual !== anterior && ahora - ultimoTic > 40){
+      reproducirTono('ruleta');
+      ultimoTic = ahora;
+    }
+    anterior = actual;
+    if(ahora < fin) requestAnimationFrame(cuadro);
+  };
+  requestAnimationFrame(cuadro);
 }
 
 function ruletaSVG(angulo){

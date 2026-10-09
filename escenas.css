@@ -827,3 +827,10 @@ button.tcarta{cursor:default;}
 .tcarta-pips-9 svg:nth-child(9){grid-column:1 / 3;}
 .m-mano-solapada .tcarta{margin-left:calc(-1 * var(--solape, 20px));}
 .m-mano-solapada .tcarta:first-child{margin-left:0;}
+
+/* Flecha de volver flotante: solo cuando el juego oculta su título y ocupa toda la escena */
+.btn-back-flotante{display:none;}
+.juego-inmersivo .btn-back-flotante, .truco-en-mesa .btn-back-flotante{
+  display:flex; align-self:flex-start; margin:2px 0 6px 2px;
+  width:34px; height:34px; font-size:19px;
+}

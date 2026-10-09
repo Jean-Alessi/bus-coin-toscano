@@ -482,7 +482,64 @@ function renderJuegos(){
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
 const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor'];
 
+// Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
+// juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
+// trivia el primer paso es volver a la lista de temas.
+function volverDeJuego(){
+  const activa = document.querySelector('.view.active');
+  if(activa && activa.id === 'view-trivia'){ triviaVolver(); return; }
+  showView('juegos');
+}
+
+// Agrega la flecha de volver a todos los juegos que no la traían: dentro del
+// título (tomando su lugar a la izquierda) y una flotante para cuando el
+// título se oculta porque el juego ocupa toda la escena.
+function juegosAgregarBotonesVolver(){
+  TABS_HIJOS_DE_JUEGOS.forEach(nombre => {
+    const vista = document.getElementById('view-' + nombre);
+    if(!vista) return;
+    const cabecera = vista.querySelector('.app-header');
+    if(cabecera && !cabecera.querySelector('.btn-back')){
+      const titulo = cabecera.firstElementChild;
+      const envoltorio = document.createElement('div');
+      envoltorio.style.cssText = 'display:flex; align-items:center; gap:10px;';
+      envoltorio.innerHTML = '<button class="btn-back" aria-label="Volver" onclick="volverDeJuego()">←</button>';
+      cabecera.insertBefore(envoltorio, titulo);
+      envoltorio.appendChild(titulo);
+    } else if(cabecera){
+      cabecera.querySelector('.btn-back').setAttribute('onclick', 'volverDeJuego()');
+    }
+    const flotante = document.createElement('button');
+    flotante.className = 'btn-back btn-back-flotante';
+    flotante.setAttribute('aria-label', 'Volver');
+    flotante.setAttribute('onclick', 'volverDeJuego()');
+    flotante.textContent = '←';
+    vista.insertBefore(flotante, vista.firstChild);
+  });
+}
+
+// El botón "atrás" del celular (o el gesto) sale del juego y vuelve a la
+// lista de juegos, en vez de cerrar la app. Al entrar a un juego se agrega un
+// paso al historial; al salir por la flecha se descarta ese paso.
+let juegoPasoHistorial = false;
+window.addEventListener('popstate', () => {
+  juegoPasoHistorial = false;
+  const activa = document.querySelector('.view.active');
+  if(activa && TABS_HIJOS_DE_JUEGOS.includes(activa.id.replace('view-', ''))){
+    const seQuedaEnTrivia = activa.id === 'view-trivia' && temaActual !== null;
+    volverDeJuego();
+    if(seQuedaEnTrivia){ try { history.pushState({ juego: 'trivia' }, ''); juegoPasoHistorial = true; } catch(e){} }
+  }
+});
+
 function showView(name){
+  const esJuego = TABS_HIJOS_DE_JUEGOS.includes(name);
+  if(esJuego && !juegoPasoHistorial){
+    try { history.pushState({ juego: name }, ''); juegoPasoHistorial = true; } catch(e){}
+  } else if(!esJuego && juegoPasoHistorial){
+    juegoPasoHistorial = false;
+    try { history.back(); } catch(e){}
+  }
   analyticsAlCambiarVista(name);
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
@@ -615,6 +672,7 @@ function mostrarToast(msg, tipo){
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
+  juegosAgregarBotonesVolver();
   // Si se abrió desde el QR de un comercio (?canjear=1&...), es el celular
   // DEL COMERCIO, no el de un pasajero: se muestra solo la confirmación del
   // canje y se corta acá, sin arrancar el resto de la app.

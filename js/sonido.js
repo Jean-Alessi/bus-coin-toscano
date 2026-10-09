@@ -22,6 +22,7 @@ function reproducirTono(tipo){
       tick: { freq: 660, dur: 0.06, onda: 'square' },
       fin: { freq: 220, dur: 0.4, onda: 'triangle' },
       bonus: { freq: 1046, dur: 0.35, onda: 'sine' },
+      ruleta: { freq: 1250, dur: 0.035, onda: 'triangle' },
     }[tipo] || { freq: 440, dur: 0.1, onda: 'sine' };
     osc.type = config.onda;
     osc.frequency.value = config.freq;
