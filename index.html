@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css?v=79">
-<link rel="stylesheet" href="escenas.css?v=2">
+<link rel="stylesheet" href="escenas.css?v=3">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -36,7 +36,7 @@
            muestra solo, si este celular ya organizó antes o tiene sesión de
            agencia (ver organizadorActualizarVisibilidad en app.js), o
            tocando 5 veces el logo de arriba (ver tapLogoOrganizador). -->
-      <div id="bloque-organizador" hidden>
+      <div id="bloque-organizador" class="escena escena-noche organizador-escena" hidden>
         <div class="organizador-grid">
           <button class="btn-organizador" onclick="mostrarGenerarCodigo()"><span class="btn-organizador-icono">➕</span>Nuevo viaje</button>
           <button class="btn-organizador" onclick="mostrarAdminViajes()"><span class="btn-organizador-icono">🔧</span>Viajes</button>

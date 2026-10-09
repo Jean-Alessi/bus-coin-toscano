@@ -762,3 +762,57 @@ button.tcarta{cursor:default;}
 .escena-cielo .home-logo-banner{padding:6px 0;}
 .escena-cielo .home-logo-banner img{height:60px;}
 .escena-cielo .card{padding:12px 14px; margin-bottom:6px;}
+
+/* ====================================================================
+   Panel del organizador (nuevo viaje, viajes, comercios, panel general):
+   mismo lenguaje de juego, pero sobre fondo oscuro para que las tarjetas
+   blancas con datos se lean de un vistazo.
+   ==================================================================== */
+.organizador-escena{margin:16px 0 14px; padding:14px 10px 16px;}
+.organizador-escena .organizador-grid{margin-top:0;}
+.organizador-escena .btn-organizador{border:3px solid #fff; box-shadow:0 4px 0 rgba(0,0,0,.35), 0 8px 12px rgba(0,0,0,.25);}
+.organizador-escena .btn-organizador:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.35);}
+
+/* Botones: los de acción como los 3D de los juegos, los secundarios en blanco */
+.organizador-escena .btn-primary{
+  width:100%; border:none; border-radius:14px; padding:12px 8px; margin-top:8px; font-family:var(--font-juego); font-size:15px; font-weight:800; color:#fff; cursor:pointer;
+  background:linear-gradient(180deg,var(--orange-soft),var(--orange)); text-shadow:0 1px 0 rgba(0,0,0,.28);
+  box-shadow:0 4px 0 var(--orange-sombra), 0 8px 12px rgba(0,0,0,.3); transition:transform .08s, box-shadow .08s;
+}
+.organizador-escena .btn-primary:active:not(:disabled){transform:translateY(3px); box-shadow:0 1px 0 var(--orange-sombra);}
+.organizador-escena .btn-primary:disabled{opacity:.5; filter:grayscale(.5); box-shadow:0 2px 0 rgba(0,0,0,.35); cursor:not-allowed;}
+.organizador-escena .btn-ghost{
+  width:100%; border:none; border-radius:14px; padding:11px 8px; margin-top:8px; font-family:var(--font-juego); font-size:14px; font-weight:800; color:#143A66; cursor:pointer;
+  background:linear-gradient(180deg,#fff,#E3EEFB); box-shadow:0 4px 0 #8FA9CC, 0 6px 8px rgba(0,0,0,.2); transition:transform .08s, box-shadow .08s;
+}
+.organizador-escena .btn-ghost:active{transform:translateY(3px); box-shadow:0 1px 0 #8FA9CC;}
+
+/* Campos de texto: blancos, grandes, con relieve */
+.organizador-escena .bingo-input-numero,
+.organizador-escena textarea{
+  width:100%; text-align:center; font-family:var(--font-juego); font-size:16px; font-weight:700; color:#143A66; background:#fff;
+  border:3px solid #fff; border-radius:14px; padding:11px 12px; margin:6px 0; box-shadow:0 4px 0 #8FA9CC, 0 6px 8px rgba(0,0,0,.2);
+}
+.organizador-escena textarea{text-align:left; font-size:13px; font-weight:600;}
+.organizador-escena .bingo-input-numero::placeholder, .organizador-escena textarea::placeholder{color:#8FA3BF; font-weight:600; font-size:14px;}
+.organizador-escena .bingo-input-numero:focus, .organizador-escena textarea:focus{outline:none; border-color:#FFD84D;}
+.organizador-escena .comercio-admin-card .bingo-input-numero{box-shadow:0 3px 0 #C8D4E8; border-color:#E3EEFB; margin:5px 0;}
+
+/* Listas y tarjetas */
+.organizador-escena .bingo-roster-item{background:#fff; border:3px solid #fff; border-radius:14px; box-shadow:0 3px 0 rgba(0,0,0,.3); padding:9px 12px;}
+.organizador-escena .bingo-roster-item span:first-child{font-weight:800;}
+.organizador-escena .comercio-admin-card{background:#fff; border:3px solid #fff; border-radius:16px; box-shadow:0 4px 0 rgba(0,0,0,.35); padding:12px;}
+.organizador-escena .comercio-admin-card h3{font-size:16px; font-weight:800;}
+.organizador-escena .comercio-admin-checkbox input{accent-color:var(--orange); width:18px; height:18px;}
+.organizador-escena .btn-finalizar-viaje{background:linear-gradient(180deg,var(--orange-soft),var(--orange)); color:#fff; border:none; box-shadow:0 2px 0 var(--orange-sombra); font-weight:800;}
+.organizador-escena .btn-eliminar-pasajero{border-width:2px;}
+
+/* Textos sobre el fondo oscuro */
+.organizador-escena .link-chico{color:rgba(255,255,255,.92); font-weight:700; font-size:12px;}
+.organizador-escena .bingo-pin-error{color:#FFD84D; font-weight:700;}
+.organizador-escena .bingo-pin-box{margin-bottom:10px;}
+.organizador-escena > div > p[style*="color:var(--gray)"], .organizador-escena p[style*="color:var(--gray)"]{color:rgba(255,255,255,.85) !important; font-weight:600;}
+.organizador-escena .comercio-admin-card p[style*="color:var(--gray)"]{color:#5B6B85 !important;}
+.organizador-escena #generar-codigo-content > .bingo-pin-box > p:last-of-type{color:rgba(255,255,255,.88);}
+.organizador-escena .organizador-grid{margin-bottom:14px;}
+.organizador-escena .link-chico:not([onclick]){text-decoration:none; font-weight:600; opacity:.92;}
