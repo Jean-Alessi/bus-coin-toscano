@@ -816,3 +816,8 @@ button.tcarta{cursor:default;}
 .organizador-escena #generar-codigo-content > .bingo-pin-box > p:last-of-type{color:rgba(255,255,255,.88);}
 .organizador-escena .organizador-grid{margin-bottom:14px;}
 .organizador-escena .link-chico:not([onclick]){text-decoration:none; font-weight:600; opacity:.92;}
+.home-viaje-link{
+  display:inline-block; background:#fff; border:2px solid #E3EEFB; border-radius:999px; padding:3px 11px; font-weight:700; color:#143A66; cursor:pointer;
+  text-decoration:none; box-shadow:0 2px 0 #8FA9CC;
+}
+.home-viaje-link{white-space:nowrap; font-size:12px;}

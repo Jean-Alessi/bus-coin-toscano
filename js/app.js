@@ -407,7 +407,18 @@ function renderTarjetas(lista, contenedorId){
 
 function renderHome(){
   document.getElementById('home-saludo').textContent = `${miEmoji} Hola, ${miNombre}`;
-  document.getElementById('home-viaje').textContent = `Viaje ${codigoViaje} · copiar link`;
+  // El link para entrar directo al viaje lo ve solo quien organiza: si lo
+  // tuviera cualquier pasajero, podría reenviarlo a gente que no va en el micro.
+  const elViaje = document.getElementById('home-viaje');
+  if(bingoEsOrganizador() || agenciasEsOrganizador()){
+    elViaje.textContent = `🔗 Viaje ${codigoViaje} · copiar`;
+    elViaje.className = 'sub home-viaje-link';
+    elViaje.onclick = copiarLinkViaje;
+  } else {
+    elViaje.textContent = `Viaje ${codigoViaje}`;
+    elViaje.className = 'sub';
+    elViaje.onclick = null;
+  }
   // Los juegos ya están en la pestaña Juegos y el ranking en su propia
   // pestaña; Inicio se queda solo con el logo (más publicidad) y la
   // ruleta del día, sin repetir lo que ya está a un toque de distancia.
