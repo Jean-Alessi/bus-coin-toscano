@@ -42,6 +42,8 @@ const ICONOS = {
   laberinto: '<path d="M4 4h16v16H4z"/><path d="M4 10h8M12 4v6M12 14h8M8 14v6M16 10v4"/>',
   tanque: '<rect x="4" y="10" width="14" height="8" rx="2"/><path d="M18 13h4"/><circle cx="8" cy="14" r="1.2"/><circle cx="14" cy="14" r="1.2"/><path d="M8 10V7h6v3"/>',
   pinball: '<circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1.6"/><circle cx="15" cy="9" r="1.6"/><path d="M7 17l3-2M17 17l-3-2"/>',
+  bombas: '<circle cx="10" cy="14" r="6"/><path d="M14 9l3-3"/><path d="M17 3v2M20 6h-2M19 4l-1 1"/>',
+  plataformas: '<circle cx="8" cy="6" r="2.2"/><path d="M8 9v5l-3 4M8 14l3 4M5 11h6"/><path d="M13 20h8"/>',
   tienda: '<path d="M4 4h16l1.5 5h-19Z"/><path d="M4.5 9V20h15V9"/><path d="M9.5 20v-6h5v6"/>'
 };
 

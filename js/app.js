@@ -17,6 +17,7 @@ const TARJETAS_SOLO = [
   { icon: "cartas", title: "Memoria", sub: "Encontrá los pares, cada nivel más grande", view: "memoria" },
   { icon: "sudoku", title: "Sudoku", sub: "Sin cronómetro, elegí tu nivel", view: "sudoku" },
   { icon: "sopaletras", title: "Sopa de letras", sub: "Destinos y cosas del viaje, escondidos en la grilla", view: "sopa" },
+  { icon: "naipe", title: "Solitario", sub: "Ordená todas las cartas de poker en sus pilas", view: "solitario" },
 ];
 
 // Juegos de acción (se dibujan en un canvas, ver js/arcade.js).
@@ -30,6 +31,8 @@ const TARJETAS_VIDEO = [
   { icon: "laberinto", title: "Laberinto del Micro", sub: "Juntá todo y escapá de los camiones", view: "laberinto" },
   { icon: "tanque", title: "Defensa del Garage", sub: "Protegé el garage de Busmac", view: "tanque" },
   { icon: "pinball", title: "Pinball", sub: "Paletas, rebotadores y puntos", view: "pinball" },
+  { icon: "bombas", title: "Bombas y Bloques", sub: "Abrite paso y sacá a los enemigos", view: "bombas" },
+  { icon: "plataformas", title: "Aventura del Pasajero", sub: "Corré, saltá y juntá las B", view: "plataformas" },
 ];
 
 const TARJETAS_GRUPO = [
@@ -495,7 +498,7 @@ function renderJuegos(){
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -570,6 +573,7 @@ function showView(name){
   if(name==='cuatrouno'){ iniciarCuatrouno(); }
   if(name==='valija'){ iniciarValija(); }
   if(name==='memoria'){ iniciarMemoria(); }
+  if(name==='solitario'){ iniciarSolitario(); }
   if(typeof ARC_JUEGOS !== 'undefined' && ARC_JUEGOS[name]){ arcIniciarVista(name); }
   if(name==='sudoku'){ iniciarSudoku(); }
   if(name==='patrones'){ iniciarPatrones(); }

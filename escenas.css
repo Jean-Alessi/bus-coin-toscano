@@ -843,3 +843,25 @@ button.tcarta{cursor:default;}
 .arc-overlay .g-acciones{width:100%;}
 .arc-fin-icono{font-size:54px; line-height:1;}
 .arc-escena .g-hud{justify-content:center;}
+
+/* ---- Baraja francesa (poker) y Solitario ---- */
+.fcarta{position:relative; width:var(--cw,44px); height:calc(var(--cw,44px) * 1.42); background:#fff; border-radius:calc(var(--cw,44px) * .12); box-shadow:0 1px 3px rgba(0,0,0,.5); font-family:var(--font-juego, Poppins, sans-serif); font-weight:800; line-height:1; flex-shrink:0; user-select:none; -webkit-user-select:none; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+.fc-rojo{color:#D3202F;} .fc-negro{color:#1A1A1A;}
+.fc-esq{position:absolute; left:calc(var(--cw,44px) * .07); top:calc(var(--cw,44px) * .05); font-size:calc(var(--cw,44px) * .27); white-space:nowrap; line-height:1;}
+.fc-centro{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:calc(var(--cw,44px) * .12); font-size:calc(var(--cw,44px) * .6);}
+.fc-figura{font-size:calc(var(--cw,44px) * .5); line-height:.9;}
+.fc-figura-palo{font-size:calc(var(--cw,44px) * .3); line-height:1;}
+.fc-sel{outline:3px solid #FFD84D; outline-offset:-1px; transform:translateY(-2px); z-index:3;}
+.fc-dorso{background:linear-gradient(135deg,#2A4E9A,#0F2A4D); border:2px solid #fff; box-sizing:border-box;}
+.fc-dorso img{position:absolute; left:50%; top:50%; width:62%; height:62%; transform:translate(-50%,-50%); object-fit:contain; background:rgba(255,255,255,.92); border-radius:50%; padding:2px; box-sizing:border-box;}
+.fc-hueco{background:rgba(0,0,0,.16); border:2px dashed rgba(255,255,255,.5); box-shadow:none; box-sizing:border-box; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.7); font-size:calc(var(--cw,44px) * .45);}
+.sol-palo-hueco{font-size:calc(var(--cw,44px) * .5); color:rgba(255,255,255,.75);} .sol-palo-hueco.fc-rojo{color:#FF9AA2;}
+.sol-escena{padding:14px 8px 12px;}
+.sol-tablero{width:100%; display:flex; flex-direction:column; gap:10px;}
+.sol-fila-alta, .sol-fila-baja{display:grid; grid-template-columns:repeat(7, 1fr); gap:var(--gap,4px); align-items:start;}
+.sol-celda{display:flex; justify-content:center;}
+.sol-col{position:relative;}
+.sol-pos{position:absolute; left:50%; transform:translateX(-50%);}
+.sol-acciones{display:flex; gap:8px; margin-top:12px;}
+.sol-acciones .gbtn{flex:1; min-width:0; padding-left:6px; padding-right:6px;}
+.sol-fin{margin-top:10px;}
