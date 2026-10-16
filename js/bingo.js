@@ -240,8 +240,8 @@ function bingoTocarNumero(indice){
   // pierde si justo se cruza con un "cantar número" del organizador.
   if(marcados.length === BINGO_CANTIDAD_CARTON && !bingo.ganadorCartonLleno){
     bingoRefEstado().update({ ganadorCartonLleno: String(miAsiento) });
-    ganarMonedas(100);
-    mostrarToast('¡BINGO! +100 monedas', 'gain');
+    regalarMonedas(100); // azar: va a la billetera, NO al ranking de premios
+    mostrarToast('¡BINGO! +100 monedas para tu personaje', 'gain');
   }
 }
 

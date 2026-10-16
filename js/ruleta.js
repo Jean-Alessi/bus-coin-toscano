@@ -42,7 +42,7 @@ function ruletaAcreditarPendiente(){
   if(!estado || estado.acreditado || ruletaGirando) return;
   estado.acreditado = true;
   ruletaGuardarEstado(estado);
-  ganarMonedas(estado.premio);
+  regalarMonedas(estado.premio); // azar: va a la billetera, NO al ranking de premios
   mostrarToast(`¡Ganaste ${estado.premio} monedas en la ruleta!`, 'gain');
 }
 
@@ -82,7 +82,7 @@ function ruletaGirar(){
     if(estado && !estado.acreditado){
       estado.acreditado = true;
       ruletaGuardarEstado(estado);
-      ganarMonedas(estado.premio);
+      regalarMonedas(estado.premio); // azar: va a la billetera, NO al ranking de premios
       reproducirTono(estado.premio >= 25 ? 'bonus' : 'correcto');
       mostrarToast(`¡Ganaste ${estado.premio} monedas en la ruleta!`, 'gain');
     }
@@ -160,7 +160,7 @@ function ruletaHTML(){
   if(yaGiro) ruletaAngulo = estado.angulo;
   const mensaje = yaGiro
     ? (ruletaGirando ? '¡Ahí va...!' : `Hoy ganaste ${estado.premio} monedas. Volvé mañana por otro giro.`)
-    : 'Un giro por día. ¡Probá tu suerte!';
+    : 'Un giro por día. Las monedas son para vestir a tu personaje.';
   return `
     <div class="escena escena-neon ruleta-card">
       <div class="ruleta-titulo">🎡 Ruleta del día</div>
