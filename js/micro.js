@@ -8,7 +8,7 @@
 // capacidad, y la presencia de la plaza (plaza/{sala}/{asiento}).
 
 const MIC = { abierto: false, piso: 'abajo', pas: {}, pres: {}, cap: 0, sel: null, oyentes: [], avisado: false };
-const MIC_SALIDA_Y = 372;             // donde aparece quien baja del micro (frente a la puerta)
+const MIC_SALIDA_Y = 1036;             // donde aparece quien baja del micro (frente a la puerta)
 const MIC_ABAJO = 12;                // asientos del piso de abajo (los últimos números)
 const MIC_ASIENTOS = 60;             // si el viaje no dice cuántos son: 1 al 48 arriba + 49 al 60 abajo
 const MIC_MAX = 100;                 // tope de asientos dibujados
@@ -167,7 +167,7 @@ function microVolver(auto){
       plz.ref.child(String(miAsiento)).remove();
     } catch(e){}
   }
-  plz.ref = null; plz.listener = null; plz.conectado = false; plz.otros = {}; plz.obj = null; plz.buscado = null;
+  plz.ref = null; plz.listener = null; plz.conectado = false; plz.otros = {}; plz.obj = null; plz.buscado = null; plz.pose = null; plz.posGuardada = null;
   if(typeof feriaAlSalir === 'function') feriaAlSalir();
   if(typeof plazaActualizarCantidad === 'function') plazaActualizarCantidad();
   if(typeof plazaActualizarSala === 'function') plazaActualizarSala();
@@ -181,7 +181,7 @@ function microBajar(){
   if(typeof plz === 'undefined' || !plz.activo) return;
   plz.enMicro = false;
   plz.ultimaActividad = performance.now(); MIC.avisado = false;
-  plz.yo.x = 320 + Math.round((Math.random() - 0.5) * 120); plz.yo.y = MIC_SALIDA_Y;
+  plz.yo.x = 320 + Math.round((Math.random() - 0.5) * 16); plz.yo.y = MIC_SALIDA_Y;
   MIC.abierto = false; microSoltar();
   const cont = document.getElementById('plaza-micro');
   if(cont) cont.innerHTML = '';
@@ -215,7 +215,7 @@ async function microBuscar(a){
 
 function microControlarInactividad(ahora){
   if(!plz.conectado || plz.enMicro) return;
-  if(!plz.ultimaActividad || plz.caminando || plz.obj || plz.menuAbierto || (typeof feria !== 'undefined' && (feria.dentro || feria.panel))) plz.ultimaActividad = ahora;
+  if(!plz.ultimaActividad || plz.caminando || plz.obj || plz.pose || plz.menuAbierto || (typeof feria !== 'undefined' && (feria.dentro || feria.panel))) plz.ultimaActividad = ahora;
   const quieto = ahora - plz.ultimaActividad;
   if(quieto > MIC_INACTIVO_MS){ microVolver(true); return; }
   if(quieto > MIC_AVISO_MS && !MIC.avisado){ MIC.avisado = true; micToast('Si no hacés nada, en 30 segundos volvés al micro 🚌'); }
