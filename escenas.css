@@ -1148,3 +1148,8 @@ button.tcarta{cursor:default;}
 .fer-pregunta{margin:6px 0;} .fer-estrellas button{background:none; border:none; font-size:28px; color:#ccd; cursor:pointer; padding:0 2px;} .fer-estrellas button.on{color:#E6A817;}
 .fer-cartelera{text-align:left; margin:8px 0;} .fer-cart-fila{display:flex; gap:10px; padding:6px 8px; background:#EEF4FF; border-radius:10px; margin-bottom:4px; font-size:13px;} .fer-cart-fila b{min-width:46px; color:#0F2A4D;}
 .fer-foto{width:100%; border-radius:14px; background:#cde;}
+
+/* ---- Volver a la plaza (desde boutique, ranking, comercios, premios, escenario, etc.) ---- */
+.btn-volver-plaza{display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:84px; z-index:60; border:none; border-radius:24px; padding:11px 22px; background:var(--orange,#E6A817); color:#fff; font-weight:800; font-size:15px; font-family:inherit; cursor:pointer; box-shadow:0 3px 0 var(--orange-sombra,#B8830A), 0 6px 16px rgba(15,42,77,.3);}
+.btn-volver-plaza.visible{display:block;}
+.btn-volver-plaza:active{transform:translateX(-50%) translateY(2px);}

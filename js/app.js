@@ -585,8 +585,18 @@ const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
 // trivia el primer paso es volver a la lista de temas.
+// Si se entró desde un edificio de la plaza (boutique, ranking, escenario...), todo "volver" regresa a la plaza.
+let plazaOrigen = null;
+function volverALaPlaza(){ plazaOrigen = null; showView('plaza'); }
+function plazaActualizarBotonVolver(vista){
+  let b = document.getElementById('btn-volver-plaza');
+  if(!b){ b = document.createElement('button'); b.id = 'btn-volver-plaza'; b.className = 'btn-volver-plaza'; b.textContent = '🏘️ Volver a la plaza'; b.onclick = volverALaPlaza; document.body.appendChild(b); }
+  b.classList.toggle('visible', !!plazaOrigen && vista === plazaOrigen && vista !== 'plaza');
+}
+
 function volverDeJuego(){
   const activa = document.querySelector('.view.active');
+  if(plazaOrigen && activa && activa.id === 'view-' + plazaOrigen){ volverALaPlaza(); return; }
   if(activa && activa.id === 'view-trivia'){ triviaVolver(); return; }
   if(activa && activa.id === 'view-plaza'){ showView('home'); return; }
   showView('juegos');
@@ -635,6 +645,8 @@ window.addEventListener('popstate', () => {
 
 function showView(name){
   const activaAntes = document.querySelector('.view.active');
+  if(activaAntes && activaAntes.id === 'view-plaza' && name !== 'plaza' && name !== 'home') plazaOrigen = name;
+  else if(name === 'plaza' || name === 'home') plazaOrigen = null;
   if(activaAntes && activaAntes.id === 'view-plaza' && name !== 'plaza' && typeof plazaAlSalir === 'function') plazaAlSalir();
   const esJuego = TABS_HIJOS_DE_JUEGOS.includes(name);
   if(esJuego && !juegoPasoHistorial){
@@ -646,6 +658,7 @@ function showView(name){
   analyticsAlCambiarVista(name);
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
+  plazaActualizarBotonVolver(name);
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   const tabName = (name === 'avatar' || name === 'plaza') ? 'home' : (TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : name);
   const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
