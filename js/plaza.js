@@ -25,8 +25,64 @@ const plazaNombre = () => 'Plaza ' + marcaCorta();
 
 let plz = {
   activo: false, sala: 1, yo: { x: 320, y: 440, dir: 1 }, obj: null, otros: {}, cam: { x: 0, y: 0 }, t: 0, ultimoEnvio: 0, ultimoLatido: 0,
-  offset: 0, listener: null, ref: null, raf: 0, ultimo: 0, burbuja: null, menuAbierto: false, puerta: null, canvas: null, ctx: null, conectado: false,
+  bots: [], offset: 0, listener: null, ref: null, raf: 0, ultimo: 0, burbuja: null, menuAbierto: false, puerta: null, canvas: null, ctx: null, conectado: false,
 };
+
+// Viajes de demostración (código que empieza con DEMO): además de las personas de
+// verdad, la plaza suma pasajeros ficticios que caminan y hablan, para ver cómo se ve
+// con gente. Viven solo en este celular, no se escriben en ninguna base de datos.
+const plazaEsDemo = () => /^DEMO/i.test((typeof codigoViaje !== 'undefined' && codigoViaje) || '');
+const PLZ_BOTS = [
+  { n: 'Sofi', a: { remera: 'hawaiana', peloEstilo: 'largo', peloColor: 3, caraAcc: 'sol', cara: 'contento', fondo: 'atardecer' } },
+  { n: 'Lucho', a: { remera: 'busmac', gorra: 'visera', peloEstilo: 'corto', peloColor: 0, piel: 2, manoAcc: 'mate' } },
+  { n: 'Cami', a: { remera: 'egresado', gorra: 'birrete', peloEstilo: 'rulos', peloColor: 1, piel: 4, cara: 'guino' } },
+  { n: 'Tomi', a: { remera: 'rayas', peloEstilo: 'flequillo', peloColor: 2, caraAcc: 'anteojos', manoAcc: 'valija' } },
+  { n: 'Vale', a: { remera: 'estrellas', gorra: 'lana', peloEstilo: 'colita', peloColor: 4, piel: 0, cara: 'sorpresa' } },
+  { n: 'Nico', a: { remera: 'chofer', peloEstilo: 'rapado', peloColor: 0, piel: 5, caraAcc: 'bigote' } },
+  { n: 'Agus', a: { remera: 'celeste', gorra: 'paja', peloEstilo: 'corto', peloColor: 3, manoAcc: 'mochila', cara: 'contento' } },
+  { n: 'Mica', a: { remera: 'dorada', gorra: 'corona', peloEstilo: 'largo', peloColor: 5, piel: 1, caraAcc: 'sol' } },
+];
+
+function plazaPuntoLibre(){
+  for(let i = 0; i < 40; i++){
+    const x = 50 + Math.random() * 540, y = 190 + Math.random() * 350;
+    if(!plazaChoca(x, y)) return { x, y };
+  }
+  return { x: 320, y: 450 };
+}
+
+function plazaCrearBots(){
+  return PLZ_BOTS.map(b => {
+    const ini = plazaPuntoLibre(), obj = plazaPuntoLibre();
+    return { n: b.n, a: b.a, x: ini.x, y: ini.y, tx: obj.x, ty: obj.y, dir: 1, espera: Math.random() * 3, caminando: false, m: null, hasta: 0 };
+  });
+}
+
+function plazaMoverBots(dt){
+  plz.bots.forEach(b => {
+    if(b.espera > 0){ b.espera -= dt; b.caminando = false; return; }
+    const dx = b.tx - b.x, dy = b.ty - b.y, d = Math.hypot(dx, dy);
+    if(d < 4){
+      b.espera = 1 + Math.random() * 4; b.caminando = false;
+      const o = plazaPuntoLibre(); b.tx = o.x; b.ty = o.y;
+      if(Math.random() < 0.4){ b.m = Math.floor(Math.random() * PLZ_FRASES.length); b.hasta = performance.now() + 4200; }
+      return;
+    }
+    const vx = dx / d, vy = dy / d;
+    const px = b.x + vx * 70 * dt, py = b.y + vy * 70 * dt;
+    let movio = false;
+    if(!plazaChoca(px, b.y)){ b.x = px; movio = true; }
+    if(!plazaChoca(b.x, py)){ b.y = py; movio = true; }
+    if(!movio){ const o = plazaPuntoLibre(); b.tx = o.x; b.ty = o.y; b.espera = 0.3; }
+    if(vx) b.dir = vx > 0 ? 1 : -1;
+    b.caminando = true;
+  });
+}
+
+function plazaActualizarCantidad(){
+  const el = document.getElementById('plaza-cantidad');
+  if(el) el.textContent = (Object.keys(plz.otros).length + plz.bots.length + 1) + ' en la plaza' + (plazaEsDemo() ? ' (demo)' : '');
+}
 
 function plazaAhora(){ return Date.now() + (plz.offset || 0); }
 function plazaRefSala(){ return db.ref(`salas/${codigoViaje}/plaza/${plz.sala}`); }
@@ -47,7 +103,9 @@ function iniciarPlaza(){
   plz.otros = {}; plz.obj = null; plz.puerta = null; plz.menuAbierto = false; plz.burbuja = null;
   plz.yo = { x: 320, y: 450 + Math.floor(Math.random() * 40), dir: 1 };
   plz.t = 0; plz.conectado = false;
+  plz.bots = plazaEsDemo() ? plazaCrearBots() : [];
   plazaRender();
+  plazaActualizarCantidad();
   const online = typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre;
   if(online) plazaConectar();
   plz.ultimo = 0;
@@ -122,8 +180,7 @@ function plazaRecibir(datos){
     };
   });
   plz.otros = nuevos;
-  const el = document.getElementById('plaza-cantidad');
-  if(el) el.textContent = (Object.keys(nuevos).length + 1) + ' en la plaza';
+  plazaActualizarCantidad();
 }
 
 function plazaDecir(i){
@@ -282,6 +339,7 @@ function plazaPaso(dt){
     o.x += (o.tx - o.x) * k; o.y += (o.ty - o.y) * k;
     if(Math.abs(o.x - antes) > 0.05) o.dir = o.x > antes ? 1 : -1;
   });
+  plazaMoverBots(dt);
   // Cámara
   plz.cam.x = Math.max(0, Math.min(PLZ.W - PLZ.VW, plz.yo.x - PLZ.VW / 2));
   plz.cam.y = Math.max(0, Math.min(PLZ.H - PLZ.VH, plz.yo.y - PLZ.VH / 2 - 20));
@@ -379,11 +437,15 @@ function plazaDibujar(ctx){
 
   const ahoraMs = performance.now(), ahoraServidor = plazaAhora();
   const personajes = Object.keys(plz.otros).map(a => ({ y: plz.otros[a].y, o: plz.otros[a] }));
+  plz.bots.forEach(b => personajes.push({ y: b.y, bot: b }));
   personajes.push({ y: plz.yo.y, yo: true });
   personajes.sort((a, b) => a.y - b.y).forEach(p => {
     if(p.yo){
       const burbuja = plz.burbuja && ahoraMs < plz.burbuja.hasta ? plz.burbuja.texto : null;
       plazaDibujarPersonaje(ctx, plz.yo.x, plz.yo.y, plazaCompacto(), 'Vos', plz.yo.dir, plz.caminando, burbuja);
+    } else if(p.bot){
+      const b = p.bot;
+      plazaDibujarPersonaje(ctx, b.x, b.y, b.a, b.n, b.dir, b.caminando, b.m != null && ahoraMs < b.hasta ? PLZ_FRASES[b.m] : null);
     } else {
       const o = p.o;
       const dice = o.m != null && ahoraServidor - o.mt < 4500 ? PLZ_FRASES[o.m] : null;
