@@ -1153,3 +1153,8 @@ button.tcarta{cursor:default;}
 .btn-volver-plaza{display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:84px; z-index:60; border:none; border-radius:24px; padding:11px 22px; background:var(--orange,#E6A817); color:#fff; font-weight:800; font-size:15px; font-family:inherit; cursor:pointer; box-shadow:0 3px 0 var(--orange-sombra,#B8830A), 0 6px 16px rgba(15,42,77,.3);}
 .btn-volver-plaza.visible{display:block;}
 .btn-volver-plaza:active{transform:translateX(-50%) translateY(2px);}
+
+/* ---- Plaza compacta ---- */
+.plz-accion{min-height:48px; margin:4px 0 2px;}
+.plz-botones{gap:5px; margin-top:2px;}
+.plz-botones .gbtn{min-height:36px; height:36px; padding:0 4px; font-size:12.5px;}

@@ -8,34 +8,34 @@
 // Cada celular escribe su posición en Firebase (salas/{viaje}/plaza/{sala}/
 // {asiento}) unas 3 veces por segundo mientras camina, y la borra al salir.
 
-const PLZ = { W: 640, H: 1040, VW: 300, VH: 440, SALA_MAX: 12, VEL: 96, VIVO_MS: 25000 };
+const PLZ = { W: 640, H: 1040, VW: 340, VH: 450, SALA_MAX: 12, VEL: 96, VIVO_MS: 25000 };
 const PLZ_FRASES = ['¡Hola! 👋', '¿Jugamos?', '¡Buen viaje! 🚌', '¡Vamos!', 'Buena jugada 👏', '😂', '¡Qué calor!', 'Gracias 🙌'];
 
 // Edificios: puertas a otras pantallas. 'lado' dice hacia dónde mira la puerta.
-const PLZ_COL = [20, 178, 336, 494]; // 4 columnas de 140 de ancho
+const PLZ_COL = [16, 180, 344, 508]; // 4 columnas de 116 de ancho con pasillos de 48
 const PLZ_EDIFICIOS = [
   // Arriba: edificios con puerta hacia abajo.
-  { id: 'arcade', nombre: 'Arcade', sub: 'Video juegos', emoji: '🎮', x: PLZ_COL[0], y: 24, w: 140, h: 120, color: '#E5586E', lado: 'abajo', ir: () => { if(typeof juegosAbiertos !== 'undefined') juegosAbiertos.video = true; showView('juegos'); } },
-  { id: 'cartas', nombre: 'Salón de cartas', sub: 'Truco, Chinchón y más', emoji: '🃏', x: PLZ_COL[1], y: 24, w: 140, h: 120, color: '#3B9B5A', lado: 'abajo', ir: () => { if(typeof juegosAbiertos !== 'undefined') juegosAbiertos.grupoCartas = true; showView('juegos'); } },
-  { id: 'boutique', nombre: 'Boutique', sub: 'Vestí a tu personaje', emoji: '👕', x: PLZ_COL[2], y: 24, w: 140, h: 120, color: '#7E57FF', lado: 'abajo', ir: () => showView('avatar') },
-  { id: 'escenario', nombre: 'Escenario', sub: 'Trivia y bingo en vivo', emoji: '🎤', x: PLZ_COL[3], y: 24, w: 140, h: 120, color: '#D62839', lado: 'abajo', ir: () => feriaEscenario() },
+  { id: 'arcade', nombre: 'Arcade', sub: 'Video juegos', emoji: '🎮', x: PLZ_COL[0], y: 24, w: 116, h: 120, color: '#E5586E', lado: 'abajo', ir: () => { if(typeof juegosAbiertos !== 'undefined') juegosAbiertos.video = true; showView('juegos'); } },
+  { id: 'cartas', nombre: 'Salón de cartas', sub: 'Truco, Chinchón y más', emoji: '🃏', x: PLZ_COL[1], y: 24, w: 116, h: 120, color: '#3B9B5A', lado: 'abajo', ir: () => { if(typeof juegosAbiertos !== 'undefined') juegosAbiertos.grupoCartas = true; showView('juegos'); } },
+  { id: 'boutique', nombre: 'Boutique', sub: 'Vestí a tu personaje', emoji: '👕', x: PLZ_COL[2], y: 24, w: 116, h: 120, color: '#7E57FF', lado: 'abajo', ir: () => showView('avatar') },
+  { id: 'escenario', nombre: 'Escenario', sub: 'Trivia y bingo en vivo', emoji: '🎤', x: PLZ_COL[3], y: 24, w: 116, h: 120, color: '#D62839', lado: 'abajo', ir: () => feriaEscenario() },
   // El micro de dos pisos: de acá bajan todos a la plaza (ver micro.js).
   { id: 'micro', micro: true, nombre: 'Micro', sub: 'Mirá quién sigue arriba y buscá a alguien', emoji: '🚌', x: 170, y: 210, w: 300, h: 100, color: '#0F2A4D', lado: 'abajo', ir: () => microAbrir() },
   // Feria, primera fila: puestos donde se pasa una vez y se hace fila (ver feria.js).
-  { id: 'kiosco', puesto: true, nombre: 'Kiosco', sub: 'Pedí una golosina de cortesía', emoji: '🍬', x: PLZ_COL[0], y: 520, w: 140, h: 100, color: '#F28482', lado: 'abajo', ir: () => feriaIntentar('kiosco') },
-  { id: 'agencia', puesto: true, nombre: 'Agencia', sub: 'Promos y descuentos', emoji: '✈️', x: PLZ_COL[1], y: 520, w: 140, h: 100, color: '#3A86FF', lado: 'abajo', ir: () => feriaIntentar('agencia') },
-  { id: 'sorteo', puesto: true, nombre: 'Sorteo', sub: 'Retirá tu número', emoji: '🎟️', x: PLZ_COL[2], y: 520, w: 140, h: 100, color: '#9D4EDD', lado: 'abajo', ir: () => feriaIntentar('sorteo') },
-  { id: 'radio', puesto: true, nombre: 'Radio', sub: 'Votá la música del micro', emoji: '📻', x: PLZ_COL[3], y: 520, w: 140, h: 100, color: '#FF9F1C', lado: 'abajo', ir: () => feriaIntentar('radio') },
+  { id: 'kiosco', puesto: true, nombre: 'Kiosco', sub: 'Pedí una golosina de cortesía', emoji: '🍬', x: PLZ_COL[0], y: 520, w: 116, h: 100, color: '#F28482', lado: 'abajo', ir: () => feriaIntentar('kiosco') },
+  { id: 'agencia', puesto: true, nombre: 'Agencia', sub: 'Promos y descuentos', emoji: '✈️', x: PLZ_COL[1], y: 520, w: 116, h: 100, color: '#3A86FF', lado: 'abajo', ir: () => feriaIntentar('agencia') },
+  { id: 'sorteo', puesto: true, nombre: 'Sorteo', sub: 'Retirá tu número', emoji: '🎟️', x: PLZ_COL[2], y: 520, w: 116, h: 100, color: '#9D4EDD', lado: 'abajo', ir: () => feriaIntentar('sorteo') },
+  { id: 'radio', puesto: true, nombre: 'Radio', sub: 'Votá la música del micro', emoji: '📻', x: PLZ_COL[3], y: 520, w: 116, h: 100, color: '#FF9F1C', lado: 'abajo', ir: () => feriaIntentar('radio') },
   // Feria, segunda fila.
-  { id: 'coordinador', puesto: true, nombre: 'Coordinador', sub: 'Pedí algo para el viaje', emoji: '🧑‍✈️', x: PLZ_COL[0], y: 700, w: 140, h: 100, color: '#2A9D8F', lado: 'abajo', ir: () => feriaIntentar('coordinador') },
-  { id: 'farmacia', puesto: true, nombre: 'Farmacia', sub: '¿Te sentís mal? Avisá acá', emoji: '💊', x: PLZ_COL[1], y: 700, w: 140, h: 100, color: '#D62839', lado: 'abajo', ir: () => feriaIntentar('farmacia') },
-  { id: 'buzon', puesto: true, nombre: 'Buzón', sub: 'Contanos cómo viajás', emoji: '📮', x: PLZ_COL[2], y: 700, w: 140, h: 100, color: '#E76F51', lado: 'abajo', ir: () => feriaIntentar('buzon') },
-  { id: 'cartelera', puesto: true, nombre: 'Cartelera', sub: 'Horarios y actividades', emoji: '📋', x: PLZ_COL[3], y: 700, w: 140, h: 100, color: '#577590', lado: 'abajo', ir: () => feriaIntentar('cartelera') },
+  { id: 'coordinador', puesto: true, nombre: 'Coordinador', sub: 'Pedí algo para el viaje', emoji: '🧑‍✈️', x: PLZ_COL[0], y: 700, w: 116, h: 100, color: '#2A9D8F', lado: 'abajo', ir: () => feriaIntentar('coordinador') },
+  { id: 'farmacia', puesto: true, nombre: 'Farmacia', sub: '¿Te sentís mal? Avisá acá', emoji: '💊', x: PLZ_COL[1], y: 700, w: 116, h: 100, color: '#D62839', lado: 'abajo', ir: () => feriaIntentar('farmacia') },
+  { id: 'buzon', puesto: true, nombre: 'Buzón', sub: 'Contanos cómo viajás', emoji: '📮', x: PLZ_COL[2], y: 700, w: 116, h: 100, color: '#E76F51', lado: 'abajo', ir: () => feriaIntentar('buzon') },
+  { id: 'cartelera', puesto: true, nombre: 'Cartelera', sub: 'Horarios y actividades', emoji: '📋', x: PLZ_COL[3], y: 700, w: 116, h: 100, color: '#577590', lado: 'abajo', ir: () => feriaIntentar('cartelera') },
   // Abajo: edificios con puerta hacia arriba.
-  { id: 'ranking', nombre: 'Ranking', sub: 'Mirá cómo vas', emoji: '🏆', x: PLZ_COL[0], y: 900, w: 140, h: 120, color: '#E6A817', lado: 'arriba', ir: () => showView('ranking') },
-  { id: 'comercios', nombre: 'Comercios', sub: 'Descuentos del destino', emoji: '🏪', x: PLZ_COL[1], y: 900, w: 140, h: 120, color: '#2FB5B5', lado: 'arriba', ir: () => showView('comercios') },
-  { id: 'premios', nombre: 'Premios', sub: 'Lo que podés ganar', emoji: '🎁', x: PLZ_COL[2], y: 900, w: 140, h: 120, color: '#FF7A1A', lado: 'arriba', ir: () => showView('tienda') },
-  { id: 'foto', nombre: 'Fotos', sub: 'Foto grupal con marco', emoji: '📸', x: PLZ_COL[3], y: 900, w: 140, h: 120, color: '#4361EE', lado: 'arriba', ir: () => feriaFotoGrupal() },
+  { id: 'ranking', nombre: 'Ranking', sub: 'Mirá cómo vas', emoji: '🏆', x: PLZ_COL[0], y: 900, w: 116, h: 120, color: '#E6A817', lado: 'arriba', ir: () => showView('ranking') },
+  { id: 'comercios', nombre: 'Comercios', sub: 'Descuentos del destino', emoji: '🏪', x: PLZ_COL[1], y: 900, w: 116, h: 120, color: '#2FB5B5', lado: 'arriba', ir: () => showView('comercios') },
+  { id: 'premios', nombre: 'Premios', sub: 'Lo que podés ganar', emoji: '🎁', x: PLZ_COL[2], y: 900, w: 116, h: 120, color: '#FF7A1A', lado: 'arriba', ir: () => showView('tienda') },
+  { id: 'foto', nombre: 'Fotos', sub: 'Foto grupal con marco', emoji: '📸', x: PLZ_COL[3], y: 900, w: 116, h: 120, color: '#4361EE', lado: 'arriba', ir: () => feriaFotoGrupal() },
 ];
 const PLZ_FUENTE = { x: 320, y: 420, r: 44 };
 const plazaNombre = () => 'Plaza ' + marcaCorta();
@@ -295,6 +295,7 @@ function plazaRender(){
   plz.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   plazaEntrada();
   plazaAjustar();
+  setTimeout(plazaAjustar, 250);
   plazaRenderMenu();
   plazaRenderAccion();
 }
@@ -305,7 +306,9 @@ function plazaAjustar(){
   const caja = plz.canvas.parentElement;
   caja.style.width = '100%';
   const top = caja.getBoundingClientRect().top - vista.getBoundingClientRect().top + vista.scrollTop;
-  const libre = vista.clientHeight - top - 150;
+  let resto = 0;
+  for(let el = caja.nextElementSibling; el; el = el.nextElementSibling) if(getComputedStyle(el).position !== 'absolute') resto += el.offsetHeight;
+  const libre = vista.clientHeight - top - Math.max(100, resto + 20);
   const escena = caja.parentElement, est = getComputedStyle(escena);
   const util = escena.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
   const w = Math.max(170, Math.min(util, libre * PLZ.VW / PLZ.VH));
@@ -446,6 +449,11 @@ function plazaDibujarFondo(ctx){
   ctx.fillStyle = 'rgba(255,255,255,.35)';
   ctx.fillRect(PLZ.W / 2 - 34, 150, 68, PLZ.H - 310);
   ctx.fillRect(40, PLZ.H / 2 - 22, PLZ.W - 80, 44);
+  for(let i = 0; i < 3; i++){ // pasillos entre columnas de edificios
+    const gx = PLZ_COL[i] + 116;
+    ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(gx, 150, 48, PLZ.H - 190);
+    ctx.fillStyle = 'rgba(160,130,90,.25)'; for(let y = 160; y < PLZ.H - 50; y += 26) ctx.fillRect(gx + 23, y, 2, 12);
+  }
 }
 
 function plazaDibujarFuente(ctx){
@@ -485,6 +493,7 @@ function plazaDibujarEdificio(ctx, e){
   ctx.fillStyle = e.color; arcRR(ctx, e.x, e.y, e.w, e.h, 12); ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,.22)'; arcRR(ctx, e.x, bandaY, e.w, 26, 12); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.font = '800 14px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  let tam = 14; while(tam > 9 && ctx.measureText(e.nombre).width > e.w - 12){ tam--; ctx.font = '800 ' + tam + 'px Poppins, sans-serif'; }
   ctx.fillText(e.nombre, e.x + e.w / 2, bandaY + 13.5);
   const centroY = abajo ? e.y + e.h / 2 + 8 : e.y + e.h / 2 - 6;
   if(!e.puesto) arcEmoji(ctx, e.emoji, e.x + e.w / 2, centroY, 34);
