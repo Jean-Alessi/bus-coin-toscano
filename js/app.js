@@ -53,6 +53,7 @@ const TARJETAS_GRUPO = [
 // ejemplo, de los viajes de estudiantes. Las fichas del póker no suman
 // monedas ni ranking. ----
 const TARJETA_VIDEOPOKER = { icon: "naipe", title: "Póker de video", sub: "Elegí las cartas y armá la mejor mano", view: "videopoker" };
+const TARJETA_TEXAS = { icon: "trebol", title: "Texas Hold'em", sub: "De 2 a 6: 2 cartas tuyas y 5 en la mesa", view: "texas" };
 const VISTAS_POKER = ['videopoker', 'texas'];
 let pokerHabilitado = false, pokerCodigoEscuchado = '', pokerRefEscuchada = null;
 
@@ -538,7 +539,7 @@ function renderJuegos(){
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -615,6 +616,7 @@ function showView(name){
   if(name==='memoria'){ iniciarMemoria(); }
   if(name==='solitario'){ iniciarSolitario(); }
   if(name==='videopoker'){ iniciarVideoPoker(); }
+  if(name==='texas'){ iniciarTexas(); }
   if(typeof ARC_JUEGOS !== 'undefined' && ARC_JUEGOS[name]){ arcIniciarVista(name); }
   if(name==='sudoku'){ iniciarSudoku(); }
   if(name==='patrones'){ iniciarPatrones(); }

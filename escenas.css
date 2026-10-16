@@ -882,3 +882,38 @@ button.tcarta{cursor:default;}
 .vp-controles .gbtn-ancho{flex:1;}
 .vp-controles .gbtn-chico-texto{width:46px; padding:0; flex:none; font-size:20px;}
 .vp-aviso{text-align:center; color:rgba(255,255,255,.6); font-size:10.5px; margin:10px 6px 0;}
+
+/* ---- Texas Hold'em ---- */
+.tx-escena{padding:12px 8px 10px;}
+.tx-hud{justify-content:center; flex-wrap:nowrap;}
+.tx-hud .g-pill{white-space:nowrap; font-size:12.5px; padding:6px 12px;}
+.tx-rivales{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:8px;}
+.tx-rival{flex:1 1 30%; min-width:84px; max-width:112px; background:rgba(0,0,0,.28); border:2px solid transparent; border-radius:12px; padding:5px 4px; text-align:center; color:#fff; font-size:10.5px; font-weight:700; line-height:1.25;}
+.tx-rival-nombre{font-size:11.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.tx-rival-cartas{display:flex; justify-content:center; margin:3px 0; min-height:22px;}
+.tx-dorsos{display:flex; gap:2px;}
+.tx-rival-cartas .fcarta{margin:0 1px;}
+.tx-rival-estado{font-size:9.5px; color:#FFE9A6; min-height:12px;}
+.tx-turno{border-color:#FFD84D; box-shadow:0 0 10px rgba(255,216,77,.55);}
+.tx-fuera{opacity:.5;}
+.tx-ganador{border-color:#5BE88D; box-shadow:0 0 10px rgba(91,232,141,.6); opacity:1;}
+.tx-ficha{display:inline-flex; align-items:center; gap:3px; font-weight:800;}
+.tx-ficha img{width:14px; height:14px; object-fit:contain; background:#fff; border-radius:50%; padding:1px;}
+.tx-insignia{display:inline-block; background:#FFD84D; color:#3A2A00; border-radius:8px; font-size:8px; font-weight:800; padding:1px 4px; margin-left:2px; vertical-align:1px;}
+.tx-mesa{background:rgba(0,0,0,.22); border-radius:14px; padding:8px 4px 6px; text-align:center; margin-bottom:8px;}
+.tx-comunes{display:flex; justify-content:center; gap:4px;}
+.tx-ciegas{color:rgba(255,255,255,.65); font-size:10px; font-weight:700; margin-top:5px;}
+.tx-yo{display:flex; justify-content:center; align-items:center; gap:14px; padding:7px; border-radius:14px; border:2px solid transparent;}
+.tx-yo-cartas{display:flex; gap:5px;}
+.tx-yo-datos{color:#fff; font-weight:800; font-size:13px; line-height:1.35;}
+.tx-mi-mano{color:#FFD84D; font-size:11.5px;}
+.tx-apostado{color:rgba(255,255,255,.8); font-size:10.5px; font-weight:700;}
+.tx-estado{text-align:center; color:#fff; font-weight:700; font-size:13px; min-height:20px; margin:8px 6px;}
+.tx-estado-turno{color:#FFD84D;}
+.tx-acciones{display:flex; gap:8px; margin-bottom:8px;}
+.tx-acciones .gbtn{flex:1;}
+.tx-subir{display:flex; gap:8px; align-items:stretch;}
+.tx-subir .gbtn-ancho{flex:1;}
+.tx-subir .gbtn-chico-texto{width:46px; padding:0; flex:none; font-size:20px;}
+.tx-rapidas{display:flex; justify-content:center; gap:16px; margin:8px 0 2px; color:#FFE9A6; font-size:12px; font-weight:800; text-decoration:underline; cursor:pointer;}
+.tx-capacidades{display:grid; grid-template-columns:repeat(5, 1fr); gap:6px;}
