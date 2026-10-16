@@ -9,6 +9,8 @@
 
 const MIC = { abierto: false, piso: 'abajo', pas: {}, pres: {}, cap: 0, sel: null, oyentes: [], avisado: false };
 const MIC_SALIDA_Y = 372;             // donde aparece quien baja del micro (frente a la puerta)
+const MIC_ABAJO = 12;                // asientos del piso de abajo (los demás van arriba)
+const MIC_ASIENTOS = 60;             // si el viaje no dice cuántos son: 12 abajo + 48 arriba
 const MIC_MAX = 100;                 // tope de asientos dibujados
 const MIC_INACTIVO_MS = 180000;      // sin hacer nada: vuelve al micro
 const MIC_AVISO_MS = 150000;         // y se le avisa 30 s antes
@@ -22,15 +24,15 @@ const micToast = (m, t) => { if(typeof mostrarToast === 'function') mostrarToast
 function microAsientos(){
   const claves = Object.keys(MIC.pas);
   const nums = claves.filter(a => /^\d+$/.test(a)).map(a => parseInt(a, 10)).filter(n => n > 0 && n <= MIC_MAX);
-  const n = Math.min(MIC_MAX, Math.ceil(Math.max(MIC.cap || 0, 8, ...nums) / 4) * 4);
+  const n = Math.min(MIC_MAX, Math.ceil(Math.max(MIC.cap || MIC_ASIENTOS, MIC_ABAJO, ...nums) / 4) * 4);
   const lista = [];
   for(let i = 1; i <= n; i++) lista.push(String(i));
   claves.filter(a => !lista.includes(a)).sort().forEach(a => lista.push(a)); // números raros, al final
   return lista;
 }
 function microPisos(){
-  const l = microAsientos(), mitad = Math.ceil(l.length / 2);
-  return { abajo: l.slice(0, mitad), arriba: l.slice(mitad) };
+  const l = microAsientos();
+  return { abajo: l.slice(0, MIC_ABAJO), arriba: l.slice(MIC_ABAJO) };
 }
 function microPisoDe(a){ return microPisos().arriba.includes(String(a)) ? 'arriba' : 'abajo'; }
 
