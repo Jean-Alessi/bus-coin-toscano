@@ -307,7 +307,7 @@ function renderAdminViajes(){
       ${typeof adminCursosPanelHTML === 'function' ? adminCursosPanelHTML(c, listaCursos) : ''}
       ${listaAbierta ? `
       <div style="margin:-6px 0 10px;">
-        <textarea id="admin-lista-input-${c}" rows="4" style="width:100%;font-family:monospace;font-size:12.5px;border:1px solid var(--line-color,#ccc);border-radius:10px;padding:10px;margin-bottom:6px;" placeholder="Seleccioná en Excel las columnas de Apellido y Nombre, copialas (Ctrl+C) y pegalas acá (Ctrl+V)">${(datos[c].listaPasajeros || []).map(p => `${p.apellido}\t${p.nombre}`).join('\n')}</textarea>
+        <textarea id="admin-lista-input-${c}" rows="4" style="width:100%;font-family:monospace;font-size:12.5px;border:1px solid var(--line-color,#ccc);border-radius:10px;padding:10px;margin-bottom:6px;" placeholder="Seleccioná en Excel las columnas Apellido, Nombre y (si querés) Curso, copialas (Ctrl+C) y pegalas acá (Ctrl+V). El curso tiene que estar cargado antes en el botón 🎓, con el mismo nombre.">${(datos[c].listaPasajeros || []).map(p => `${p.apellido}\t${p.nombre}${p.curso ? '\t' + p.curso : ''}`).join('\n')}</textarea>
         <button class="btn-primary" style="margin-bottom:4px;" onclick="adminGuardarLista('${c}')">Guardar lista</button>
       </div>` : ''}
       ${canjesAbiertos ? `

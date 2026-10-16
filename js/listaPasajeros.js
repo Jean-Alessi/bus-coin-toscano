@@ -18,14 +18,30 @@ function listaPasajerosParsearTexto(texto){
     .filter(l => l.length > 0)
     .map(linea => {
       const cols = linea.includes('\t') ? linea.split('\t') : linea.split(',');
-      return { apellido: (cols[0] || '').trim(), nombre: (cols[1] || '').trim() };
+      return { apellido: (cols[0] || '').trim(), nombre: (cols[1] || '').trim(), extras: cols.slice(2).map(c => c.trim()) };
     })
     .filter(p => p.apellido || p.nombre);
 }
 
+// Si en la lista hay una columna con el nombre de un curso que ya está cargado en el
+// viaje (botón 🎓), ese curso queda asignado al alumno y no tiene que elegirlo. Solo se
+// guarda si coincide con un curso del viaje: así una columna de DNI nunca se copia.
 function listaPasajerosGuardarEnViaje(codigo, texto){
   const lista = listaPasajerosParsearTexto(texto);
-  return db.ref('salas/' + codigo + '/listaPasajeros').set(lista).then(() => lista.length);
+  return db.ref('salas/' + codigo + '/cursos').once('value').then(snap => {
+    const v = snap.val();
+    const cursos = (Array.isArray(v) ? v : (v ? Object.keys(v).map(k => v[k]) : [])).map(String);
+    const norm = s => String(s).trim().toLowerCase();
+    const porNombre = {};
+    cursos.forEach(c => { porNombre[norm(c)] = c; });
+    const final = lista.map(p => {
+      const o = { apellido: p.apellido, nombre: p.nombre };
+      const curso = (p.extras || []).map(x => porNombre[norm(x)]).find(Boolean);
+      if(curso) o.curso = curso;
+      return o;
+    });
+    return db.ref('salas/' + codigo + '/listaPasajeros').set(final).then(() => final.length);
+  });
 }
 
 // ---- Selector en el onboarding ----
@@ -51,6 +67,7 @@ function listaPasajerosElegir(id){
   const p = listaPasajerosDatos[id];
   if(!p) return;
   listaPasajerosSeleccionado = Object.assign({ id }, p);
+  if(p.curso){ try { localStorage.setItem('mi-curso-' + codigoViaje, p.curso); } catch(e){} }
   const nombreInput = document.getElementById('mi-nombre-input');
   if(nombreInput){
     nombreInput.value = `${p.nombre} ${p.apellido}`.trim();
