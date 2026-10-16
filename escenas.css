@@ -1082,3 +1082,9 @@ button.tcarta{cursor:default;}
 .fer-sub-admin{margin:6px 0;}
 .fer-botones-admin{display:flex; gap:8px; align-items:center;}
 .fer-aviso{font-size:11px; color:#8a5a00; background:#FFF3D6; border-radius:8px; padding:6px 8px; margin-top:8px;}
+
+/* ---- Salas de la plaza ---- */
+.plz-sala-fila{display:flex; align-items:center; justify-content:space-between; gap:8px; background:#EEF4FF; border-radius:12px; padding:8px 10px; margin-bottom:6px; font-weight:800; font-size:13px; color:#0F2A4D; text-align:left;}
+.plz-sala-fila small{color:#5b6673; font-weight:700; margin-left:6px;}
+.plz-sala-fila.actual{background:#FFF3B0;}
+.plz-sala-fila .gbtn{min-height:32px; padding:0 14px;}

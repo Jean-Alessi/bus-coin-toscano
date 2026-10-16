@@ -117,29 +117,85 @@ function iniciarPlaza(){
   plz.raf = requestAnimationFrame(plazaBucle);
 }
 
-async function plazaConectar(){
+// Elige la sala: si ya estoy en una (me reconecté), esa; si el viaje tiene cursos y elegí
+// el mío, la sala de mi curso (con partes si el curso es grande); si no, la primera
+// sala general con lugar. 'forzada' es una sala que el pasajero eligió a mano.
+async function plazaConectar(forzada){
   try {
     db.ref('.info/serverTimeOffset').once('value').then(s => { plz.offset = s.val() || 0; });
-    const snap = await db.ref(`salas/${codigoViaje}/plaza`).once('value');
+    const [snap, snapCursos] = await Promise.all([db.ref(`salas/${codigoViaje}/plaza`).once('value'), db.ref(`salas/${codigoViaje}/cursos`).once('value')]);
     const salas = snap.val() || {};
-    const ahora = plazaAhora();
-    let elegida = 1;
-    for(let i = 1; i <= 30; i++){
-      const s = salas[i] || {};
-      const mia = s[miAsiento];
-      if(mia && ahora - (mia.t || 0) < PLZ.VIVO_MS){ elegida = i; break; }
-      const vivos = Object.keys(s).filter(a => a !== String(miAsiento) && ahora - (s[a].t || 0) < PLZ.VIVO_MS);
-      if(vivos.length < PLZ.SALA_MAX){ elegida = i; break; }
+    const cv = snapCursos.val();
+    plz.cursos = (Array.isArray(cv) ? cv : (cv ? Object.keys(cv).map(k => cv[k]) : [])).map(String);
+    const ahora = plazaAhora(), yo = String(miAsiento);
+    const vivos = k => Object.keys(salas[k] || {}).filter(a => a !== yo && ahora - (((salas[k] || {})[a] || {}).t || 0) < PLZ.VIVO_MS).length;
+    const estoyEn = k => { const m = (salas[k] || {})[yo]; return !!m && ahora - (m.t || 0) < PLZ.VIVO_MS; };
+    let elegida = forzada || Object.keys(salas).find(estoyEn) || null;
+    if(!elegida){
+      const miCurso = typeof cursosMio === 'function' ? cursosMio() : '';
+      const idx = miCurso ? plz.cursos.indexOf(miCurso) : -1;
+      for(let k = 1; idx >= 0 && k <= 20 && !elegida; k++){ const key = 'c' + (idx + 1) + '-' + k; if(vivos(key) < PLZ.SALA_MAX) elegida = key; }
+      for(let i = 1; i <= 30 && !elegida; i++){ const key = String(i); if(vivos(key) < PLZ.SALA_MAX) elegida = key; }
     }
     if(!plz.activo) return;
-    plz.sala = elegida;
+    if(plz.ref){ // viene de otra sala: se despide de ahí
+      try { if(plz.listener) plz.ref.off('value', plz.listener); plz.ref.child(yo).remove(); } catch(e){}
+      plz.otros = {};
+    }
+    plz.sala = String(elegida || '1');
     plz.ref = plazaRefSala();
-    const miRef = plz.ref.child(String(miAsiento));
+    const miRef = plz.ref.child(yo);
     miRef.onDisconnect().remove();
     plz.conectado = true;
     plazaEnviar(true);
     plz.listener = plz.ref.on('value', s => plazaRecibir(s.val() || {}));
+    plazaActualizarSala();
   } catch(e){ plz.conectado = false; }
+}
+
+// "c2-1" = sala 1 del curso número 2; "3" = sala general 3.
+function plazaEtiquetaSala(k){
+  const m = /^c(\d+)-(\d+)$/.exec(String(k));
+  if(m){
+    const nombre = (plz.cursos || [])[Number(m[1]) - 1] || 'Curso';
+    return Number(m[2]) > 1 ? nombre + ' · ' + m[2] : nombre;
+  }
+  return 'Sala ' + k;
+}
+
+function plazaActualizarSala(){
+  const el = document.getElementById('plaza-sala');
+  if(el) el.textContent = plz.conectado ? plazaEtiquetaSala(plz.sala) : plazaNombre();
+}
+
+async function plazaAbrirSalas(){
+  const cont = document.getElementById('plaza-salas');
+  if(!cont) return;
+  if(!plz.conectado){ if(typeof mostrarToast === 'function') mostrarToast('Entrá a un viaje para cambiar de sala'); return; }
+  const snap = await db.ref(`salas/${codigoViaje}/plaza`).once('value');
+  const salas = snap.val() || {};
+  const ahora = plazaAhora(), yo = String(miAsiento);
+  const cuenta = k => Object.keys(salas[k] || {}).filter(a => ahora - (((salas[k] || {})[a] || {}).t || 0) < PLZ.VIVO_MS).length;
+  const claves = new Set(Object.keys(salas).filter(k => cuenta(k) > 0));
+  claves.add(String(plz.sala));
+  const miCurso = typeof cursosMio === 'function' ? cursosMio() : '';
+  const idx = miCurso ? (plz.cursos || []).indexOf(miCurso) : -1;
+  if(idx >= 0) claves.add('c' + (idx + 1) + '-1');
+  for(let i = 1; i <= 30; i++){ if(!claves.has(String(i)) || cuenta(String(i)) < PLZ.SALA_MAX){ claves.add(String(i)); break; } }
+  const orden = k => { const m = /^c(\d+)-(\d+)$/.exec(k); return m ? [0, Number(m[1]), Number(m[2])] : [1, Number(k), 0]; };
+  const lista = Array.from(claves).sort((a, b) => { const x = orden(a), y = orden(b); return x[0] - y[0] || x[1] - y[1] || x[2] - y[2]; });
+  cont.innerHTML = `<div class="plz-modal"><div class="plz-modal-caja"><h3 class="fer-titulo">🚪 Salas de la plaza</h3><p class="fer-sub">Elegí dónde querés estar. Cada sala admite ${PLZ.SALA_MAX} personas.</p>${lista.map(k => {
+    const n = cuenta(k) + (String(k) === String(plz.sala) && !salas[k] ? 1 : 0), actual = String(k) === String(plz.sala), llena = !actual && n >= PLZ.SALA_MAX;
+    return `<div class="plz-sala-fila${actual ? ' actual' : ''}"><span>${plazaEtiquetaSala(k)}<small>${n}/${PLZ.SALA_MAX}</small></span>${actual ? '<b>Estás acá</b>' : `<button class="gbtn gbtn-chico-texto" ${llena ? 'disabled' : ''} onclick="plazaIrASala('${k}')">${llena ? 'Llena' : 'Entrar'}</button>`}</div>`;
+  }).join('')}<div class="fer-botones"><button class="gbtn gbtn-ancho gbtn-no" onclick="plazaCerrarSalas()">Cerrar</button></div></div></div>`;
+}
+
+function plazaCerrarSalas(){ const c = document.getElementById('plaza-salas'); if(c) c.innerHTML = ''; }
+
+async function plazaIrASala(k){
+  plazaCerrarSalas();
+  if(String(k) === String(plz.sala)) return;
+  await plazaConectar(String(k));
 }
 
 function plazaAlSalir(silencioso){
@@ -152,6 +208,7 @@ function plazaAlSalir(silencioso){
     } catch(e){}
   }
   plz.ref = null; plz.listener = null; plz.activo = false; plz.conectado = false;
+  plazaCerrarSalas();
   if(!silencioso) plz.otros = {};
 }
 
@@ -207,12 +264,13 @@ function plazaRender(){
   if(!cont) return;
   document.getElementById('view-plaza').classList.add('juego-inmersivo');
   cont.innerHTML = gEscenaHTML('cielo', `
-    <div class="g-hud"><span class="g-pill" id="plaza-cantidad">1 en la plaza</span><span class="g-pill">${plazaNombre()}</span></div>
+    <div class="g-hud"><span class="g-pill" id="plaza-cantidad">1 en la plaza</span><span class="g-pill" id="plaza-sala">${plazaNombre()}</span></div>
     <div class="plz-caja"><canvas class="plz-canvas"></canvas></div>
     <div id="plaza-modal"></div>
+    <div id="plaza-salas"></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
-    <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir algo</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Mi personaje</button></div>`, 'plz-escena');
+    <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Mi personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button></div>`, 'plz-escena');
   plz.canvas = cont.querySelector('canvas');
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   plz.canvas.width = PLZ.VW * dpr; plz.canvas.height = PLZ.VH * dpr;
