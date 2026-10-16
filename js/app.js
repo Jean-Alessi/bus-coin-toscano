@@ -766,8 +766,30 @@ function mostrarToast(msg, tipo){
   toastTimer = setTimeout(()=> t.classList.remove('show'), 2600);
 }
 
+// Aviso de "sin conexión": en el micro se corta el internet seguido y los juegos en
+// grupo parecen trabados. Se espera unos segundos antes de avisar para no mostrarlo
+// mientras la app recién se está conectando.
+let conexionAntes = null, conexionTimer = null;
+function conexionVigilar(){
+  try {
+    db.ref('.info/connected').on('value', snap => {
+      const conectado = snap.val() === true;
+      const banner = document.getElementById('banner-sin-conexion');
+      clearTimeout(conexionTimer);
+      if(conectado){
+        if(banner) banner.classList.remove('show');
+        if(conexionAntes === false) mostrarToast('Conexión recuperada');
+      } else {
+        conexionTimer = setTimeout(() => { if(banner) banner.classList.add('show'); }, 4000);
+      }
+      conexionAntes = conectado;
+    });
+  } catch(e){}
+}
+
 document.addEventListener('DOMContentLoaded', ()=>{
   juegosAgregarBotonesVolver();
+  conexionVigilar();
   // Si se abrió desde el QR de un comercio (?canjear=1&...), es el celular
   // DEL COMERCIO, no el de un pasajero: se muestra solo la confirmación del
   // canje y se corta acá, sin arrancar el resto de la app.
