@@ -1,15 +1,23 @@
-// Feria de la Plaza: puestos donde cada pasajero puede pasar UNA vez.
-//   🍬 Kiosco: pide una golosina de cortesía; el coordinador se la lleva al asiento.
-//   ✈️ Agencia: ve las promos de viajes y pide un descuento (queda un código y un
-//      aviso para que la agencia lo contacte).
-//   🎟️ Sorteo: retira su número (el organizador lo habilita y hace el sorteo).
-// En cada puesto entra una persona por vez; las demás hacen fila y entran solas
-// cuando les toca. Todo vive en Firebase dentro del viaje:
-//   salas/{viaje}/feria/{puesto}/{adentro, fila, hecho}   estado de cada puesto
-//   salas/{viaje}/feriaConfig                              menú y promos del organizador
-//   salas/{viaje}/pedidos/{asiento}                        pedidos del kiosco
-//   salas/{viaje}/consultas/{asiento}                      pedidos de descuento
-//   salas/{viaje}/sorteo/{activo, premio, proximo, numeros, ganador}
+// Feria de la Plaza: puestos donde cada pasajero pasa a hacer algo.
+//   🍬 Kiosco: golosina de cortesía que el coordinador lleva al asiento (una vez).
+//   ✈️ Agencia: promos de viajes y un código de descuento (una vez).
+//   🎟️ Sorteo: retira su número (una vez; lo habilita y sortea el organizador).
+//   📻 Radio: vota la música del micro (una vez).
+//   🧑‍✈️ Coordinador: pide algo para el viaje (manta, agua, cargar el celular...) o
+//      avisa que cumple años. Un pedido por vez.
+//   💊 Farmacia: avisa que se siente mal (dolor de cabeza, mareo...). Un pedido por
+//      vez y siempre lo atiende el coordinador, que decide qué darle.
+//   📮 Buzón: califica el viaje (una vez).
+//   📋 Cartelera: horarios y actividades (se puede volver las veces que quiera).
+// En los puestos con fila entra una persona por vez; las demás esperan y entran
+// solas cuando les toca. El "Pasaporte" junta un sello por cada puesto visitado.
+//
+// Todo vive en Firebase dentro del viaje (salas/{viaje}/...):
+//   feria/{puesto}/{adentro, fila, hecho, visitas}   estado de cada puesto
+//   feriaConfig                                       menús y textos del organizador
+//   pedidos, servicios, farmacia, consultas, cumples  lo que le llega al coordinador
+//   radio/votos, encuestas, sorteo, pasaporte         votos, calificaciones, sorteo y premios
+// El coordinador ve todo junto en la bandeja de pedidos (pedidos.js).
 
 const FERIA_DEFECTO = {
   kiosco: ['Alfajor', 'Caramelos', 'Bombón', 'Chicle', 'Turrón'],
@@ -18,12 +26,24 @@ const FERIA_DEFECTO = {
     { t: 'Mendoza fin de semana largo', d: 'Bodegas y alta montaña', off: 8 },
     { t: 'Viaje de egresados 2027', d: 'Reservá tu lugar hoy', off: 5 },
   ],
+  radio: ['Cumbia', 'Rock nacional', 'Pop', 'Reggaetón', 'Folklore', 'Cuarteto', 'Clásicos en español', 'Electrónica'],
+  servicios: ['Una manta', 'Agua', 'Cargar el celular', 'Parada para el baño', 'Consulta al coordinador'],
+  farmacia: ['Dolor de cabeza', 'Dolor de panza', 'Mareo o náuseas', 'Alergia', 'Curita o venda', 'Dolor de garganta'],
+  cartelera: ['08:00 | Salida', '12:30 | Parada para almorzar', '21:00 | Bingo en vivo', '22:00 | Trivia en vivo'],
 };
 const FERIA_VIVO_MS = 60000; // si alguien deja de dar señales adentro de un puesto, se libera
 const FERIA_EMOJIS = { alfajor: '🍪', caramelos: '🍬', bombon: '🍫', 'bombón': '🍫', chicle: '🫧', turron: '🥜', 'turrón': '🥜', mate: '🧉', agua: '💧', gaseosa: '🥤', galletitas: '🍪', chocolate: '🍫' };
-const FERIA_NOMBRES = { kiosco: 'Kiosco', agencia: 'Agencia de viajes', sorteo: 'Sorteo' };
+const FERIA_NOMBRES = { kiosco: 'Kiosco', agencia: 'Agencia de viajes', sorteo: 'Sorteo', radio: 'Radio del micro', coordinador: 'Coordinador', farmacia: 'Farmacia', buzon: 'Buzón del viaje', cartelera: 'Cartelera' };
+const FERIA_EMOJI_PUESTO = { kiosco: '🍬', agencia: '✈️', sorteo: '🎟️', radio: '📻', coordinador: '🧑‍✈️', farmacia: '💊', buzon: '📮', cartelera: '📋' };
+const FERIA_COLA = ['kiosco', 'agencia', 'sorteo', 'radio', 'coordinador', 'farmacia', 'buzon']; // puestos con fila
+const FERIA_LIBRES = ['cartelera']; // sin fila: se puede volver
+const FERIA_PREGUNTAS = ['¿Cómo fue el viaje en general?', '¿Cómo te atendió el coordinador?', '¿Volverías a viajar con nosotros?'];
+const FERIA_PREMIO_PASAPORTE = 30; // monedas por completar el pasaporte
 
-const feria = { activa: false, stands: {}, config: null, sorteo: null, pedido: null, oyentes: [], dentro: null, latido: null, panel: null, avisados: {}, tomando: {} };
+const feria = {
+  activa: false, stands: {}, config: null, sorteo: null, radio: null, pedido: null, servicio: null, farm: null, pasaporte: null,
+  cumple: false, cumples: null, oyentes: [], dentro: null, latido: null, panel: null, avisados: {}, tomando: {}, encuesta: [0, 0, 0], cumplesVistos: null,
+};
 
 const feriaEsc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const feriaYo = () => String(miAsiento);
@@ -31,15 +51,16 @@ const feriaEnLinea = () => !!(typeof codigoViaje !== 'undefined' && codigoViaje 
 function feriaRef(ruta){ return db.ref('salas/' + codigoViaje + '/' + ruta); }
 function feriaAhora(){ return typeof plazaAhora === 'function' ? plazaAhora() : Date.now(); }
 function feriaToast(m, tipo){ if(typeof mostrarToast === 'function') mostrarToast(m, tipo); }
+const feriaTS = () => firebase.database.ServerValue.TIMESTAMP;
 
 // ---- Datos ----
 
 function feriaListaDe(v){ return Array.isArray(v) ? v.filter(x => x != null) : (v ? Object.keys(v).map(k => v[k]) : []); }
-
-function feriaKiosco(){
-  const l = feriaListaDe(feria.config && feria.config.kiosco).map(String).filter(Boolean);
-  return l.length ? l : FERIA_DEFECTO.kiosco;
+function feriaLista(clave){
+  const l = feriaListaDe(feria.config && feria.config[clave]).map(String).filter(Boolean);
+  return l.length ? l : FERIA_DEFECTO[clave];
 }
+function feriaKiosco(){ return feriaLista('kiosco'); }
 function feriaPromos(){
   const l = feriaListaDe(feria.config && feria.config.promos).filter(p => p && p.t);
   return l.length ? l : FERIA_DEFECTO.promos;
@@ -51,11 +72,19 @@ function feriaStand(id){
   const adentro = crudo.adentro && (ahora - (crudo.adentro.t || 0) < FERIA_VIVO_MS) ? crudo.adentro : null;
   const fila = Object.keys(crudo.fila || {}).map(a => ({ a, n: crudo.fila[a].n, o: crudo.fila[a].o || 0 })).sort((x, y) => x.o - y.o);
   const hecho = !!(crudo.hecho && crudo.hecho[feriaYo()]);
-  return { adentro, fila, hecho };
+  const visito = !!(crudo.visitas && crudo.visitas[feriaYo()]);
+  return { adentro, fila, hecho, visito };
+}
+
+function feriaPendiente(id){
+  if(id === 'coordinador') return feria.servicio && feria.servicio.estado === 'pendiente' ? feria.servicio : null;
+  if(id === 'farmacia') return feria.farm && feria.farm.estado === 'pendiente' ? feria.farm : null;
+  return null;
 }
 
 function feriaSubtitulo(id){
   if(!feriaEnLinea()) return 'Disponible cuando estés en un viaje';
+  if(FERIA_LIBRES.includes(id)) return 'Pasá cuando quieras';
   const s = feriaStand(id);
   if(s.hecho) return 'Ya pasaste por acá ✅';
   if(feria.dentro === id) return 'Estás adentro';
@@ -68,7 +97,7 @@ function feriaSubtitulo(id){
 
 // Texto corto que se dibuja arriba de cada puesto en la plaza.
 function feriaInsignia(id){
-  if(!feria.activa) return null;
+  if(!feria.activa || FERIA_LIBRES.includes(id)) return null;
   const s = feriaStand(id);
   if(s.fila.length) return '👥 ' + s.fila.length;
   if(s.adentro) return '🔒';
@@ -80,15 +109,35 @@ function feriaInsignia(id){
 function feriaIniciar(){
   feriaAlSalir();
   feria.activa = true;
-  feria.stands = {}; feria.config = null; feria.sorteo = null; feria.pedido = null; feria.panel = null;
+  Object.assign(feria, { stands: {}, config: null, sorteo: null, radio: null, pedido: null, servicio: null, farm: null, pasaporte: null, cumple: false, cumples: null, panel: null, cumplesVistos: null });
   if(!feriaEnLinea()) return;
+  const yo = feriaYo();
   const escuchar = (ruta, f) => { const r = feriaRef(ruta); const cb = r.on('value', s => f(s.val())); feria.oyentes.push({ r, cb }); };
   escuchar('feria', v => { feria.stands = v || {}; feriaAlCambiar(); });
   escuchar('feriaConfig', v => { feria.config = v; feriaRenderPanel(); });
   escuchar('sorteo', v => { feria.sorteo = v; feriaAvisarGanador(); feriaRenderPanel(); });
-  escuchar('pedidos/' + feriaYo(), v => {
+  escuchar('radio', v => { feria.radio = v; feriaRenderPanel(); });
+  escuchar('pasaporte/' + yo, v => { feria.pasaporte = v; feriaRenderPanel(); });
+  escuchar('pedidos/' + yo, v => {
     if(feria.pedido && feria.pedido.estado !== 'entregado' && v && v.estado === 'entregado') feriaToast('¡Ya te llevaron tu ' + v.item + '! 🎉', 'gain');
     feria.pedido = v; feriaRenderPanel();
+  });
+  escuchar('servicios/' + yo, v => {
+    if(feria.servicio && feria.servicio.estado === 'pendiente' && v && v.estado === 'atendido') feriaToast('El coordinador atendió tu pedido: ' + v.tipo, 'gain');
+    feria.servicio = v; feriaRenderPanel();
+  });
+  escuchar('farmacia/' + yo, v => {
+    if(feria.farm && feria.farm.estado === 'pendiente' && v && v.estado === 'atendido') feriaToast('El coordinador atendió tu pedido de farmacia', 'gain');
+    feria.farm = v; feriaRenderPanel();
+  });
+  escuchar('cumples', v => {
+    feria.cumples = v || {};
+    feria.cumple = !!(v && v[yo]);
+    // Aviso a todos cuando alguien nuevo avisa que cumple años (no con lo que ya había).
+    if(feria.cumplesVistos){
+      Object.keys(feria.cumples).forEach(a => { if(!feria.cumplesVistos[a] && a !== yo) feriaToast('🎂 ¡Hoy cumple años ' + (feria.cumples[a].n || 'alguien') + '!'); });
+    }
+    feria.cumplesVistos = Object.keys(feria.cumples).reduce((o, a) => { o[a] = true; return o; }, {});
   });
 }
 
@@ -98,7 +147,7 @@ function feriaAlSalir(){
   if(feriaEnLinea()){
     try {
       if(feria.dentro) feriaRef('feria/' + feria.dentro + '/adentro').remove();
-      Object.keys(FERIA_NOMBRES).forEach(id => { if(feria.stands[id] && feria.stands[id].fila && feria.stands[id].fila[feriaYo()]) feriaRef('feria/' + id + '/fila/' + feriaYo()).remove(); });
+      FERIA_COLA.forEach(id => { if(feria.stands[id] && feria.stands[id].fila && feria.stands[id].fila[feriaYo()]) feriaRef('feria/' + id + '/fila/' + feriaYo()).remove(); });
     } catch(e){}
   }
   clearInterval(feria.latido); feria.latido = null;
@@ -109,7 +158,7 @@ function feriaAlSalir(){
 // Cuando cambia algo en los puestos: refresca los textos y entra solo al que le toca.
 function feriaAlCambiar(){
   if(typeof plazaRenderAccion === 'function') plazaRenderAccion();
-  Object.keys(FERIA_NOMBRES).forEach(id => {
+  FERIA_COLA.forEach(id => {
     const s = feriaStand(id);
     const pos = s.fila.findIndex(f => f.a === feriaYo());
     if(pos === 0 && !s.adentro && feria.dentro !== id && !feria.tomando[id] && !s.hecho){
@@ -123,8 +172,13 @@ function feriaAlCambiar(){
 
 // ---- Entrar, hacer fila, salir ----
 
+function feriaVisita(id){
+  if(feriaEnLinea()) feriaRef('feria/' + id + '/visitas/' + feriaYo()).set(true);
+}
+
 function feriaIntentar(id){
   if(!feriaEnLinea()){ feriaToast('Entrá a un viaje para usar la feria'); return; }
+  if(FERIA_LIBRES.includes(id)){ feriaVisita(id); feria.panel = { id, modo: 'dentro' }; feriaRenderPanel(); return; }
   const s = feriaStand(id);
   if(s.hecho){ feria.panel = { id, modo: 'ya' }; feriaRenderPanel(); return; }
   if(feria.dentro === id){ feria.panel = { id, modo: 'dentro' }; feriaRenderPanel(); return; }
@@ -145,6 +199,8 @@ function feriaTomarLugar(id){
       feria.dentro = id;
       try { ref.onDisconnect().remove(); } catch(e){}
       feriaQuitarDeFila(id);
+      feriaVisita(id);
+      feria.encuesta = [0, 0, 0];
       clearInterval(feria.latido);
       feria.latido = setInterval(() => { if(feria.dentro) feriaRef('feria/' + feria.dentro + '/adentro').update({ t: feriaAhora() }); }, 15000);
       feria.panel = { id, modo: 'dentro' };
@@ -158,7 +214,7 @@ function feriaTomarLugar(id){
 
 function feriaHacerFila(id){
   const ref = feriaRef('feria/' + id + '/fila/' + feriaYo());
-  ref.set({ n: String(miNombre).slice(0, 14), o: firebase.database.ServerValue.TIMESTAMP });
+  ref.set({ n: String(miNombre).slice(0, 14), o: feriaTS() });
   try { ref.onDisconnect().remove(); } catch(e){}
   feria.panel = { id, modo: 'fila' };
   feriaRenderPanel();
@@ -184,54 +240,106 @@ function feriaCerrarPanel(){
   if(typeof plazaRenderAccion === 'function') plazaRenderAccion();
 }
 
-// ---- Pantallas de cada puesto ----
+// ---- Pantallas ----
 
 function feriaEmojiDe(item){ return FERIA_EMOJIS[String(item).toLowerCase()] || '🍬'; }
+function feriaOpciones(items, funcion, clase){
+  return `<div class="fer-items">${items.map((it, i) => `<button class="fer-item ${clase || ''}" onclick="${funcion}(${i})"><span>${clase === 'fer-item-txt' ? '' : feriaEmojiDe(it)}</span>${feriaEsc(it)}</button>`).join('')}</div>`;
+}
+
+function feriaVotosRadio(){
+  const votos = (feria.radio && feria.radio.votos) || {};
+  const canciones = feriaLista('radio');
+  const cuenta = canciones.map(() => 0);
+  Object.keys(votos).forEach(a => { if(cuenta[votos[a]] != null) cuenta[votos[a]]++; });
+  return canciones.map((c, i) => ({ c, n: cuenta[i], i })).sort((x, y) => y.n - x.n || x.i - y.i);
+}
+function feriaRadioHTML(){
+  const t = feriaVotosRadio();
+  const total = t.reduce((s, x) => s + x.n, 0);
+  return `<div class="fer-tabla">${t.slice(0, 4).map((x, k) => `<div class="fer-barra"><span>${k === 0 && x.n ? '🏆 ' : ''}${feriaEsc(x.c)}</span><i style="width:${total ? Math.round(x.n / total * 100) : 0}%"></i><b>${x.n}</b></div>`).join('')}</div>`;
+}
 
 function feriaRenderPanel(){
   const cont = document.getElementById('plaza-modal');
   if(!cont) return;
   const p = feria.panel;
   if(!p){ cont.innerHTML = ''; return; }
-  const nombre = FERIA_NOMBRES[p.id];
   let cuerpo = '', botones = '';
   const cerrar = '<button class="gbtn gbtn-ancho gbtn-no" onclick="feriaCerrarPanel()">Salir</button>';
 
-  if(p.modo === 'fila'){
+  if(p.modo === 'pasaporte') {
+    const d = feriaPasaporteDatos();
+    cuerpo = `<h3 class="fer-titulo">📒 Pasaporte de la feria</h3><p class="fer-sub">Visitá cada puesto y juntá todos los sellos. Si lo completás, ganás ${FERIA_PREMIO_PASAPORTE} monedas para tu personaje${feria.sorteo && feria.sorteo.activo ? ' y un número extra del sorteo' : ''}.</p>
+      <div class="fer-sellos">${d.sellos.map(s => `<div class="fer-sello ${s.ok ? 'ok' : ''}"><span>${FERIA_EMOJI_PUESTO[s.id]}</span><small>${feriaEsc(FERIA_NOMBRES[s.id])}</small>${s.ok ? '<b>✓</b>' : ''}</div>`).join('')}</div>
+      <p class="fer-texto">${d.ok} de ${d.sellos.length} sellos</p>`;
+    botones = d.reclamado ? '<p class="fer-sub">¡Ya cobraste tu premio del pasaporte! 🎉</p>' : (d.completo ? '<button class="gbtn gbtn-ancho" onclick="feriaReclamarPasaporte()">🎁 Reclamar mi premio</button>' : '');
+    botones += cerrar;
+  } else if(p.modo === 'escenario'){
+    cuerpo = `<h3 class="fer-titulo">🎤 Escenario</h3><p class="fer-texto">Acá se juega en vivo con todo el micro.</p>`;
+    botones = `<button class="gbtn gbtn-ancho" onclick="feriaIrA('triviavivo')">🧠 Trivia en vivo</button><button class="gbtn gbtn-ancho" onclick="feriaIrA('bingo')">🎱 Bingo</button>${cerrar}`;
+  } else if(p.modo === 'foto'){
+    cuerpo = `<h3 class="fer-titulo">📸 Foto grupal</h3><canvas id="fer-foto" width="600" height="420" class="fer-foto"></canvas><p class="fer-sub">Una foto con los personajes de tu sala y el marco de ${feriaEsc(typeof marcaCorta === 'function' ? marcaCorta() : 'la agencia')}.</p>`;
+    botones = `<button class="gbtn gbtn-ancho" onclick="feriaGuardarFoto()">💾 Guardar foto</button>${(typeof navigator !== 'undefined' && navigator.share) ? '<button class="gbtn gbtn-ancho" onclick="feriaCompartirFoto()">📤 Compartir</button>' : ''}${cerrar}`;
+  } else if(p.modo === 'fila'){
     const s = feriaStand(p.id);
     const pos = s.fila.findIndex(f => f.a === feriaYo());
-    cuerpo = `<p class="fer-texto">Estás en la fila. ${s.adentro ? 'Ahora está adentro <b>' + feriaEsc(s.adentro.n) + '</b>.' : ''}</p><div class="fer-pos">${pos >= 0 ? pos + 1 : '-'}°</div><p class="fer-sub">de ${s.fila.length} en la fila. Cuando sea tu turno entrás solo, podés seguir caminando.</p>`;
+    cuerpo = `<h3 class="fer-titulo">${FERIA_EMOJI_PUESTO[p.id]} ${feriaEsc(FERIA_NOMBRES[p.id])}</h3><p class="fer-texto">Estás en la fila. ${s.adentro ? 'Ahora está adentro <b>' + feriaEsc(s.adentro.n) + '</b>.' : ''}</p><div class="fer-pos">${pos >= 0 ? pos + 1 : '-'}°</div><p class="fer-sub">de ${s.fila.length} en la fila. Cuando sea tu turno entrás solo, podés seguir caminando.</p>`;
     botones = '<button class="gbtn gbtn-ancho gbtn-no" onclick="feriaSalirDeLaFila()">Salir de la fila</button>';
   } else if(p.modo === 'ya'){
     if(p.id === 'kiosco'){
       const ped = feria.pedido;
       cuerpo = ped ? `<div class="fer-grande">${feriaEmojiDe(ped.item)}</div><p class="fer-texto">Ya pediste: <b>${feriaEsc(ped.item)}</b></p><p class="fer-sub">${ped.estado === 'entregado' ? '¡Entregado! ✅' : 'El coordinador te lo lleva a tu asiento.'}</p>` : '<p class="fer-texto">Ya pasaste por el kiosco.</p>';
     } else if(p.id === 'agencia'){
-      cuerpo = '<p class="fer-texto">Ya pediste tu descuento. Mostrá tu código en la agencia, o buscalo en tu consulta.</p>';
       const c = feria.stands.agencia && feria.stands.agencia.hecho && feria.stands.agencia.hecho[feriaYo()];
-      if(c && c.cupon) cuerpo = `<div class="fer-cupon">${feriaEsc(c.cupon)}</div><p class="fer-texto">Tu código de descuento: <b>${feriaEsc(c.promo || '')}</b> (${Number(c.off) || 0}% menos)</p><p class="fer-sub">Mostralo en la agencia. Un asesor también va a contactarte en el viaje.</p>`;
-    } else {
+      cuerpo = c && c.cupon ? `<div class="fer-cupon">${feriaEsc(c.cupon)}</div><p class="fer-texto">Tu descuento en <b>${feriaEsc(c.promo || '')}</b> (${Number(c.off) || 0}% menos)</p><p class="fer-sub">Mostralo en la agencia. Un asesor también va a contactarte en el viaje.</p>` : '<p class="fer-texto">Ya pediste tu descuento.</p>';
+    } else if(p.id === 'sorteo'){
       const c = feria.stands.sorteo && feria.stands.sorteo.hecho && feria.stands.sorteo.hecho[feriaYo()];
       cuerpo = `<p class="fer-texto">Ya retiraste tu número:</p><div class="fer-pos">${c && c.num ? '#' + c.num : '?'}</div>${feriaSorteoEstadoHTML()}`;
+    } else if(p.id === 'radio'){
+      cuerpo = `<h3 class="fer-titulo">📻 Radio del micro</h3><p class="fer-texto">Ya votaste. Así van las votaciones:</p>${feriaRadioHTML()}`;
+    } else {
+      cuerpo = `<p class="fer-texto">¡Gracias! Ya nos contaste cómo viajás. 💙</p>`;
     }
     botones = cerrar;
   } else if(p.modo === 'resultado'){
     cuerpo = p.html;
     botones = '<button class="gbtn gbtn-ancho" onclick="feriaCerrarPanel()">¡Gracias!</button>';
-  } else { // dentro
-    if(p.id === 'kiosco'){
-      cuerpo = `<h3 class="fer-titulo">🍬 Kiosco</h3><p class="fer-texto">Elegí una golosina de cortesía. ¡El coordinador te la lleva a tu asiento! Podés pedir una sola vez.</p><div class="fer-items">${feriaKiosco().map((it, i) => `<button class="fer-item" onclick="feriaPedirKiosco(${i})"><span>${feriaEmojiDe(it)}</span>${feriaEsc(it)}</button>`).join('')}</div>`;
-    } else if(p.id === 'agencia'){
+  } else { // dentro del puesto
+    const id = p.id;
+    if(id === 'kiosco'){
+      cuerpo = `<h3 class="fer-titulo">🍬 Kiosco</h3><p class="fer-texto">Elegí una golosina de cortesía. ¡El coordinador te la lleva a tu asiento! Podés pedir una sola vez.</p>${feriaOpciones(feriaKiosco(), 'feriaPedirKiosco')}`;
+    } else if(id === 'agencia'){
       cuerpo = `<h3 class="fer-titulo">✈️ Agencia de viajes</h3><p class="fer-texto">Mirá las promos y pedí tu descuento. Podés elegir una sola vez.</p><div class="fer-promos">${feriaPromos().map((pr, i) => `<div class="fer-promo"><div><b>${feriaEsc(pr.t)}</b><div class="fer-sub">${feriaEsc(pr.d || '')}</div></div><button class="gbtn gbtn-chico-texto" onclick="feriaPedirPromo(${i})">${Number(pr.off) ? pr.off + '% off' : 'Quiero'}</button></div>`).join('')}</div>`;
-    } else {
+    } else if(id === 'sorteo'){
       const sorteo = feria.sorteo || {};
       if(!sorteo.activo) cuerpo = '<h3 class="fer-titulo">🎟️ Sorteo</h3><p class="fer-texto">El sorteo todavía no está abierto. Pasá más tarde: el coordinador lo avisa.</p>';
       else cuerpo = `<h3 class="fer-titulo">🎟️ Sorteo</h3>${sorteo.premio ? `<p class="fer-texto">Premio: <b>${feriaEsc(sorteo.premio)}</b></p>` : ''}<p class="fer-sub">Retirá tu número. Es uno por persona y el sorteo lo hace el coordinador.</p>`;
       botones = sorteo.activo ? '<button class="gbtn gbtn-ancho" onclick="feriaRetirarNumero()">🎟️ Retirar mi número</button>' : '';
+    } else if(id === 'radio'){
+      cuerpo = `<h3 class="fer-titulo">📻 Radio del micro</h3><p class="fer-texto">Votá qué música querés escuchar. Se vota una sola vez; el chofer pone la más votada.</p>${feriaOpciones(feriaLista('radio'), 'feriaVotarRadio', 'fer-item-txt')}${feriaRadioHTML()}`;
+    } else if(id === 'coordinador'){
+      const pen = feriaPendiente('coordinador');
+      cuerpo = pen
+        ? `<h3 class="fer-titulo">🧑‍✈️ Coordinador</h3><p class="fer-texto">Ya tenés un pedido en camino: <b>${feriaEsc(pen.tipo)}</b>.</p><p class="fer-sub">Cuando el coordinador lo atienda vas a poder pedir otra cosa.</p>`
+        : `<h3 class="fer-titulo">🧑‍✈️ Coordinador</h3><p class="fer-texto">¿Qué necesitás? El coordinador lo recibe y te lo lleva.</p>${feriaOpciones(feriaLista('servicios'), 'feriaPedirServicio', 'fer-item-txt')}<button class="fer-item fer-item-cumple" onclick="feriaAvisarCumple()"><span>🎂</span>¡Hoy es mi cumpleaños!</button>`;
+    } else if(id === 'farmacia'){
+      const pen = feriaPendiente('farmacia');
+      cuerpo = pen
+        ? `<h3 class="fer-titulo">💊 Farmacia</h3><p class="fer-texto">Ya avisaste: <b>${feriaEsc(pen.motivo)}</b>.</p><p class="fer-sub">El coordinador va a ir a verte. Si te sentís peor, avisale a un adulto.</p>`
+        : `<h3 class="fer-titulo">💊 Farmacia</h3><p class="fer-texto">¿Te sentís mal? Elegí qué te pasa y el coordinador va a verte.</p><p class="fer-aviso-fer">El coordinador te consulta antes de darte cualquier medicamento.</p>${feriaOpciones(feriaLista('farmacia'), 'feriaPedirFarmacia', 'fer-item-txt')}<button class="fer-item fer-item-urgente" onclick="feriaPedirFarmacia(-1)"><span>🚨</span>Necesito ayuda ahora</button>`;
+    } else if(id === 'buzon'){
+      const listo = feria.encuesta.every(v => v > 0);
+      cuerpo = `<h3 class="fer-titulo">📮 Buzón del viaje</h3><p class="fer-sub">Tres preguntas rápidas. Solo se contesta una vez.</p>${FERIA_PREGUNTAS.map((q, i) => `<div class="fer-pregunta"><div class="fer-texto">${q}</div><div class="fer-estrellas">${[1, 2, 3, 4, 5].map(v => `<button class="${feria.encuesta[i] >= v ? 'on' : ''}" onclick="feriaPuntuar(${i},${v})">★</button>`).join('')}</div></div>`).join('')}`;
+      botones = `<button class="gbtn gbtn-ancho" ${listo ? '' : 'disabled'} onclick="feriaEnviarEncuesta()">Enviar</button>`;
+    } else if(id === 'cartelera'){
+      const l = feriaLista('cartelera');
+      cuerpo = `<h3 class="fer-titulo">📋 Cartelera</h3><div class="fer-cartelera">${l.map(x => { const [h, t] = String(x).split('|').map(s => s.trim()); return t ? `<div class="fer-cart-fila"><b>${feriaEsc(h)}</b><span>${feriaEsc(t)}</span></div>` : `<div class="fer-cart-fila"><span>${feriaEsc(h)}</span></div>`; }).join('')}</div>`;
     }
-    botones += (botones ? '' : '') + `<button class="gbtn gbtn-ancho gbtn-no" onclick="feriaCerrarPanel()">Salir sin pedir</button>`;
+    botones += (id === 'cartelera' ? '<button class="gbtn gbtn-ancho" onclick="feriaCerrarPanel()">Cerrar</button>' : '<button class="gbtn gbtn-ancho gbtn-no" onclick="feriaCerrarPanel()">Salir</button>');
   }
   cont.innerHTML = `<div class="plz-modal"><div class="plz-modal-caja">${cuerpo}<div class="fer-botones">${botones}</div></div></div>`;
+  if(p.modo === 'foto') setTimeout(feriaDibujarFoto, 30);
 }
 
 function feriaSorteoEstadoHTML(){
@@ -242,8 +350,8 @@ function feriaSorteoEstadoHTML(){
 
 // ---- Acciones ----
 
-function feriaTerminarPuesto(id, dato, html){
-  feriaRef('feria/' + id + '/hecho/' + feriaYo()).set(dato || true);
+function feriaTerminarPuesto(id, dato, html, marcarHecho){
+  if(marcarHecho !== false) feriaRef('feria/' + id + '/hecho/' + feriaYo()).set(dato || true);
   feriaSalirDelPuesto();
   feria.panel = { id, modo: 'resultado', html };
   feriaRenderPanel();
@@ -255,8 +363,8 @@ function feriaPedirKiosco(i){
   if(feria.dentro !== 'kiosco') return;
   const item = feriaKiosco()[i];
   if(!item) return;
-  feriaRef('pedidos/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), item, t: firebase.database.ServerValue.TIMESTAMP, estado: 'pendiente' });
-  feriaTerminarPuesto('kiosco', { item, t: firebase.database.ServerValue.TIMESTAMP }, `<div class="fer-grande">${feriaEmojiDe(item)}</div><p class="fer-texto">¡Pedido listo! El coordinador te lleva <b>${feriaEsc(item)}</b> a tu asiento.</p>`);
+  feriaRef('pedidos/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), item, t: feriaTS(), estado: 'pendiente' });
+  feriaTerminarPuesto('kiosco', { item, t: feriaTS() }, `<div class="fer-grande">${feriaEmojiDe(item)}</div><p class="fer-texto">¡Pedido listo! El coordinador te lleva <b>${feriaEsc(item)}</b> a tu asiento.</p>`);
 }
 
 function feriaCodigoCupon(){
@@ -271,7 +379,7 @@ function feriaPedirPromo(i){
   const pr = feriaPromos()[i];
   if(!pr) return;
   const cupon = feriaCodigoCupon();
-  feriaRef('consultas/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), promo: pr.t, off: Number(pr.off) || 0, cupon, t: firebase.database.ServerValue.TIMESTAMP, estado: 'nueva' });
+  feriaRef('consultas/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), promo: pr.t, off: Number(pr.off) || 0, cupon, t: feriaTS(), estado: 'nueva' });
   feriaTerminarPuesto('agencia', { promo: pr.t, off: Number(pr.off) || 0, cupon }, `<div class="fer-cupon">${cupon}</div><p class="fer-texto">Tu descuento en <b>${feriaEsc(pr.t)}</b>${Number(pr.off) ? ': <b>' + Number(pr.off) + '% menos</b>' : ''}.</p><p class="fer-sub">Mostrá este código en la agencia. Un asesor también va a contactarte durante el viaje.</p>`);
 }
 
@@ -280,20 +388,184 @@ function feriaRetirarNumero(){
   feriaRef('sorteo/proximo').transaction(n => (n || 0) + 1).then(r => {
     if(!r || !r.committed) return;
     const num = r.snapshot.val();
-    feriaRef('sorteo/numeros/' + feriaYo()).set({ num, n: String(miNombre).slice(0, 30), t: firebase.database.ServerValue.TIMESTAMP });
+    feriaRef('sorteo/numeros/' + feriaYo()).set({ num, n: String(miNombre).slice(0, 30), t: feriaTS() });
     feriaTerminarPuesto('sorteo', { num }, `<p class="fer-texto">Tu número del sorteo es:</p><div class="fer-pos">#${num}</div><p class="fer-sub">Guardalo. El coordinador anuncia el ganador en la plaza.</p>`);
   });
+}
+
+function feriaVotarRadio(i){
+  if(feria.dentro !== 'radio') return;
+  const cancion = feriaLista('radio')[i];
+  if(cancion == null) return;
+  feriaRef('radio/votos/' + feriaYo()).set(i);
+  feriaTerminarPuesto('radio', true, `<p class="fer-texto">¡Votaste <b>${feriaEsc(cancion)}</b>! 🎶</p><p class="fer-sub">Así van las votaciones:</p>${feriaRadioHTMLTrasVoto(i)}`);
+}
+function feriaRadioHTMLTrasVoto(i){
+  const t = feriaVotosRadio().map(x => Object.assign({}, x, { n: x.n + (x.i === i && !((feria.radio && feria.radio.votos) || {})[feriaYo()] ? 1 : 0) })).sort((x, y) => y.n - x.n || x.i - y.i);
+  const total = t.reduce((s, x) => s + x.n, 0);
+  return `<div class="fer-tabla">${t.slice(0, 4).map((x, k) => `<div class="fer-barra"><span>${k === 0 && x.n ? '🏆 ' : ''}${feriaEsc(x.c)}</span><i style="width:${total ? Math.round(x.n / total * 100) : 0}%"></i><b>${x.n}</b></div>`).join('')}</div>`;
+}
+
+function feriaPedirServicio(i){
+  if(feria.dentro !== 'coordinador' || feriaPendiente('coordinador')) return;
+  const tipo = feriaLista('servicios')[i];
+  if(!tipo) return;
+  feriaRef('servicios/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), tipo, t: feriaTS(), estado: 'pendiente' });
+  feriaTerminarPuesto('coordinador', null, `<div class="fer-grande">🧑‍✈️</div><p class="fer-texto">¡Listo! El coordinador recibió tu pedido: <b>${feriaEsc(tipo)}</b>.</p>`, false);
+}
+
+function feriaAvisarCumple(){
+  if(feria.dentro !== 'coordinador') return;
+  feriaRef('cumples/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), t: feriaTS(), estado: 'nuevo' });
+  feriaTerminarPuesto('coordinador', null, '<div class="fer-grande">🎂</div><p class="fer-texto">¡Feliz cumpleaños! 🎉 El coordinador va a avisarlo en el micro y en la plaza te va a aparecer una torta.</p>', false);
+}
+
+function feriaPedirFarmacia(i){
+  if(feria.dentro !== 'farmacia' || feriaPendiente('farmacia')) return;
+  const urgente = i < 0;
+  const motivo = urgente ? 'Necesita ayuda ahora' : feriaLista('farmacia')[i];
+  if(!motivo) return;
+  feriaRef('farmacia/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), motivo, urgente, t: feriaTS(), estado: 'pendiente' });
+  feriaTerminarPuesto('farmacia', null, `<div class="fer-grande">${urgente ? '🚨' : '💊'}</div><p class="fer-texto">${urgente ? '¡Aviso enviado!' : 'Listo, avisamos al coordinador.'} Va a ir a verte${urgente ? ' enseguida' : ''}.</p><p class="fer-sub">Si te sentís peor, avisale a un adulto.</p>`, false);
+}
+
+function feriaPuntuar(q, v){ feria.encuesta[q] = v; feriaRenderPanel(); }
+
+function feriaEnviarEncuesta(){
+  if(feria.dentro !== 'buzon' || !feria.encuesta.every(v => v > 0)) return;
+  const [a, b, c] = feria.encuesta;
+  feriaRef('encuestas/' + feriaYo()).set({ a, b, c, t: feriaTS() });
+  feriaTerminarPuesto('buzon', true, '<div class="fer-grande">💙</div><p class="fer-texto">¡Gracias por contarnos cómo viajás!</p>');
 }
 
 function feriaAvisarGanador(){
   const g = feria.sorteo && feria.sorteo.ganador;
   if(!g || feria.avisados[g.t]) return;
   feria.avisados[g.t] = true;
-  const mio = feria.sorteo.numeros && feria.sorteo.numeros[feriaYo()] && feria.sorteo.numeros[feriaYo()].num === g.num;
+  const mios = feria.sorteo.numeros || {};
+  const mio = [feriaYo(), feriaYo() + 'p'].some(k => mios[k] && mios[k].num === g.num);
   feriaToast(mio ? '🎉 ¡¡Ganaste el sorteo!! Número #' + g.num : '🎉 ¡Ganó el número #' + g.num + ' (' + (g.n || '') + ')!', 'gain');
 }
 
-// ---- Panel del organizador (botón 🎪 en Viajes) ----
+// ---- Escenario ----
+
+function feriaEscenario(){
+  feria.panel = { id: 'escenario', modo: 'escenario' };
+  feriaRenderPanel();
+}
+function feriaIrA(vista){
+  feria.panel = null; feriaRenderPanel();
+  showView(vista);
+}
+
+// ---- Pasaporte ----
+
+function feriaPasaporteDatos(){
+  const sellos = Object.keys(FERIA_NOMBRES).map(id => ({ id, ok: feriaStand(id).visito || feriaStand(id).hecho }));
+  const ok = sellos.filter(s => s.ok).length;
+  return { sellos, ok, completo: ok === sellos.length, reclamado: !!feria.pasaporte };
+}
+
+function feriaPasaporte(){
+  if(!feriaEnLinea()){ feriaToast('Entrá a un viaje para usar el pasaporte'); return; }
+  feria.panel = { id: 'pasaporte', modo: 'pasaporte' };
+  feriaRenderPanel();
+}
+
+function feriaReclamarPasaporte(){
+  const d = feriaPasaporteDatos();
+  if(!d.completo || d.reclamado) return;
+  feriaRef('pasaporte/' + feriaYo()).set({ t: feriaTS() });
+  if(typeof regalarMonedas === 'function') regalarMonedas(FERIA_PREMIO_PASAPORTE);
+  const extra = feria.sorteo && feria.sorteo.activo;
+  if(extra){
+    feriaRef('sorteo/proximo').transaction(n => (n || 0) + 1).then(r => {
+      if(r && r.committed) feriaRef('sorteo/numeros/' + feriaYo() + 'p').set({ num: r.snapshot.val(), n: String(miNombre).slice(0, 30), t: feriaTS(), extra: true });
+    });
+  }
+  feriaToast('¡Pasaporte completo! +' + FERIA_PREMIO_PASAPORTE + ' monedas' + (extra ? ' y un número extra' : ''), 'gain');
+  if(typeof reproducirTono === 'function') reproducirTono('bonus');
+}
+
+// ---- Foto grupal: un dibujo con los personajes de la sala (sin cámara ni fotos reales) ----
+
+function feriaPersonajesDeLaSala(){
+  const lista = [{ n: 'Vos', a: typeof plazaCompacto === 'function' ? plazaCompacto() : {} }];
+  if(typeof plz !== 'undefined'){
+    Object.keys(plz.otros || {}).forEach(k => lista.push({ n: plz.otros[k].nombre, a: plz.otros[k].avatar }));
+    (plz.bots || []).forEach(b => lista.push({ n: b.n, a: b.a }));
+  }
+  return lista.slice(0, 18);
+}
+
+function feriaDibujarFoto(intento){
+  const c = document.getElementById('fer-foto');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  const cielo = ctx.createLinearGradient(0, 0, 0, H);
+  cielo.addColorStop(0, '#4FB3FF'); cielo.addColorStop(0.6, '#CFEBFF'); cielo.addColorStop(1, '#F3E7C9');
+  ctx.fillStyle = cielo; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#7FC77A'; ctx.fillRect(0, H * 0.62, W, H * 0.38);
+  ctx.fillStyle = '#E7DCC5'; ctx.fillRect(0, H * 0.7, W, H * 0.3);
+  const gente = feriaPersonajesDeLaSala();
+  const porFila = gente.length > 8 ? 6 : Math.max(1, Math.min(gente.length, 4));
+  const filas = Math.ceil(gente.length / porFila);
+  let faltan = false;
+  const tamAlto = Math.min(150, (H * 0.5) / filas), tamAncho = tamAlto * 0.84;
+  gente.forEach((g, i) => {
+    const fila = Math.floor(i / porFila), col = i % porFila;
+    const enFila = Math.min(porFila, gente.length - fila * porFila);
+    const x = W / 2 + (col - (enFila - 1) / 2) * (tamAncho + 18);
+    const y = H * 0.5 + fila * tamAlto * 0.55 + tamAlto * 0.7;
+    const img = typeof avatarSprite === 'function' ? avatarSprite(g.a) : null;
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(x, y, tamAncho * 0.38, 7, 0, 0, 7); ctx.fill();
+    if(img && img.complete && img.naturalWidth) ctx.drawImage(img, x - tamAncho / 2, y - tamAlto, tamAncho, tamAlto);
+    else faltan = true;
+    ctx.font = '700 13px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#0F2A4D';
+    ctx.fillText(String(g.n).slice(0, 10), x, y + 18);
+  });
+  // Marco con el logo en las esquinas
+  ctx.lineWidth = 14; ctx.strokeStyle = '#fff'; ctx.strokeRect(7, 7, W - 14, H - 14);
+  ctx.lineWidth = 3; ctx.strokeStyle = '#E6A817'; ctx.strokeRect(16, 16, W - 32, H - 32);
+  if(typeof arcLogo === 'function'){ [[44, 44], [W - 44, 44], [44, H - 44], [W - 44, H - 44]].forEach(([x, y]) => arcLogo(ctx, x, y, 44, '#fff')); }
+  ctx.fillStyle = 'rgba(15,42,77,.85)'; ctx.fillRect(W / 2 - 150, 22, 300, 30);
+  ctx.fillStyle = '#fff'; ctx.font = '800 16px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('Plaza ' + (typeof marcaCorta === 'function' ? marcaCorta() : 'Busmac') + ' · ' + new Date().toLocaleDateString('es-AR'), W / 2, 38);
+  ctx.textBaseline = 'alphabetic';
+  if(faltan && (intento || 0) < 6) setTimeout(() => feriaDibujarFoto((intento || 0) + 1), 250);
+}
+
+function feriaFotoGrupal(){
+  feriaVisita('foto');
+  feria.panel = { id: 'foto', modo: 'foto' };
+  feriaRenderPanel();
+}
+
+function feriaGuardarFoto(){
+  const c = document.getElementById('fer-foto');
+  if(!c) return;
+  c.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'foto-plaza.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    feriaToast('Foto guardada');
+  });
+}
+
+function feriaCompartirFoto(){
+  const c = document.getElementById('fer-foto');
+  if(!c || !navigator.share) return;
+  c.toBlob(blob => {
+    const archivo = new File([blob], 'foto-plaza.png', { type: 'image/png' });
+    const datos = { files: [archivo], title: 'Mi foto en la plaza' };
+    if(navigator.canShare && !navigator.canShare(datos)){ feriaGuardarFoto(); return; }
+    navigator.share(datos).catch(() => {});
+  });
+}
+
+// ---- Panel del organizador (botón 🎪 en Viajes): menús y textos del puesto ----
 
 let adminFeriaAbiertaPara = null;
 
@@ -302,10 +574,10 @@ function adminToggleFeria(codigo){
   renderAdminViajes();
 }
 
-function adminFeriaGuardarMenu(codigo){
-  const el = document.getElementById('admin-feria-menu-' + codigo);
-  const items = (el ? el.value : '').split('\n').map(l => l.trim().slice(0, 30)).filter(Boolean).slice(0, 12);
-  db.ref('salas/' + codigo + '/feriaConfig/kiosco').set(items.length ? items : null).then(() => { feriaToast('Menú del kiosco guardado'); renderAdminViajes(); });
+function adminFeriaGuardarLista(codigo, clave){
+  const el = document.getElementById('admin-feria-' + clave + '-' + codigo);
+  const items = (el ? el.value : '').split('\n').map(l => l.trim().slice(0, 60)).filter(Boolean).slice(0, 14);
+  db.ref('salas/' + codigo + '/feriaConfig/' + clave).set(items.length ? items : null).then(() => { feriaToast('Guardado'); renderAdminViajes(); });
 }
 
 function adminFeriaGuardarPromos(codigo){
@@ -329,8 +601,8 @@ function adminFeriaSortear(codigo){
     const claves = Object.keys(v);
     if(!claves.length){ feriaToast('Todavía nadie retiró un número'); return; }
     const a = claves[Math.floor(Math.random() * claves.length)];
-    const g = { num: v[a].num, n: v[a].n || '', asiento: a, t: Date.now() };
-    db.ref('salas/' + codigo + '/sorteo/ganador').set(g).then(() => { feriaToast('Ganó el #' + g.num + ' (' + g.n + ', asiento ' + a + ')', 'gain'); renderAdminViajes(); });
+    const g = { num: v[a].num, n: v[a].n || '', asiento: a.replace(/p$/, ''), t: Date.now() };
+    db.ref('salas/' + codigo + '/sorteo/ganador').set(g).then(() => { feriaToast('Ganó el #' + g.num + ' (' + g.n + ', asiento ' + g.asiento + ')', 'gain'); renderAdminViajes(); });
   });
 }
 
@@ -340,36 +612,36 @@ function adminFeriaReiniciarSorteo(codigo){
   db.ref('salas/' + codigo + '/sorteo').update(u).then(() => db.ref('salas/' + codigo + '/feria/sorteo/hecho').remove()).then(() => { feriaToast('Sorteo reiniciado'); renderAdminViajes(); });
 }
 
-function adminFeriaEntregar(codigo, asiento, entregado){
-  db.ref('salas/' + codigo + '/pedidos/' + asiento + '/estado').set(entregado ? 'entregado' : 'pendiente').then(() => renderAdminViajes());
+function adminFeriaListaHTML(codigo, clave, titulo, ayuda, items){
+  return `<div class="fer-admin-t">${titulo} <small>${ayuda}</small></div><textarea id="admin-feria-${clave}-${codigo}" rows="4">${feriaEsc(items.join('\n'))}</textarea><button class="btn-primary" onclick="adminFeriaGuardarLista('${codigo}','${clave}')">Guardar</button>`;
 }
 
 function adminFeriaPanelHTML(codigo, viaje){
   if(adminFeriaAbiertaPara !== codigo) return '';
   const cfg = (viaje && viaje.feriaConfig) || {};
-  const menu = feriaListaDe(cfg.kiosco).length ? feriaListaDe(cfg.kiosco).map(String) : FERIA_DEFECTO.kiosco;
+  const de = clave => { const l = feriaListaDe(cfg[clave]).map(String); return l.length ? l : FERIA_DEFECTO[clave]; };
   const promos = feriaListaDe(cfg.promos).length ? feriaListaDe(cfg.promos) : FERIA_DEFECTO.promos;
   const sorteo = (viaje && viaje.sorteo) || {};
-  const pedidos = (viaje && viaje.pedidos) || {};
-  const consultas = (viaje && viaje.consultas) || {};
   const numeros = sorteo.numeros || {};
-  const cuentaItems = {};
-  Object.keys(pedidos).forEach(a => { if(pedidos[a].estado !== 'entregado') cuentaItems[pedidos[a].item] = (cuentaItems[pedidos[a].item] || 0) + 1; });
-  const pendientesTxt = Object.keys(cuentaItems).map(k => k + ' ×' + cuentaItems[k]).join(' · ');
-  const filasPedidos = Object.keys(pedidos).sort((x, y) => (pedidos[x].estado === 'entregado') - (pedidos[y].estado === 'entregado')).map(a => {
-    const p = pedidos[a], ok = p.estado === 'entregado';
-    return `<div class="fer-fila ${ok ? 'fer-fila-ok' : ''}"><span>Asiento <b>${feriaEsc(a)}</b> · ${feriaEsc(p.n || '')} · ${feriaEsc(p.item)}</span><button class="fer-mini" onclick="adminFeriaEntregar('${codigo}','${feriaEsc(a)}',${!ok})">${ok ? '✅ Entregado' : 'Marcar entregado'}</button></div>`;
-  }).join('') || '<div class="fer-vacio">Todavía no hay pedidos.</div>';
-  const filasConsultas = Object.keys(consultas).map(a => { const c = consultas[a]; return `<div class="fer-fila"><span>Asiento <b>${feriaEsc(a)}</b> · ${feriaEsc(c.n || '')} · ${feriaEsc(c.promo)} (${Number(c.off) || 0}%) · <b>${feriaEsc(c.cupon)}</b></span></div>`; }).join('') || '<div class="fer-vacio">Todavía no hay consultas.</div>';
   const g = sorteo.ganador;
+  const votos = ((viaje && viaje.radio) || {}).votos || {};
+  const canciones = de('radio'), cuenta = canciones.map(() => 0);
+  Object.keys(votos).forEach(a => { if(cuenta[votos[a]] != null) cuenta[votos[a]]++; });
+  const topRadio = canciones.map((c, i) => ({ c, n: cuenta[i] })).sort((x, y) => y.n - x.n).filter(x => x.n).slice(0, 3).map(x => feriaEsc(x.c) + ' ×' + x.n).join(' · ') || 'Todavía no hay votos';
+  const enc = Object.keys((viaje && viaje.encuestas) || {}).map(a => viaje.encuestas[a]);
+  const prom = k => enc.length ? (enc.reduce((s, e) => s + (Number(e[k]) || 0), 0) / enc.length).toFixed(1) : '-';
+  const pasaportes = Object.keys((viaje && viaje.pasaporte) || {}).length;
   return `<div class="fer-admin">
-    <div class="fer-admin-t">🍬 Menú del kiosco <small>(uno por línea)</small></div>
-    <textarea id="admin-feria-menu-${codigo}" rows="4">${feriaEsc(menu.join('\n'))}</textarea>
-    <button class="btn-primary" onclick="adminFeriaGuardarMenu('${codigo}')">Guardar menú</button>
-
+    <div class="fer-aviso">📥 Todos los pedidos (kiosco, farmacia, coordinador, agencia y cumpleaños) están juntos en <b>la bandeja de pedidos</b>: botón 📥 de esta fila.</div>
+    ${adminFeriaListaHTML(codigo, 'kiosco', '🍬 Menú del kiosco', '(uno por línea)', de('kiosco'))}
     <div class="fer-admin-t">✈️ Promos de la agencia <small>(Título | detalle | descuento)</small></div>
     <textarea id="admin-feria-promos-${codigo}" rows="4">${feriaEsc(promos.map(p => [p.t, p.d || '', p.off || 0].join(' | ')).join('\n'))}</textarea>
     <button class="btn-primary" onclick="adminFeriaGuardarPromos('${codigo}')">Guardar promos</button>
+    ${adminFeriaListaHTML(codigo, 'servicios', '🧑‍✈️ Pedidos al coordinador', '(uno por línea)', de('servicios'))}
+    ${adminFeriaListaHTML(codigo, 'farmacia', '💊 Opciones de la farmacia', '(uno por línea)', de('farmacia'))}
+    ${adminFeriaListaHTML(codigo, 'radio', '📻 Música de la radio', '(uno por línea)', canciones)}
+    <div class="fer-sub-admin">Más votadas: <b>${topRadio}</b></div>
+    ${adminFeriaListaHTML(codigo, 'cartelera', '📋 Cartelera', '(Hora | Actividad)', de('cartelera'))}
 
     <div class="fer-admin-t">🎟️ Sorteo</div>
     <label class="fer-check"><input type="checkbox" id="admin-feria-sorteo-activo-${codigo}" ${sorteo.activo ? 'checked' : ''}> Sorteo abierto (se pueden retirar números)</label>
@@ -379,9 +651,8 @@ function adminFeriaPanelHTML(codigo, viaje){
     <div class="fer-botones-admin"><button class="btn-primary" onclick="adminFeriaSortear('${codigo}')">🎲 Sortear ahora</button><button class="fer-mini" onclick="adminFeriaReiniciarSorteo('${codigo}')">Reiniciar</button></div>
     <div class="fer-aviso">Antes de sortear premios de verdad, consultá si tu provincia exige autorización para sorteos.</div>
 
-    <div class="fer-admin-t">📦 Pedidos del kiosco ${pendientesTxt ? '<small>Falta entregar: ' + feriaEsc(pendientesTxt) + '</small>' : ''}</div>
-    ${filasPedidos}
-    <div class="fer-admin-t">🧾 Consultas de la agencia</div>
-    ${filasConsultas}
+    <div class="fer-admin-t">📮 Buzón del viaje <small>(${enc.length} respuestas)</small></div>
+    <div class="fer-sub-admin">General: <b>${prom('a')}</b> · Coordinador: <b>${prom('b')}</b> · Volverían: <b>${prom('c')}</b> <small>(de 5)</small></div>
+    <div class="fer-admin-t">📒 Pasaportes completados: <b>${pasaportes}</b></div>
   </div>`;
 }

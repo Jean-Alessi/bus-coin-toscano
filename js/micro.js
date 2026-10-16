@@ -1,0 +1,285 @@
+// Micro de dos pisos de la plaza. Todos bajan del micro a la plaza, pero pueden volver:
+// el edificio "Micro" muestra los dos pisos con cada asiento numerado, quién sigue
+// sentado y quién está paseando por la plaza, y desde ahí se puede ir a buscar a
+// cualquiera por su número de asiento (el personaje de cada uno está en su asiento).
+// Quien está un rato sin hacer nada en la plaza vuelve solo al micro.
+//
+// Datos (solo lectura, ya existen): ranking/puntos/{asiento} → nombre + personaje,
+// capacidad, y la presencia de la plaza (plaza/{sala}/{asiento}).
+
+const MIC = { abierto: false, piso: 'abajo', pas: {}, pres: {}, cap: 0, sel: null, oyentes: [], avisado: false };
+const MIC_SALIDA_Y = 372;             // donde aparece quien baja del micro (frente a la puerta)
+const MIC_MAX = 100;                 // tope de asientos dibujados
+const MIC_INACTIVO_MS = 180000;      // sin hacer nada: vuelve al micro
+const MIC_AVISO_MS = 150000;         // y se le avisa 30 s antes
+
+const micEsc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const micEnLinea = () => !!(typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre);
+const micToast = (m, t) => { if(typeof mostrarToast === 'function') mostrarToast(m, t); };
+
+// ---- Asientos ----
+
+function microAsientos(){
+  const claves = Object.keys(MIC.pas);
+  const nums = claves.filter(a => /^\d+$/.test(a)).map(a => parseInt(a, 10)).filter(n => n > 0 && n <= MIC_MAX);
+  const n = Math.min(MIC_MAX, Math.ceil(Math.max(MIC.cap || 0, 8, ...nums) / 4) * 4);
+  const lista = [];
+  for(let i = 1; i <= n; i++) lista.push(String(i));
+  claves.filter(a => !lista.includes(a)).sort().forEach(a => lista.push(a)); // números raros, al final
+  return lista;
+}
+function microPisos(){
+  const l = microAsientos(), mitad = Math.ceil(l.length / 2);
+  return { abajo: l.slice(0, mitad), arriba: l.slice(mitad) };
+}
+function microPisoDe(a){ return microPisos().arriba.includes(String(a)) ? 'arriba' : 'abajo'; }
+
+// 'libre' (nadie), 'micro' (sentado) o 'plaza' (paseando).
+function microEstado(a){
+  if(String(a) === String(miAsiento)) return typeof plz !== 'undefined' && plz.enMicro ? 'micro' : 'plaza';
+  if(!MIC.pas[a]) return 'libre';
+  return MIC.pres[a] ? 'plaza' : 'micro';
+}
+
+function microLeerPresencia(salas){
+  const ahora = typeof plazaAhora === 'function' ? plazaAhora() : Date.now();
+  const pres = {};
+  Object.keys(salas || {}).forEach(sala => Object.keys(salas[sala] || {}).forEach(a => {
+    const d = salas[sala][a];
+    if(!d || typeof d.x !== 'number' || ahora - (d.t || 0) > PLZ.VIVO_MS) return;
+    if(!pres[a] || (d.t || 0) > pres[a].t) pres[a] = { sala, x: d.x, y: d.y, t: d.t || 0 };
+  }));
+  return pres;
+}
+
+// ---- Abrir y cerrar ----
+
+function microAbrir(){
+  if(!micEnLinea()){ micToast('Entrá a un viaje para ver el micro'); return; }
+  microSoltar();
+  MIC.abierto = true; MIC.sel = String(miAsiento); MIC.pas = {}; MIC.pres = {};
+  MIC.piso = null;
+  const escuchar = (ruta, f) => { const r = db.ref('salas/' + codigoViaje + '/' + ruta); const cb = r.on('value', s => { f(s.val()); microPintar(); }); MIC.oyentes.push({ r, cb }); };
+  escuchar('ranking/puntos', v => { MIC.pas = v || {}; if(!MIC.piso) MIC.piso = microPisoDe(miAsiento); });
+  escuchar('plaza', v => { MIC.pres = microLeerPresencia(v); });
+  db.ref('salas/' + codigoViaje + '/capacidad').once('value').then(s => { MIC.cap = Number(s.val()) || 0; microPintar(); });
+  const cont = document.getElementById('plaza-micro');
+  if(!cont) return;
+  cont.innerHTML = `<div class="plz-modal"><div class="plz-modal-caja mic-caja">
+    <h3 class="fer-titulo">🚌 Micro de dos pisos</h3>
+    <div class="mic-buscar"><input type="number" inputmode="numeric" min="1" placeholder="Buscar asiento nº" oninput="microBuscarNumero(this.value)"></div>
+    <div id="mic-cuerpo"></div></div></div>`;
+  MIC.piso = MIC.piso || microPisoDe(miAsiento);
+  microPintar();
+}
+
+function microSoltar(){
+  MIC.oyentes.forEach(o => { try { o.r.off('value', o.cb); } catch(e){} });
+  MIC.oyentes = [];
+}
+
+function microCerrar(){
+  if(typeof plz !== 'undefined' && plz.enMicro) return; // quien está en el micro baja con el botón
+  MIC.abierto = false;
+  microSoltar();
+  const cont = document.getElementById('plaza-micro');
+  if(cont) cont.innerHTML = '';
+}
+
+// ---- Pintar ----
+
+function microAsientoHTML(a){
+  const p = MIC.pas[a], st = microEstado(a), yo = String(a) === String(miAsiento);
+  const dibujo = p || yo
+    ? (typeof avatarMiniHTML === 'function' ? avatarMiniHTML(yo && typeof avatarPuestoActual === 'function' ? avatarPuestoActual() : (p && p.avatar) || {}, 34) : '🙂')
+    : '<span class="mic-vacio">💺</span>';
+  return `<button class="mic-asiento ${st}${yo ? ' yo' : ''}${MIC.sel === String(a) ? ' sel' : ''}" data-a="${micEsc(a)}" onclick="microElegir(this.dataset.a)"><b>${micEsc(a)}</b>${dibujo}${st === 'plaza' ? '<em>🚶</em>' : ''}</button>`;
+}
+
+function microFilaHTML(fila){
+  const c = i => fila[i] != null ? microAsientoHTML(fila[i]) : '<span class="mic-hueco"></span>';
+  return `<div class="mic-fila">${c(0)}${c(1)}<span class="mic-pasillo"></span>${c(2)}${c(3)}</div>`;
+}
+
+function microDetalleHTML(){
+  const a = MIC.sel;
+  if(a == null) return '<p class="fer-sub">Tocá un asiento para ver quién es.</p>';
+  const p = MIC.pas[a], yo = String(a) === String(miAsiento), st = microEstado(a);
+  if(!p && !yo) return `<p class="fer-texto">Asiento ${micEsc(a)}: <b>libre</b></p>`;
+  const nombre = yo ? 'Vos' : (p.nombre || 'Pasajero');
+  const dibujo = typeof avatarSVG === 'function' ? avatarSVG(yo && typeof avatarPuestoActual === 'function' ? avatarPuestoActual() : (p && p.avatar) || {}, 58) : '';
+  const donde = st === 'plaza'
+    ? `🚶 En la plaza${!yo && MIC.pres[a] && typeof plazaEtiquetaSala === 'function' ? ' · ' + micEsc(plazaEtiquetaSala(MIC.pres[a].sala)) : ''}`
+    : '💺 En el micro, en su asiento';
+  const boton = !yo && st === 'plaza' ? `<button class="gbtn gbtn-ancho" data-a="${micEsc(a)}" onclick="microBuscar(this.dataset.a)">📍 Ir a buscar a ${micEsc(nombre)}</button>` : '';
+  return `<div class="mic-detalle"><div class="mic-det-av">${dibujo}</div><div><div class="fer-texto"><b>${micEsc(nombre)}</b></div><div class="fer-sub">Asiento ${micEsc(a)}${p && p.curso ? ' · ' + micEsc(p.curso) : ''}<br>${donde}</div></div></div>${boton}`;
+}
+
+function microPintar(){
+  const cont = document.getElementById('mic-cuerpo');
+  if(!cont || !MIC.abierto) return;
+  const enMicro = typeof plz !== 'undefined' && plz.enMicro;
+  const pisos = microPisos();
+  const piso = MIC.piso || 'abajo';
+  const lista = pisos[piso];
+  const filas = [];
+  for(let i = 0; i < lista.length; i += 4) filas.push(lista.slice(i, i + 4));
+  const sentados = Object.keys(MIC.pas).filter(a => microEstado(a) === 'micro').length + (MIC.pas[String(miAsiento)] ? 0 : (enMicro ? 1 : 0));
+  const afuera = Object.keys(MIC.pas).filter(a => microEstado(a) === 'plaza').length + (MIC.pas[String(miAsiento)] ? 0 : (enMicro ? 0 : 1));
+  const tab = (id, txt) => `<button class="mic-tab ${piso === id ? 'on' : ''}" onclick="microPiso('${id}')">${txt}</button>`;
+  cont.innerHTML = `
+    <div class="mic-resumen"><span>💺 En el micro <b>${sentados}</b></span><span>🚶 En la plaza <b>${afuera}</b></span></div>
+    <div class="mic-tabs">${tab('arriba', '⬆️ Piso de arriba')}${tab('abajo', '⬇️ Piso de abajo')}</div>
+    <div class="mic-bus mic-${piso}">
+      ${piso === 'abajo' ? '<div class="mic-frente">🧑‍✈️ Chofer</div>' : '<div class="mic-frente">🌄 Vista panorámica</div>'}
+      ${filas.length ? filas.map(microFilaHTML).join('') : '<div class="fer-vacio">No hay asientos en este piso.</div>'}
+    </div>
+    <div class="mic-detalle-caja">${microDetalleHTML()}</div>
+    <div class="fer-botones">
+      ${enMicro
+        ? '<button class="gbtn gbtn-ancho" onclick="microBajar()">⬇️ Bajar a la plaza</button>'
+        : '<button class="gbtn gbtn-ancho" onclick="microVolver()">🚌 Volver al micro</button><button class="gbtn gbtn-ancho gbtn-no" onclick="microCerrar()">Cerrar</button>'}
+    </div>`;
+}
+
+function microPiso(id){ MIC.piso = id; microPintar(); }
+function microElegir(a){ MIC.sel = String(a); microPintar(); }
+
+function microBuscarNumero(v){
+  const a = String(parseInt(v, 10));
+  if(!v || a === 'NaN' || !microAsientos().includes(a)) return;
+  MIC.sel = a; MIC.piso = microPisoDe(a);
+  microPintar();
+}
+
+// ---- Bajar, volver y buscar ----
+
+// Vuelve al micro: sale de la sala de la plaza (los demás dejan de verme) y suelta los puestos.
+function microVolver(auto){
+  if(typeof plz === 'undefined' || !plz.activo || plz.enMicro) return;
+  plz.enMicro = true;
+  if(plz.ref){
+    try {
+      if(plz.listener) plz.ref.off('value', plz.listener);
+      plz.ref.child(String(miAsiento)).remove();
+    } catch(e){}
+  }
+  plz.ref = null; plz.listener = null; plz.conectado = false; plz.otros = {}; plz.obj = null; plz.buscado = null;
+  if(typeof feriaAlSalir === 'function') feriaAlSalir();
+  if(typeof plazaActualizarCantidad === 'function') plazaActualizarCantidad();
+  if(typeof plazaActualizarSala === 'function') plazaActualizarSala();
+  const aviso = document.getElementById('plaza-accion');
+  if(aviso) aviso.innerHTML = '<div class="plz-accion-sub">Estás en el micro. Bajá a la plaza cuando quieras.</div>';
+  micToast(auto ? '🚌 Volviste al micro porque no hacías nada. ¡Bajá cuando quieras!' : '🚌 Volviste al micro');
+  microAbrir();
+}
+
+function microBajar(){
+  if(typeof plz === 'undefined' || !plz.activo) return;
+  plz.enMicro = false;
+  plz.ultimaActividad = performance.now(); MIC.avisado = false;
+  plz.yo.x = 320 + Math.round((Math.random() - 0.5) * 120); plz.yo.y = MIC_SALIDA_Y;
+  MIC.abierto = false; microSoltar();
+  const cont = document.getElementById('plaza-micro');
+  if(cont) cont.innerHTML = '';
+  if(typeof feriaIniciar === 'function') feriaIniciar();
+  if(micEnLinea() && typeof plazaConectar === 'function') plazaConectar();
+  if(typeof plazaRenderAccion === 'function') plazaRenderAccion();
+  micToast('¡Bajaste a la plaza! 🏘️');
+}
+
+// Baja (si hace falta), pasa a la sala de esa persona y camina hasta ella.
+async function microBuscar(a){
+  const pr = MIC.pres[a];
+  if(!pr){ micToast('Ya no está en la plaza'); microPintar(); return; }
+  const eraDelMicro = plz.enMicro;
+  MIC.abierto = false; microSoltar();
+  const cont = document.getElementById('plaza-micro');
+  if(cont) cont.innerHTML = '';
+  if(eraDelMicro){
+    plz.enMicro = false; plz.ultimaActividad = performance.now(); MIC.avisado = false;
+    plz.yo.x = 320; plz.yo.y = MIC_SALIDA_Y;
+    if(typeof feriaIniciar === 'function') feriaIniciar();
+    await plazaConectar(pr.sala);
+  } else if(String(pr.sala) !== String(plz.sala)){
+    await plazaIrASala(pr.sala);
+  }
+  plz.buscado = { a: String(a), hasta: performance.now() + 30000, sigue: true, nombre: String((MIC.pas[a] && MIC.pas[a].nombre) || 'Pasajero') };
+  micToast('📍 Yendo a buscar a ' + plz.buscado.nombre);
+}
+
+// ---- Inactividad (se llama en cada cuadro de la plaza) ----
+
+function microControlarInactividad(ahora){
+  if(!plz.conectado || plz.enMicro) return;
+  if(!plz.ultimaActividad || plz.caminando || plz.obj || plz.menuAbierto || (typeof feria !== 'undefined' && (feria.dentro || feria.panel))) plz.ultimaActividad = ahora;
+  const quieto = ahora - plz.ultimaActividad;
+  if(quieto > MIC_INACTIVO_MS){ microVolver(true); return; }
+  if(quieto > MIC_AVISO_MS && !MIC.avisado){ MIC.avisado = true; micToast('Si no hacés nada, en 30 segundos volvés al micro 🚌'); }
+  if(quieto < MIC_AVISO_MS) MIC.avisado = false;
+}
+
+// Marca "buscado": un aro y una flecha sobre la persona, y un cartel en el borde si queda fuera de la pantalla.
+function microDibujarBuscado(ctx, ahoraMs){
+  const b = plz.buscado;
+  if(!b) return;
+  if(ahoraMs > b.hasta){ plz.buscado = null; return; }
+  const o = plz.otros[b.a];
+  if(!o) return;
+  const d = Math.hypot(o.x - plz.yo.x, o.y - plz.yo.y);
+  if(b.sigue && d < 45){ b.sigue = false; plz.obj = null; b.hasta = Math.min(b.hasta, ahoraMs + 6000); }
+  else if(b.sigue) plz.obj = { x: o.x, y: o.y + 14 };
+  const pulso = Math.sin(plz.t * 7);
+  ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.ellipse(o.x, o.y, 24 + pulso * 3, 10 + pulso * 1.5, 0, 0, 7); ctx.stroke();
+  ctx.fillStyle = '#FFD84D';
+  const fy = o.y - 86 + Math.abs(pulso) * 5;
+  ctx.beginPath(); ctx.moveTo(o.x - 9, fy); ctx.lineTo(o.x + 9, fy); ctx.lineTo(o.x, fy + 13); ctx.fill();
+}
+
+// Cartel fijo al borde de la pantalla apuntando a quien se busca (se dibuja sin mover la cámara).
+function microDibujarFlechaBorde(ctx){
+  const b = plz.buscado, o = b && plz.otros[b.a];
+  if(!o) return;
+  const sx = o.x - plz.cam.x, sy = o.y - plz.cam.y - 28;
+  if(sx > 18 && sx < PLZ.VW - 18 && sy > 18 && sy < PLZ.VH - 18) return;
+  const x = Math.max(24, Math.min(PLZ.VW - 24, sx)), y = Math.max(24, Math.min(PLZ.VH - 24, sy));
+  ctx.fillStyle = '#0F2A4D'; ctx.beginPath(); ctx.arc(x, y, 17, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.font = '800 15px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('📍', x, y + 1);
+  ctx.font = '700 9px Poppins, sans-serif';
+  ctx.fillStyle = 'rgba(15,42,77,.85)'; const w = ctx.measureText(b.nombre).width + 8;
+  const ty = y > PLZ.VH / 2 ? y - 28 : y + 28;
+  arcRR(ctx, x - w / 2, ty - 7, w, 14, 7); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText(b.nombre, x, ty);
+}
+
+// ---- El edificio del micro en el mapa ----
+
+function plazaDibujarMicro(ctx, e){
+  ctx.fillStyle = 'rgba(0,0,0,.14)'; arcRR(ctx, e.x + 4, e.y + 10, e.w, e.h, 14); ctx.fill();
+  // Carrocería de dos pisos
+  ctx.fillStyle = e.color; arcRR(ctx, e.x, e.y, e.w, e.h - 10, 14); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(e.x, e.y + (e.h - 10) / 2 - 2, e.w, 4);
+  for(let piso = 0; piso < 2; piso++){
+    for(let i = 0; i < 7; i++){
+      const wx = e.x + 14 + i * 40, wy = e.y + 12 + piso * 40;
+      if(piso === 1 && i === 3){ arcLogo(ctx, wx + 15, wy + 12, 28, '#fff'); continue; }
+      ctx.fillStyle = 'rgba(190,230,255,.92)';
+      arcRR(ctx, wx, wy, 30, 24, 5); ctx.fill();
+    }
+  }
+  // Ruedas
+  [e.x + 52, e.x + e.w - 52].forEach(rx => {
+    ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(rx, e.y + e.h - 10, 14, 0, 7); ctx.fill();
+    ctx.fillStyle = '#B8C2D1'; ctx.beginPath(); ctx.arc(rx, e.y + e.h - 10, 6, 0, 7); ctx.fill();
+  });
+  ctx.fillStyle = '#fff'; ctx.font = '800 10px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('MICRO DE DOS PISOS', e.x + e.w / 2, e.y + 44);
+  // Baldosa de entrada
+  const z = plazaZonaPuerta(e);
+  ctx.fillStyle = 'rgba(255,255,255,.4)'; arcRR(ctx, z.x, z.y, z.w, z.h, 10); ctx.fill();
+  ctx.fillStyle = '#0F2A4D'; ctx.font = '800 11px Poppins, sans-serif';
+  ctx.fillText('🚌 Subir', z.x + z.w / 2, z.y + z.h / 2);
+}

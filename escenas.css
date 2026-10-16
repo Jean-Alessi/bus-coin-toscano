@@ -1088,3 +1088,63 @@ button.tcarta{cursor:default;}
 .plz-sala-fila small{color:#5b6673; font-weight:700; margin-left:6px;}
 .plz-sala-fila.actual{background:#FFF3B0;}
 .plz-sala-fila .gbtn{min-height:32px; padding:0 14px;}
+
+/* ---- Botones de la plaza en dos filas ---- */
+.plz-botones{flex-wrap:wrap;}
+.plz-botones .gbtn{flex:1 1 40%;}
+
+/* ---- Micro de dos pisos y bandeja de pedidos ---- */
+.plz-botones .gbtn{flex:1 1 30%;}
+.mic-caja{padding:10px 12px;}
+.mic-buscar input{width:100%; box-sizing:border-box; border:1.5px solid #ccd; border-radius:12px; padding:8px 10px; font-size:14px; font-family:inherit; margin-bottom:6px; text-align:center;}
+.mic-resumen{display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:#0F2A4D; margin:2px 2px 6px;}
+.mic-tabs{display:flex; gap:6px; margin-bottom:6px;}
+.mic-tab{flex:1; border:2px solid #0F2A4D; background:#fff; color:#0F2A4D; border-radius:12px; padding:6px 4px; font-weight:800; font-size:12px; font-family:inherit; cursor:pointer;}
+.mic-tab.on{background:#0F2A4D; color:#fff;}
+.mic-bus{background:linear-gradient(#DCEBFF,#EEF4FF); border:3px solid #0F2A4D; border-radius:18px; padding:8px 6px; max-height:168px; overflow:auto;}
+.mic-arriba{background:linear-gradient(#FFF3D6,#FFF9EA);}
+.mic-frente{font-size:11px; font-weight:800; color:#5b6673; text-align:center; margin-bottom:6px;}
+.mic-fila{display:grid; grid-template-columns:1fr 1fr 12px 1fr 1fr; gap:4px; margin-bottom:4px; align-items:stretch;}
+.mic-hueco{display:block;}
+.mic-asiento{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:1px; border:2px solid transparent; background:#fff; border-radius:10px; padding:2px 0 3px; min-height:50px; font-family:inherit; cursor:pointer; color:#0F2A4D;}
+.mic-asiento b{font-size:10px; font-weight:800; line-height:1;}
+.mic-asiento .av-mini{border-radius:50%; overflow:hidden; display:inline-block;}
+.mic-vacio{font-size:20px; opacity:.35; line-height:34px;}
+.mic-asiento.plaza .av-mini{opacity:.35; filter:grayscale(.6);}
+.mic-asiento em{position:absolute; right:0; bottom:0; font-style:normal; font-size:12px;}
+.mic-asiento.yo{border-color:#E6A817; background:#FFF3B0;}
+.mic-asiento.sel{border-color:#3A86FF; box-shadow:0 0 0 2px rgba(58,134,255,.35);}
+.mic-detalle-caja{margin:6px 0 0;}
+.mic-detalle{display:flex; align-items:center; gap:10px; background:#EEF4FF; border-radius:14px; padding:8px 10px; margin-bottom:6px; text-align:left;}
+.mic-det-av{flex-shrink:0;}
+.ped-panel{background:#F7F5F0; border-radius:12px; padding:10px; margin:-6px 0 10px; color:#0F2A4D; font-size:12.5px;}
+.ped-titulo{font-weight:800; font-size:14px; margin-bottom:6px;}
+.ped-titulo small{font-weight:700; color:#8a5a00; margin-left:6px;}
+.ped-chips{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px;}
+.ped-chip{border:1.5px solid #ccd; background:#fff; color:#0F2A4D; border-radius:14px; padding:4px 9px; font-size:11.5px; font-weight:800; cursor:pointer; font-family:inherit;}
+.ped-chip.on{background:#0F2A4D; color:#fff; border-color:#0F2A4D;}
+.ped-chip b{background:#E5586E; color:#fff; border-radius:9px; padding:0 5px; margin-left:2px;}
+.ped-lista{display:flex; flex-direction:column; gap:5px; max-height:300px; overflow:auto;}
+.ped-fila{display:flex; align-items:center; gap:8px; background:#fff; border-radius:10px; padding:7px 9px; border-left:4px solid #E6A817;}
+.ped-fila.ped-urgente{border-left-color:#E5334B; background:#FFECEE;}
+.ped-fila.ped-hecho{opacity:.55; border-left-color:#3B9B5A;}
+.ped-emoji{font-size:22px; flex-shrink:0;}
+.ped-txt{flex:1; min-width:0; text-align:left;}
+.ped-txt small{color:#5b6673; font-weight:600;}
+.ped-ok{color:#3B9B5A; font-weight:800; font-size:18px;}
+.fer-aviso-fer{font-size:11px; color:#8a5a00; background:#FFF3D6; border-radius:8px; padding:5px 8px; margin:0 0 6px;}
+.fer-item-txt{flex-direction:row; justify-content:center; min-height:44px;}
+.fer-item-cumple{grid-column:1 / -1; width:100%; margin-top:6px;}
+.fer-item-urgente{width:100%; margin-top:6px; background:#FFD9DD;}
+.fer-tabla{margin:8px 0; text-align:left;}
+.fer-barra{position:relative; background:#EEF4FF; border-radius:8px; margin-bottom:4px; height:26px; overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 8px; font-size:12px; font-weight:800;}
+.fer-barra i{position:absolute; left:0; top:0; bottom:0; background:rgba(58,134,255,.25);}
+.fer-barra span, .fer-barra b{position:relative;}
+.fer-sellos{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:8px 0;}
+.fer-sello{position:relative; background:#F1F1F1; border-radius:12px; padding:6px 2px; opacity:.5;}
+.fer-sello.ok{background:#FFF3B0; opacity:1; border:2px dashed #E6A817;}
+.fer-sello span{font-size:24px; display:block;} .fer-sello small{font-size:9px; font-weight:800; display:block;}
+.fer-sello b{position:absolute; top:-4px; right:-2px; color:#3B9B5A; font-size:15px;}
+.fer-pregunta{margin:6px 0;} .fer-estrellas button{background:none; border:none; font-size:28px; color:#ccd; cursor:pointer; padding:0 2px;} .fer-estrellas button.on{color:#E6A817;}
+.fer-cartelera{text-align:left; margin:8px 0;} .fer-cart-fila{display:flex; gap:10px; padding:6px 8px; background:#EEF4FF; border-radius:10px; margin-bottom:4px; font-size:13px;} .fer-cart-fila b{min-width:46px; color:#0F2A4D;}
+.fer-foto{width:100%; border-radius:14px; background:#cde;}

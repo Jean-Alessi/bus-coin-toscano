@@ -282,6 +282,7 @@ function renderAdminViajes(){
       cont.innerHTML = '<p style="color:var(--gray);font-size:13px;">Todavía no hay viajes guardados.</p>';
       return;
     }
+    if(typeof pedidosVigilar === 'function') pedidosVigilar(codigos);
     cont.innerHTML = `<div class="section-label">Viajes guardados</div>` + codigos.map(c => {
       const pasajeros = Object.keys((datos[c].ranking && datos[c].ranking.puntos) || {}).length;
       const cerrado = !!datos[c].cerrado;
@@ -295,6 +296,7 @@ function renderAdminViajes(){
       return `<div class="bingo-roster-item">
         <span>${c}${cerrado ? ' 🔒' : ''}${listoParaBorrar ? ' <span style="color:#B85A0B;font-weight:600;">· ✅ Listo para borrar</span>' : ''}</span>
         <span class="bingo-roster-derecha">
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;background:#E5586E;color:#fff;" onclick="pedidosToggle('${c}')" title="Bandeja con todos los pedidos de los pasajeros">📥<span id="pedidos-num-${c}">${typeof pedidosPendientes === 'function' && pedidosPendientes(c) ? ' ' + pedidosPendientes(c) : ''}</span></button>
           <span>${pasajeros}${capacidad ? '/' + capacidad : ''} pasajero${pasajeros === 1 ? '' : 's'}</span>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleLista('${c}')" title="Cargar lista de pasajeros">📋${listaLen ? ' ' + listaLen : ''}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCursos('${c}')" title="Cursos para la Guerra de cursos">🎓${listaCursos.length ? ' ' + listaCursos.length : ''}</button>
@@ -306,6 +308,7 @@ function renderAdminViajes(){
         </span>
       </div>
       ${typeof adminCursosPanelHTML === 'function' ? adminCursosPanelHTML(c, listaCursos) : ''}
+      ${typeof pedidosPanelHTML === 'function' ? pedidosPanelHTML(c) : ''}
       ${typeof adminFeriaPanelHTML === 'function' ? adminFeriaPanelHTML(c, datos[c]) : ''}
       ${listaAbierta ? `
       <div style="margin:-6px 0 10px;">
