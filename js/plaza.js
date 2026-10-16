@@ -21,6 +21,7 @@ const PLZ_EDIFICIOS = [
   { id: 'premios', nombre: 'Premios', sub: 'Lo que podés ganar', emoji: '🎁', x: 428, y: 556, w: 188, h: 120, color: '#FF7A1A', lado: 'arriba', ir: () => showView('tienda') },
 ];
 const PLZ_FUENTE = { x: 320, y: 350, r: 44 };
+const plazaNombre = () => 'Plaza ' + marcaCorta();
 
 let plz = {
   activo: false, sala: 1, yo: { x: 320, y: 440, dir: 1 }, obj: null, otros: {}, cam: { x: 0, y: 0 }, t: 0, ultimoEnvio: 0, ultimoLatido: 0,
@@ -40,6 +41,8 @@ function plazaZonaPuerta(e){
 
 function iniciarPlaza(){
   plazaAlSalir(true);
+  const titulo = document.querySelector('#view-plaza h1');
+  if(titulo) titulo.textContent = plazaNombre();
   plz.activo = true;
   plz.otros = {}; plz.obj = null; plz.puerta = null; plz.menuAbierto = false; plz.burbuja = null;
   plz.yo = { x: 320, y: 450 + Math.floor(Math.random() * 40), dir: 1 };
@@ -141,7 +144,7 @@ function plazaRender(){
   if(!cont) return;
   document.getElementById('view-plaza').classList.add('juego-inmersivo');
   cont.innerHTML = gEscenaHTML('cielo', `
-    <div class="g-hud"><span class="g-pill" id="plaza-cantidad">1 en la plaza</span><span class="g-pill">Plaza Busmac</span></div>
+    <div class="g-hud"><span class="g-pill" id="plaza-cantidad">1 en la plaza</span><span class="g-pill">${plazaNombre()}</span></div>
     <div class="plz-caja"><canvas class="plz-canvas"></canvas></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
@@ -399,5 +402,5 @@ function plazaDibujar(ctx){
 
 // Tarjeta de Inicio: lleva a la plaza.
 function plazaTarjetaHomeHTML(){
-  return `<div class="av-home plz-home" onclick="showView('plaza')"><div class="plz-home-img">🏘️</div><div class="av-home-txt"><h3>Plaza Busmac</h3><p>Encontrate con los del viaje y entrá a los juegos</p></div><span class="av-home-flecha">›</span></div>`;
+  return `<div class="av-home plz-home" onclick="showView('plaza')"><div class="plz-home-img">🏘️</div><div class="av-home-txt"><h3>${plazaNombre()}</h3><p>Encontrate con los del viaje y entrá a los juegos</p></div><span class="av-home-flecha">›</span></div>`;
 }

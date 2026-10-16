@@ -609,6 +609,6 @@ ARC_JUEGOS.bombas = {
 };
 ARC_JUEGOS.plataformas = {
   titulo: 'Aventura del Pasajero', tema: 'cielo', crear: arcCrearPlataformas, emojiFin: '🧳', textoFin: '¡Se terminó el viaje!',
-  instrucciones: 'Corré con ◀ ▶ y saltá con SALTAR (mantené apretado para saltar más alto). Juntá las B de Busmac, saltale encima a los conos y llegá a la bandera.',
+  instrucciones: `Corré con ◀ ▶ y saltá con SALTAR (mantené apretado para saltar más alto). Juntá los logos de ${marcaCorta()}, saltale encima a los conos y llegá a la bandera.`,
   monedas: p => Math.min(15, Math.floor(p / 100)),
 };

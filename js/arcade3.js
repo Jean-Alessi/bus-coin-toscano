@@ -801,12 +801,12 @@ function arcCrearPinball(){
 
 ARC_JUEGOS.laberinto = {
   titulo: 'Laberinto del Micro', tema: 'noche', crear: arcCrearLaberinto, emojiFin: '🚚', textoFin: '¡Te atraparon los camiones!',
-  instrucciones: 'Deslizá el dedo para girar y juntá todos los puntos. La B de Busmac te da poder para sacar de la ruta a los camiones.',
+  instrucciones: `Deslizá el dedo para girar y juntá todos los puntos. El logo de ${marcaCorta()} te da poder para sacar de la ruta a los camiones.`,
   monedas: p => Math.min(15, Math.floor(p / 150)),
 };
 ARC_JUEGOS.tanque = {
   titulo: 'Defensa del Garage', tema: 'noche', crear: arcCrearTanque, emojiFin: '💥', textoFin: '¡Cayó el garage!',
-  instrucciones: 'Arrastrá el dedo para mover tu tanque (dispara solo). Defendé el garage de Busmac y no dejes pasar a los enemigos.',
+  instrucciones: `Arrastrá el dedo para mover tu tanque (dispara solo). Defendé el garage de ${marcaCorta()} y no dejes pasar a los enemigos.`,
   monedas: p => Math.min(15, Math.floor(p / 120)),
 };
 ARC_JUEGOS.pinball = {

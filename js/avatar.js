@@ -21,11 +21,13 @@ const AV_CARAS = [
 
 const AV_TORSO = 'M24 120 V98 C24 84 35 76 50 76 C65 76 76 84 76 98 V120 Z';
 
-// Logo de Busmac sobre un disco blanco, centrado en (x, y) con 'tam' de alto.
+// Logo de la empresa sobre un disco blanco, centrado en (x, y) con 'tam' de alto.
 let AV_LOGO_SRC = 'logo-empresa.png';
 function avLogo(x, y, tam, fondo){
-  const w = tam * 296 / 309;
-  return `${fondo ? `<circle cx="${x}" cy="${y}" r="${tam * 0.62}" fill="${fondo}"/>` : ''}<image href="${AV_LOGO_SRC}" x="${x - w / 2}" y="${y - tam / 2}" width="${w}" height="${tam}"/>`;
+  // La caja es más ancha que alta: un logo cuadrado se ajusta por el alto y uno ancho
+  // (con el nombre escrito) por el ancho, sin deformarse.
+  const w = tam * 1.4;
+  return `${fondo ? `<circle cx="${x}" cy="${y}" r="${tam * 0.62}" fill="${fondo}"/>` : ''}<image href="${AV_LOGO_SRC}" x="${x - w / 2}" y="${y - tam / 2}" width="${w}" height="${tam}" preserveAspectRatio="xMidYMid meet"/>`;
 }
 
 // ---- Catálogo de la tienda ----
@@ -38,7 +40,7 @@ const AV_REMERAS = [
   { id: 'hawaiana', nombre: 'Hawaiana', precio: 40, color: '#2FB5B5', deco: () => [[36, 90, '#FFD84D'], [58, 86, '#FF7AA8'], [46, 104, '#FF7AA8'], [66, 106, '#FFD84D'], [34, 112, '#FFD84D']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="3.4" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.2" fill="#fff"/>`).join('') },
   { id: 'estrellas', nombre: 'Estrellas', precio: 50, color: '#1D2B6B', deco: () => [[36, 88], [60, 84], [48, 100], [68, 104], [34, 110], [54, 114]].map(([x, y]) => `<path d="M${x} ${y - 3.4} L${x + 1} ${y - 1} L${x + 3.4} ${y} L${x + 1} ${y + 1} L${x} ${y + 3.4} L${x - 1} ${y + 1} L${x - 3.4} ${y} L${x - 1} ${y - 1} Z" fill="#FFF3B0"/>`).join('') },
   { id: 'chofer', nombre: 'Camisa de chofer', precio: 60, color: '#BFE6FF', deco: () => `<path d="M40 76 L50 90 L60 76 Z" fill="#fff"/><path d="M48 89 L52 89 L53.5 105 L50 109 L46.5 105 Z" fill="#0F2A4D"/><rect x="56" y="96" width="9" height="8" rx="1.5" fill="#9CCBEA"/>` },
-  { id: 'busmac', nombre: 'Remera Busmac', precio: 80, color: '#0F2A4D', deco: () => `<rect x="20" y="98" width="60" height="5" fill="#E6A817"/>${avLogo(50, 89, 14, '#fff')}`, mangas: '#E6A817' },
+  { id: 'busmac', nombre: 'Remera ' + marcaCorta(), precio: 80, color: '#0F2A4D', deco: () => `<rect x="20" y="98" width="60" height="5" fill="#E6A817"/>${avLogo(50, 89, 14, '#fff')}`, mangas: '#E6A817' },
   { id: 'egresado', nombre: 'Buzo de egresado', precio: 100, color: '#7E57FF', deco: () => `<rect x="20" y="104" width="60" height="4" fill="#FFD84D"/>${avLogo(50, 91, 13, '#fff')}`, mangas: '#5D3FD4' },
   { id: 'dorada', nombre: 'Campera dorada', precio: 130, color: '#E6A817', deco: () => `<path d="M50 78 V122" stroke="#8B5A12" stroke-width="1.6"/><path d="M30 90 Q36 84 42 86" stroke="#FFF3B0" stroke-width="2" fill="none" stroke-linecap="round"/>`, mangas: '#C98F0F' },
 ];
@@ -47,7 +49,7 @@ const AV_REMERAS = [
 const AV_GORRAS = [
   { id: 'lana', nombre: 'Gorro de lana', precio: 20, svg: () => `<path d="M24 36 C24 14 76 14 76 36 Z" fill="#E5484D"/><rect x="22" y="32" width="56" height="9" rx="4.5" fill="#B83238"/><circle cx="50" cy="13" r="6" fill="#FFE9A6"/>` },
   { id: 'paja', nombre: 'Sombrero de paja', precio: 30, svg: () => `<ellipse cx="50" cy="35" rx="42" ry="9" fill="#E6C27A"/><path d="M28 34 C28 10 72 10 72 34 Z" fill="#F0D391"/><rect x="28" y="28" width="44" height="6" fill="#B5651D"/>` },
-  { id: 'visera', nombre: 'Gorra Busmac', precio: 45, svg: () => `<path d="M22 38 C22 12 78 12 78 38 Z" fill="#0F2A4D"/><path d="M46 38 H92 C92 43 70 46 46 42 Z" fill="#E6A817"/>${avLogo(50, 26, 15, '#fff')}` },
+  { id: 'visera', nombre: 'Gorra ' + marcaCorta(), precio: 45, svg: () => `<path d="M22 38 C22 12 78 12 78 38 Z" fill="#0F2A4D"/><path d="M46 38 H92 C92 43 70 46 46 42 Z" fill="#E6A817"/>${avLogo(50, 26, 15, '#fff')}` },
   { id: 'birrete', nombre: 'Birrete de egresado', precio: 70, svg: () => `<rect x="30" y="28" width="40" height="10" fill="#1B1F3A"/><path d="M12 24 L50 8 L88 24 L50 40 Z" fill="#2A2F57"/><path d="M50 24 L84 27 V40" stroke="#FFD84D" stroke-width="2" fill="none"/><circle cx="84" cy="42" r="3" fill="#FFD84D"/>` },
   { id: 'corona', nombre: 'Corona', precio: 150, svg: () => `<path d="M26 34 L30 12 L40 24 L50 8 L60 24 L70 12 L74 34 Z" fill="#FFD84D" stroke="#C9A227" stroke-width="1.5" stroke-linejoin="round"/><circle cx="50" cy="26" r="3" fill="#E5484D"/><circle cx="36" cy="28" r="2" fill="#4FB8FF"/><circle cx="64" cy="28" r="2" fill="#5BE88D"/>` },
 ];

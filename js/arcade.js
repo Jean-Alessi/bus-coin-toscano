@@ -49,14 +49,20 @@ function arcRR(ctx, x, y, w, h, r){
 // 'fondo' (opcional) le dibuja un disco detrás para que se lea sobre colores oscuros.
 const ARC_LOGO = new Image();
 ARC_LOGO.src = 'logo-empresa.png';
+function marcaCorta(){ return (typeof MARCA !== 'undefined' && MARCA.nombreCorto) || 'Busmac'; }
+
 function arcLogo(ctx, x, y, tam, fondo){
   if(fondo){
     ctx.fillStyle = fondo;
     ctx.beginPath(); ctx.arc(x, y, tam * 0.62, 0, 7); ctx.fill();
   }
   if(ARC_LOGO.complete && ARC_LOGO.naturalWidth){
-    const w = tam * ARC_LOGO.naturalWidth / ARC_LOGO.naturalHeight;
-    ctx.drawImage(ARC_LOGO, x - w / 2, y - tam / 2, w, tam);
+    // Se ajusta a su proporción: un logo cuadrado ocupa 'tam' de alto y uno ancho (con el
+    // nombre escrito) hasta 1,4 veces 'tam' de ancho, sin deformarse.
+    const asp = ARC_LOGO.naturalWidth / ARC_LOGO.naturalHeight;
+    const lado = asp > 1.4 ? tam * 1.4 : tam;
+    const w = asp >= 1 ? lado : lado * asp, h = asp >= 1 ? lado / asp : lado;
+    ctx.drawImage(ARC_LOGO, x - w / 2, y - h / 2, w, h);
   } else {
     ctx.fillStyle = '#F28A1E';
     ctx.font = '800 ' + Math.round(tam) + 'px "Baloo 2", Poppins, sans-serif';

@@ -13,6 +13,9 @@ const MARCA = {
   // <title> de la pestaña del navegador.
   nombreCompleto: 'Turismo Toscano',
 
+  // Nombre corto, para textos de juegos y de la plaza ("Plaza Toscano").
+  nombreCorto: 'Toscano',
+
   // Mensaje de bienvenida en la pantalla de "código de viaje".
   bienvenida: '¡Bienvenido a bordo! 🚌 Arrancamos esta nueva experiencia con Turismo Toscano',
 
