@@ -647,9 +647,15 @@ function arcTerminar(){
   if(typeof analyticsRegistrar === 'function') analyticsRegistrar('partida_arcade', { juego: id, puntaje: p });
 }
 
-// Toque, deslizar y teclado: cada juego define solo las que usa.
+// Entrada. Cada juego define solo lo que usa:
+//  toque(x, y)        al apoyar el dedo (o al soltar, si toqueAlSoltar y no se movió)
+//  deslizar(dir)      cada ~22 px de arrastre: 'izq' | 'der' | 'arr' | 'abj'
+//  lanzar(dir)        un movimiento rápido y largo (flick) al soltar
+//  arrastrar(x, y)    posición del dedo mientras está apoyado (coordenadas del juego)
+//  soltar()           al levantar el dedo
+//  tecla(k) / teclaSuelta(k)   teclado, para probar desde la compu
 function arcEntrada(canvas){
-  let origen = null;
+  let origen = null, inicio = null;
   const logico = e => {
     const r = canvas.getBoundingClientRect();
     return [(e.clientX - r.left) * arc.juego.ancho / r.width, (e.clientY - r.top) * arc.juego.alto / r.height];
@@ -658,17 +664,35 @@ function arcEntrada(canvas){
     if(arc.fase !== 'jugando') return;
     e.preventDefault();
     origen = { x: e.clientX, y: e.clientY };
+    inicio = { x: e.clientX, y: e.clientY, t: performance.now(), movido: false };
     const [x, y] = logico(e);
-    if(arc.juego.toque) arc.juego.toque(x, y);
+    const j = arc.juego;
+    if(j.arrastrar) j.arrastrar(x, y);
+    if(j.toque && !j.toqueAlSoltar) j.toque(x, y);
   });
   canvas.addEventListener('pointermove', e => {
-    if(!origen || arc.fase !== 'jugando' || !arc.juego.deslizar) return;
+    if(!origen || arc.fase !== 'jugando') return;
+    const j = arc.juego;
+    if(j.arrastrar){ const [x, y] = logico(e); j.arrastrar(x, y); }
+    if(Math.hypot(e.clientX - inicio.x, e.clientY - inicio.y) > 12) inicio.movido = true;
+    if(!j.deslizar) return;
     const dx = e.clientX - origen.x, dy = e.clientY - origen.y;
     if(Math.hypot(dx, dy) < 22) return;
-    arc.juego.deslizar(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'izq' : 'der') : (dy < 0 ? 'arr' : 'abj'));
+    j.deslizar(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'izq' : 'der') : (dy < 0 ? 'arr' : 'abj'));
     origen = { x: e.clientX, y: e.clientY };
   });
-  const soltar = () => { origen = null; };
+  const soltar = e => {
+    if(origen && inicio && arc.fase === 'jugando'){
+      const j = arc.juego;
+      if(j.toqueAlSoltar && j.toque && !inicio.movido && e.type === 'pointerup'){ const [x, y] = logico(e); j.toque(x, y); }
+      const dx = e.clientX - inicio.x, dy = e.clientY - inicio.y;
+      if(j.lanzar && e.type === 'pointerup' && performance.now() - inicio.t < 260 && Math.hypot(dx, dy) > 55){
+        j.lanzar(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'izq' : 'der') : (dy < 0 ? 'arr' : 'abj'));
+      }
+    }
+    if(arc.juego && arc.juego.soltar) arc.juego.soltar();
+    origen = null; inicio = null;
+  };
   canvas.addEventListener('pointerup', soltar);
   canvas.addEventListener('pointercancel', soltar);
   canvas.addEventListener('pointerleave', soltar);
@@ -677,5 +701,8 @@ function arcEntrada(canvas){
 document.addEventListener('keydown', e => {
   if(arc.fase !== 'jugando' || !arc.juego.tecla) return;
   if(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
-  arc.juego.tecla(e.key);
+  if(!e.repeat) arc.juego.tecla(e.key);
+});
+document.addEventListener('keyup', e => {
+  if(arc.fase === 'jugando' && arc.juego.teclaSuelta) arc.juego.teclaSuelta(e.key);
 });

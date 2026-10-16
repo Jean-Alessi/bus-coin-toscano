@@ -36,6 +36,9 @@ const ICONOS = {
   sopaletras: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h6M7 16h8"/><circle cx="17.5" cy="16.5" r="3"/><path d="m19.8 18.8 2.2 2.2"/>',
   micro: '<rect x="5" y="3" width="14" height="17" rx="3"/><path d="M7 6.5h10v4H7z"/><circle cx="8.5" cy="16" r="1"/><circle cx="15.5" cy="16" r="1"/><path d="M7 20v1.5M17 20v1.5"/>',
   serpiente: '<path d="M4 18c3.5 3 6.5 1 8-1.5S15 12 17.5 11"/><path d="M4 18c-1-3 1-5 4-5.5"/><circle cx="18.5" cy="9" r="2.5"/><circle cx="18" cy="8.5" r=".6" fill="currentColor" stroke="none"/>',
+  tetris: '<rect x="3" y="13" width="6" height="6" rx="1"/><rect x="9" y="13" width="6" height="6" rx="1"/><rect x="15" y="13" width="6" height="6" rx="1"/><rect x="9" y="7" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/>',
+  ladrillos: '<rect x="3" y="4" width="8" height="4" rx="1"/><rect x="13" y="4" width="8" height="4" rx="1"/><rect x="3" y="10" width="18" height="3.5" rx="1"/><circle cx="12" cy="17" r="1.6"/><path d="M8 21h8"/>',
+  parking: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9.5 17V7h3.5a3 3 0 0 1 0 6H9.5"/>',
   tienda: '<path d="M4 4h16l1.5 5h-19Z"/><path d="M4.5 9V20h15V9"/><path d="M9.5 20v-6h5v6"/>'
 };
 

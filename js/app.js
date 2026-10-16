@@ -24,6 +24,9 @@ const TARJETAS_VIDEO = [
   { icon: "micro", title: "Corredor del Micro", sub: "Esquivá obstáculos y juntá monedas por la ruta", view: "corredor" },
   { icon: "avion", title: "Vuelo", sub: "Un toque para subir, pasá entre las torres", view: "vuelo" },
   { icon: "serpiente", title: "Serpiente", sub: "Comé medialunas sin chocarte", view: "serpiente" },
+  { icon: "tetris", title: "Tetris", sub: "Encajá las piezas y completá líneas", view: "tetris" },
+  { icon: "ladrillos", title: "Ladrillos", sub: "Rebotá la pelota y rompé todo", view: "ladrillos" },
+  { icon: "parking", title: "Estacionar el Micro", sub: "Entrá derecho al lugar libre", view: "parking" },
 ];
 
 const TARJETAS_GRUPO = [
@@ -489,7 +492,7 @@ function renderJuegos(){
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -564,7 +567,7 @@ function showView(name){
   if(name==='cuatrouno'){ iniciarCuatrouno(); }
   if(name==='valija'){ iniciarValija(); }
   if(name==='memoria'){ iniciarMemoria(); }
-  if(name==='corredor' || name==='vuelo' || name==='serpiente'){ arcIniciarVista(name); }
+  if(typeof ARC_JUEGOS !== 'undefined' && ARC_JUEGOS[name]){ arcIniciarVista(name); }
   if(name==='sudoku'){ iniciarSudoku(); }
   if(name==='patrones'){ iniciarPatrones(); }
   if(name==='sopa'){ iniciarSopa(); }
