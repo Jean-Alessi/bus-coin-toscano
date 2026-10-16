@@ -495,6 +495,7 @@ function renderHome(){
   // ruleta del día, sin repetir lo que ya está a un toque de distancia.
   document.getElementById('home-content').innerHTML = gEscenaHTML('cielo', `
     <div class="home-logo-banner"><img src="logo-empresa.png" alt="Logo"></div>
+    ${typeof plazaTarjetaHomeHTML === 'function' ? plazaTarjetaHomeHTML() : ''}
     ${typeof avatarTarjetaHomeHTML === 'function' ? avatarTarjetaHomeHTML() : ''}
     ${pwaInstalarHTML()}
     ${ruletaHTML()}`);
@@ -555,7 +556,7 @@ function renderJuegos(){
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas', 'plaza'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -563,6 +564,7 @@ const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 
 function volverDeJuego(){
   const activa = document.querySelector('.view.active');
   if(activa && activa.id === 'view-trivia'){ triviaVolver(); return; }
+  if(activa && activa.id === 'view-plaza'){ showView('home'); return; }
   showView('juegos');
 }
 
@@ -608,6 +610,8 @@ window.addEventListener('popstate', () => {
 });
 
 function showView(name){
+  const activaAntes = document.querySelector('.view.active');
+  if(activaAntes && activaAntes.id === 'view-plaza' && name !== 'plaza' && typeof plazaAlSalir === 'function') plazaAlSalir();
   const esJuego = TABS_HIJOS_DE_JUEGOS.includes(name);
   if(esJuego && !juegoPasoHistorial){
     try { history.pushState({ juego: name }, ''); juegoPasoHistorial = true; } catch(e){}
@@ -619,7 +623,7 @@ function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  const tabName = TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : (name === 'avatar' ? 'home' : name);
+  const tabName = (name === 'avatar' || name === 'plaza') ? 'home' : (TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : name);
   const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
   if(tab) tab.classList.add('active');
   if(name==='juegos'){ renderJuegos(); }
@@ -634,6 +638,7 @@ function showView(name){
   if(name==='videopoker'){ iniciarVideoPoker(); }
   if(name==='texas'){ iniciarTexas(); }
   if(name==='avatar'){ iniciarAvatar(); }
+  if(name==='plaza'){ iniciarPlaza(); }
   if(typeof ARC_JUEGOS !== 'undefined' && ARC_JUEGOS[name]){ arcIniciarVista(name); }
   if(name==='sudoku'){ iniciarSudoku(); }
   if(name==='patrones'){ iniciarPatrones(); }

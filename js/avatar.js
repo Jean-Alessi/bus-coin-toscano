@@ -22,9 +22,10 @@ const AV_CARAS = [
 const AV_TORSO = 'M24 120 V98 C24 84 35 76 50 76 C65 76 76 84 76 98 V120 Z';
 
 // Logo de Busmac sobre un disco blanco, centrado en (x, y) con 'tam' de alto.
+let AV_LOGO_SRC = 'logo-empresa.png';
 function avLogo(x, y, tam, fondo){
   const w = tam * 296 / 309;
-  return `${fondo ? `<circle cx="${x}" cy="${y}" r="${tam * 0.62}" fill="${fondo}"/>` : ''}<image href="logo-empresa.png" x="${x - w / 2}" y="${y - tam / 2}" width="${w}" height="${tam}"/>`;
+  return `${fondo ? `<circle cx="${x}" cy="${y}" r="${tam * 0.62}" fill="${fondo}"/>` : ''}<image href="${AV_LOGO_SRC}" x="${x - w / 2}" y="${y - tam / 2}" width="${w}" height="${tam}"/>`;
 }
 
 // ---- Catálogo de la tienda ----
@@ -128,7 +129,7 @@ function avatarSVG(p, tam, opts){
   const cabeza = `<circle cx="23" cy="49" r="5.5" fill="${piel}"/><circle cx="77" cy="49" r="5.5" fill="${piel}"/><circle cx="50" cy="46" r="27" fill="${piel}"/>`;
 
   const contenido = `
-    ${fondo.svg(u)}
+    ${o.sinFondo ? '' : fondo.svg(u)}
     ${avPeloAtras(p.peloEstilo, peloColor)}
     ${cuerpo}
     ${manoAcc && manoAcc.capa === 'cuerpo' ? manoAcc.svg() : ''}
@@ -307,4 +308,36 @@ function renderAvatar(){
 function avatarTarjetaHomeHTML(){
   avCargar();
   return `<div class="av-home" onclick="showView('avatar')"><div class="av-home-img">${avatarSVG(avEstado.puesto, 84)}</div><div class="av-home-txt"><h3>Mi personaje</h3><p>Vestilo con las monedas que juntes jugando</p></div><span class="av-home-flecha">›</span></div>`;
+}
+
+// ---- Sprites para el mundo (canvas): el personaje sin fondo, como imagen ----
+const AV_SPRITES = {};
+let avLogoDatos = null;
+
+function avLogoComoDatos(){
+  if(avLogoDatos) return avLogoDatos;
+  try {
+    if(typeof ARC_LOGO !== 'undefined' && ARC_LOGO.complete && ARC_LOGO.naturalWidth){
+      const c = document.createElement('canvas');
+      c.width = ARC_LOGO.naturalWidth; c.height = ARC_LOGO.naturalHeight;
+      c.getContext('2d').drawImage(ARC_LOGO, 0, 0);
+      avLogoDatos = c.toDataURL('image/png');
+    }
+  } catch(e){}
+  return avLogoDatos;
+}
+
+// Devuelve una imagen (que puede tardar un instante en cargar) del personaje, con cache.
+function avatarSprite(p){
+  const clave = JSON.stringify(p || {});
+  if(AV_SPRITES[clave]) return AV_SPRITES[clave];
+  const previo = AV_LOGO_SRC;
+  const datos = avLogoComoDatos();
+  if(datos) AV_LOGO_SRC = datos;
+  const svg = avatarSVG(p, 120, { sinFondo: true }).replace('class="av-svg"', 'xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"');
+  AV_LOGO_SRC = previo;
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  AV_SPRITES[clave] = img;
+  return img;
 }
