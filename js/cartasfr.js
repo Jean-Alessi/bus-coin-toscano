@@ -41,7 +41,7 @@ function frCartaHTML(c, opts){
 function frDorsoHTML(opts){
   const o = opts || {};
   const attrs = `${o.onclick ? ` onclick="${o.onclick}"` : ''}${o.estilo ? ` style="${o.estilo}"` : ''}`;
-  return `<div class="fcarta fc-dorso${o.extra ? ' ' + o.extra : ''}"${attrs}><img src="logo-empresa.png" alt=""></div>`;
+  return `<div class="fcarta fc-dorso${o.extra ? ' ' + o.extra : ''}"${attrs}><img src="logo-empresa.png?v=2" alt=""></div>`;
 }
 
 function frHuecoHTML(opts){

@@ -309,7 +309,7 @@ function arcCrearLaberinto(){
           ctx.fillStyle = '#FFE9A6'; ctx.beginPath(); ctx.arc(x * C + C / 2, y * C + C / 2, 2.3, 0, 7); ctx.fill();
         } else if(p === 2){
           // Pastilla de poder: la B de Busmac
-          arcLogo(ctx, x * C + C / 2, y * C + C / 2, 15 + Math.sin(j.t * 6) * 1.5, '#fff');
+          arcLogo(ctx, x * C + C / 2, y * C + C / 2, 19 + Math.sin(j.t * 6) * 1.5, '#fff');
         }
       }
     }

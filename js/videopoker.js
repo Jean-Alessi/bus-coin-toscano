@@ -110,7 +110,7 @@ function vpRender(){
       : `<button class="gbtn gbtn-ancho" onclick="vpRepartir()">Repartir</button>`;
 
   cont.innerHTML = gEscenaHTML('casino', `
-    <div class="g-hud"><span class="g-pill"><img class="vp-ficha" src="logo-empresa.png" alt=""> ${vp.fichas}</span><span class="g-pill">Apuesta ${vp.apuesta}</span></div>
+    <div class="g-hud"><span class="g-pill"><img class="vp-ficha" src="logo-empresa.png?v=2" alt=""> ${vp.fichas}</span><span class="g-pill">Apuesta ${vp.apuesta}</span></div>
     <div class="vp-tabla">${tabla}</div>
     <div class="vp-cartas" style="--cw:${vp.cw}px">${cartas}</div>
     <p class="vp-mensaje ${vp.resultado && vp.resultado.pago > 0 ? 'vp-mensaje-gana' : ''}">${mensaje}</p>

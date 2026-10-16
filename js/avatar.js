@@ -22,12 +22,13 @@ const AV_CARAS = [
 const AV_TORSO = 'M24 120 V98 C24 84 35 76 50 76 C65 76 76 84 76 98 V120 Z';
 
 // Logo de la empresa sobre un disco blanco, centrado en (x, y) con 'tam' de alto.
-let AV_LOGO_SRC = 'logo-empresa.png';
+let AV_LOGO_SRC = 'logo-empresa.png?v=2';
 function avLogo(x, y, tam, fondo){
   // La caja es más ancha que alta: un logo cuadrado se ajusta por el alto y uno ancho
   // (con el nombre escrito) por el ancho, sin deformarse.
   const w = tam * 1.4;
-  return `${fondo ? `<circle cx="${x}" cy="${y}" r="${tam * 0.62}" fill="${fondo}"/>` : ''}<image href="${AV_LOGO_SRC}" x="${x - w / 2}" y="${y - tam / 2}" width="${w}" height="${tam}" preserveAspectRatio="xMidYMid meet"/>`;
+  const ancho = typeof logoAncho === 'function' && logoAncho();
+  return `${fondo && ancho ? `<rect x="${x - w / 2 - 1}" y="${y - tam / 2 - 1}" width="${w + 2}" height="${tam + 2}" rx="3" fill="#fff" opacity=".95"/>` : ''}<image href="${AV_LOGO_SRC}" x="${x - w / 2}" y="${y - tam / 2}" width="${w}" height="${tam}" preserveAspectRatio="xMidYMid meet"/>`;
 }
 
 // ---- Catálogo de la tienda ----

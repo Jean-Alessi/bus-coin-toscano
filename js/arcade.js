@@ -48,20 +48,31 @@ function arcRR(ctx, x, y, w, h, r){
 // El logo de Busmac (la B) para usarlo como pieza o adorno dentro de los juegos.
 // 'fondo' (opcional) le dibuja un disco detrás para que se lea sobre colores oscuros.
 const ARC_LOGO = new Image();
-ARC_LOGO.src = 'logo-empresa.png';
+ARC_LOGO.src = 'logo-empresa.png?v=2';
 function marcaCorta(){ return (typeof MARCA !== 'undefined' && MARCA.nombreCorto) || 'Busmac'; }
 
+// Un logo con el nombre escrito (ancho) necesita una placa blanca para leerse sobre fondos
+// oscuros; la "b" de Busmac se dibuja sola, sin ningún recuadro ni círculo detrás.
+function logoAncho(){
+  return ARC_LOGO.complete && ARC_LOGO.naturalWidth > 0 && ARC_LOGO.naturalWidth / ARC_LOGO.naturalHeight > 1.4;
+}
+if(typeof document !== 'undefined'){
+  const marcarAncho = () => { if(logoAncho()) document.documentElement.classList.add('logo-ancho'); };
+  ARC_LOGO.addEventListener('load', marcarAncho);
+  marcarAncho();
+}
+
 function arcLogo(ctx, x, y, tam, fondo){
-  if(fondo){
-    ctx.fillStyle = fondo;
-    ctx.beginPath(); ctx.arc(x, y, tam * 0.62, 0, 7); ctx.fill();
-  }
   if(ARC_LOGO.complete && ARC_LOGO.naturalWidth){
     // Se ajusta a su proporción: un logo cuadrado ocupa 'tam' de alto y uno ancho (con el
     // nombre escrito) hasta 1,4 veces 'tam' de ancho, sin deformarse.
     const asp = ARC_LOGO.naturalWidth / ARC_LOGO.naturalHeight;
     const lado = asp > 1.4 ? tam * 1.4 : tam;
     const w = asp >= 1 ? lado : lado * asp, h = asp >= 1 ? lado / asp : lado;
+    if(fondo && asp > 1.4){
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      arcRR(ctx, x - w / 2 - 3, y - h / 2 - 2, w + 6, h + 4, 4); ctx.fill();
+    }
     ctx.drawImage(ARC_LOGO, x - w / 2, y - h / 2, w, h);
   } else {
     ctx.fillStyle = '#F28A1E';

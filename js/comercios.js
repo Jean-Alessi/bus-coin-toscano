@@ -242,7 +242,7 @@ function comerciosLeerParamsCanje(){
 function comerciosCanjePantallaHTML(contenidoHTML){
   return `<div class="device"><div class="screen" style="justify-content:flex-start;">
     <div class="statusbar">
-      <img src="logo-empresa.png" alt="Logo" class="statusbar-logo">
+      <img src="logo-empresa.png?v=2" alt="Logo" class="statusbar-logo">
       <span class="statusbar-brand">${MARCA.marcaPrincipal} <em>${MARCA.marcaSecundaria}</em></span>
     </div>
     <div class="view active" style="padding:20px;">${contenidoHTML}</div>

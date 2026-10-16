@@ -139,7 +139,7 @@ function texasObjetivoRapido(modo){
 }
 
 function texasFichaHTML(n){
-  return `<span class="tx-ficha"><img src="logo-empresa.png" alt="">${n}</span>`;
+  return `<span class="tx-ficha"><img src="logo-empresa.png?v=2" alt="">${n}</span>`;
 }
 
 function texasInsignias(mesa, a){

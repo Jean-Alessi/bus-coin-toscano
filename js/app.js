@@ -511,7 +511,7 @@ function renderHome(){
   // pestaña; Inicio se queda solo con el logo (más publicidad) y la
   // ruleta del día, sin repetir lo que ya está a un toque de distancia.
   document.getElementById('home-content').innerHTML = gEscenaHTML('cielo', `
-    <div class="home-logo-banner"><img src="logo-empresa.png" alt="Logo"></div>
+    <div class="home-logo-banner"><img src="logo-empresa.png?v=2" alt="Logo"></div>
     ${organizadorTarjetaHomeHTML()}
     ${typeof plazaTarjetaHomeHTML === 'function' ? plazaTarjetaHomeHTML() : ''}
     ${typeof avatarTarjetaHomeHTML === 'function' ? avatarTarjetaHomeHTML() : ''}

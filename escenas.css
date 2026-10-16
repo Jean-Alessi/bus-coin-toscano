@@ -1010,3 +1010,10 @@ button.tcarta{cursor:default;}
 .organizador-escena .bingo-roster-derecha{flex:1 1 100%; flex-wrap:wrap; justify-content:flex-start; gap:6px; min-width:0;}
 .organizador-escena .bingo-roster-derecha > span{font-size:12px; font-weight:700; margin-right:auto; white-space:nowrap;}
 .organizador-escena .bingo-roster-derecha .btn-eliminar-pasajero{min-height:26px;}
+
+/* ---- Logo sin recuadro ---- */
+.fc-dorso img{background:none !important; border-radius:0 !important; padding:0 !important;}
+.vp-ficha{background:none !important; border-radius:0 !important; padding:0 !important;}
+.tx-ficha img{background:none !important; border-radius:0 !important; padding:0 !important;}
+.logo-ancho .fc-dorso img{background:rgba(255,255,255,.95) !important; border-radius:6px !important; padding:2px !important; width:78%; height:auto;}
+.logo-ancho .vp-ficha, .logo-ancho .tx-ficha img{background:#fff !important; border-radius:4px !important; padding:1px 2px !important; width:auto; height:14px;}
