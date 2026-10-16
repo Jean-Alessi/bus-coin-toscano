@@ -470,6 +470,19 @@ function renderTarjetas(lista, contenedorId){
   });
 }
 
+// Desde adentro de un viaje, el organizador vuelve a su panel (Viajes, comercios,
+// cursos, póker) por esta tarjeta de Inicio: ese panel vive en la pantalla de entrada.
+function irAlPanelOrganizador(){
+  const bloque = document.getElementById('bloque-organizador');
+  if(bloque) bloque.hidden = false;
+  showView('codigo-viaje');
+}
+
+function organizadorTarjetaHomeHTML(){
+  if(!(bingoEsOrganizador() || agenciasEsOrganizador())) return '';
+  return `<div class="av-home org-home" onclick="irAlPanelOrganizador()"><div class="org-home-img">⚙️</div><div class="av-home-txt"><h3>Panel del organizador</h3><p>Viajes, cursos, comercios y póker</p></div><span class="av-home-flecha">›</span></div>`;
+}
+
 function renderHome(){
   pokerEscucharAjuste();
   const saludo = document.getElementById('home-saludo');
@@ -499,6 +512,7 @@ function renderHome(){
   // ruleta del día, sin repetir lo que ya está a un toque de distancia.
   document.getElementById('home-content').innerHTML = gEscenaHTML('cielo', `
     <div class="home-logo-banner"><img src="logo-empresa.png" alt="Logo"></div>
+    ${organizadorTarjetaHomeHTML()}
     ${typeof plazaTarjetaHomeHTML === 'function' ? plazaTarjetaHomeHTML() : ''}
     ${typeof avatarTarjetaHomeHTML === 'function' ? avatarTarjetaHomeHTML() : ''}
     ${pwaInstalarHTML()}

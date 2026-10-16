@@ -999,3 +999,7 @@ button.tcarta{cursor:default;}
 /* ---- Aviso de sin conexión ---- */
 .banner-sin-conexion{position:absolute; left:10px; right:10px; top:58px; z-index:200; background:#B3402A; color:#fff; font-size:12px; font-weight:800; text-align:center; padding:8px 12px; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,.3); opacity:0; pointer-events:none; transform:translateY(-8px); transition:opacity .25s, transform .25s;}
 .banner-sin-conexion.show{opacity:1; transform:none;}
+
+/* ---- Tarjeta del organizador en Inicio ---- */
+.org-home-img{font-size:42px; width:84px; height:84px; display:grid; place-items:center; background:linear-gradient(180deg,#2A2F57,#12163A); border-radius:14px; flex-shrink:0; line-height:1;}
+.org-home{border:2px solid rgba(255,216,77,.7);}
