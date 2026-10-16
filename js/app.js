@@ -287,6 +287,7 @@ function renderAdminViajes(){
       const capacidad = datos[c].capacidad;
       const listaLen = (datos[c].listaPasajeros || []).length;
       const listaAbierta = adminListaAbiertaPara === c;
+      const listaCursos = Array.isArray(datos[c].cursos) ? datos[c].cursos : Object.values(datos[c].cursos || {});
       const listoParaBorrar = !!datos[c].listoParaBorrar;
       const canjesAbiertos = adminCanjesAbiertoPara === c;
       const mayoresDe12 = Object.values((datos[c].ranking && datos[c].ranking.puntos) || {}).filter(p => p.mayorDe12).length;
@@ -295,12 +296,14 @@ function renderAdminViajes(){
         <span class="bingo-roster-derecha">
           <span>${pasajeros}${capacidad ? '/' + capacidad : ''} pasajero${pasajeros === 1 ? '' : 's'}</span>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleLista('${c}')" title="Cargar lista de pasajeros">📋${listaLen ? ' ' + listaLen : ''}</button>
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCursos('${c}')" title="Cursos para la Guerra de cursos">🎓${listaCursos.length ? ' ' + listaCursos.length : ''}</button>
           ${datos[c].destino ? `<button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCanjes('${c}')" title="Ver canjes de comercios">🏪</button>` : ''}
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTogglePoker('${c}',${!(datos[c].ajustes && datos[c].ajustes.poker === true)})" title="Póker en este viaje (apagado para estudiantiles)">🃏 ${datos[c].ajustes && datos[c].ajustes.poker === true ? 'Sí' : 'No'}</button>
           <button class="btn-finalizar-viaje" onclick="toggleCerrarViaje('${c}',${!cerrado})">${cerrado ? 'Reabrir' : 'Finalizar'}</button>
           <button class="btn-eliminar-pasajero" onclick="eliminarViaje('${c}')" title="Eliminar viaje">✕</button>
         </span>
       </div>
+      ${typeof adminCursosPanelHTML === 'function' ? adminCursosPanelHTML(c, listaCursos) : ''}
       ${listaAbierta ? `
       <div style="margin:-6px 0 10px;">
         <textarea id="admin-lista-input-${c}" rows="4" style="width:100%;font-family:monospace;font-size:12.5px;border:1px solid var(--line-color,#ccc);border-radius:10px;padding:10px;margin-bottom:6px;" placeholder="Seleccioná en Excel las columnas de Apellido y Nombre, copialas (Ctrl+C) y pegalas acá (Ctrl+V)">${(datos[c].listaPasajeros || []).map(p => `${p.apellido}\t${p.nombre}`).join('\n')}</textarea>
@@ -375,6 +378,7 @@ function rankingUnirse(){
   ref.once('value').then(snap => {
     if(snap.val() == null) ref.set({ nombre: miNombre, pts: 0, mayorDe12: !!miMayorDe12 });
     if(typeof avatarSincronizar === 'function') avatarSincronizar();
+    if(typeof cursosSincronizar === 'function') cursosSincronizar();
   });
   if(!rankingListener){
     rankingListener = rankingRefPuntos().on('value', snap => {
@@ -664,6 +668,8 @@ const MEDALLAS_RANKING = ['🥇', '🥈', '🥉'];
 function renderRanking(){
   const list = document.getElementById('ranking-list');
   if(!list) return;
+  if(typeof cursosEscuchar === 'function') cursosEscuchar();
+  if(typeof cursosVistaActiva === 'function' && cursosVistaActiva()){ list.innerHTML = cursosRankingHTML(); return; }
   const filas = Object.keys(rankingPuntos)
     .map(asiento => ({ asiento, nombre: rankingPuntos[asiento].nombre, pts: rankingPuntos[asiento].pts, avatar: rankingPuntos[asiento].avatar, me: asiento === String(miAsiento) }))
     .sort((a,b)=> b.pts - a.pts);
@@ -697,6 +703,7 @@ function renderRanking(){
     </div>`).join('');
 
   list.innerHTML = gEscenaHTML('noche', `
+    ${typeof cursosSelectorHTML === 'function' ? cursosSelectorHTML() : ''}
     ${miPuesto >= 0 ? `<div class="g-hud"><span class="g-pill">Tu puesto: ${miPuesto + 1}°</span><span class="g-pill">🪙 ${filas[miPuesto].pts}</span></div>` : ''}
     <div class="rk-podio">${podioHTML}</div>
     ${restoHTML ? `<div class="rk-resto">${restoHTML}</div>` : ''}`);
