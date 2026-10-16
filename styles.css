@@ -216,21 +216,23 @@ body{
 /* ---- Botones grandes del menú de Juegos (solo / grupo) ---- */
 .categoria-juegos{
   display:flex; align-items:center; gap:14px;
-  border-radius:20px; padding:18px 18px;
+  border-radius:20px; padding:0 18px; height:88px; box-sizing:border-box;
   margin-bottom:10px; cursor:pointer; color:#fff;
   transition:transform .1s ease, box-shadow .1s ease;
 }
 .categoria-juegos-solo{background:linear-gradient(135deg, var(--navy-light), var(--navy)); box-shadow:0 4px 0 #3D0708, 0 8px 18px rgba(15,42,77,.28);}
 .categoria-juegos-grupo{background:linear-gradient(135deg, var(--orange-soft), var(--orange)); box-shadow:0 4px 0 var(--orange-sombra), 0 8px 18px rgba(232,114,15,.32);}
 .categoria-juegos-cartas{background:linear-gradient(135deg, #3B9B5A, #1E5C3A); box-shadow:0 4px 0 #123D26, 0 8px 18px rgba(30,92,58,.32);}
+.categoria-juegos-video{background:linear-gradient(135deg, #E5586E, #A02A58); box-shadow:0 4px 0 #6B1A3B, 0 8px 18px rgba(160,42,88,.32);}
 .categoria-juegos:active{transform:translateY(3px);}
+.categoria-juegos-video:active{box-shadow:0 1px 0 #6B1A3B, 0 3px 8px rgba(160,42,88,.24);}
 .categoria-juegos-solo:active{box-shadow:0 1px 0 #3D0708, 0 3px 8px rgba(15,42,77,.24);}
 .categoria-juegos-grupo:active{box-shadow:0 1px 0 var(--orange-sombra), 0 3px 8px rgba(232,114,15,.24);}
 .categoria-juegos-cartas:active{box-shadow:0 1px 0 #123D26, 0 3px 8px rgba(30,92,58,.24);}
 .categoria-juegos-icono{font-size:28px; flex-shrink:0;}
 .categoria-juegos-info{flex:1; min-width:0;}
-.categoria-juegos-info h2{font-size:18px; font-weight:700; margin-bottom:2px; font-family:var(--font-juego);}
-.categoria-juegos-info p{font-size:12px; color:rgba(255,255,255,0.8); font-weight:400;}
+.categoria-juegos-info h2{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:18px; font-weight:700; margin-bottom:2px; font-family:var(--font-juego);}
+.categoria-juegos-info p{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12px; color:rgba(255,255,255,0.8); font-weight:400;}
 .categoria-juegos-flecha{font-size:18px; transition:transform .2s; flex-shrink:0;}
 .categoria-juegos-flecha-abierta{transform:rotate(180deg);}
 .categoria-juegos-lista{margin-bottom:14px;}

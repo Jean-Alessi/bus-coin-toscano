@@ -12,7 +12,7 @@ let analyticsVistaActual = null;
 let analyticsEntradaTs = 0;
 
 function analyticsJuegosConocidos(){
-  return new Set(TARJETAS_SOLO.concat(TARJETAS_GRUPO).map(t => t.view));
+  return new Set(TARJETAS_SOLO.concat(TARJETAS_VIDEO, TARJETAS_GRUPO).map(t => t.view));
 }
 
 function analyticsRefEventos(){ return db.ref('analytics/eventos'); }

@@ -19,6 +19,13 @@ const TARJETAS_SOLO = [
   { icon: "sopaletras", title: "Sopa de letras", sub: "Destinos y cosas del viaje, escondidos en la grilla", view: "sopa" },
 ];
 
+// Juegos de acción (se dibujan en un canvas, ver js/arcade.js).
+const TARJETAS_VIDEO = [
+  { icon: "micro", title: "Corredor del Micro", sub: "Esquivá obstáculos y juntá monedas por la ruta", view: "corredor" },
+  { icon: "avion", title: "Vuelo", sub: "Un toque para subir, pasá entre las torres", view: "vuelo" },
+  { icon: "serpiente", title: "Serpiente", sub: "Comé medialunas sin chocarte", view: "serpiente" },
+];
+
 const TARJETAS_GRUPO = [
   { icon: "letraA", title: "Tutti Frutti", sub: "Una letra, contra el resto del viaje", view: "tutifruti" },
   { icon: "espia", title: "El Impostor", sub: "Para tu grupo, no todo el micro", view: "impostor" },
@@ -394,7 +401,7 @@ function goHome(){
 function renderTarjetas(lista, contenedorId){
   const container = document.getElementById(contenedorId);
   const categoria = contenedorId.split('-').pop();
-  const claseColor = categoria === 'solo' ? 'juego-tile-solo' : categoria === 'grupoCartas' ? 'juego-tile-cartas' : 'juego-tile-grupo';
+  const claseColor = categoria === 'solo' ? 'juego-tile-solo' : categoria === 'video' ? 'juego-tile-video' : categoria === 'grupoCartas' ? 'juego-tile-cartas' : 'juego-tile-grupo';
   container.classList.add('juego-tiles');
   lista.forEach(c=>{
     const boton = document.createElement('button');
@@ -435,7 +442,7 @@ function renderHome(){
 // por eso las funciones llevan un "vista" para no chocar los mismos ids.
 // Dentro de "jugar en grupo" separamos los de cartas del resto, para no
 // mezclar en una sola tira Truco con Bingo o Dibujar y Adivinar.
-let juegosAbiertos = { solo: false, grupoCartas: false, grupoOtros: false };
+let juegosAbiertos = { solo: false, video: false, grupoCartas: false, grupoOtros: false };
 
 const TARJETAS_GRUPO_CARTAS_VISTAS = new Set(['escoba', 'chinchon', 'truco', 'buscolor']);
 const TARJETAS_GRUPO_CARTAS = TARJETAS_GRUPO.filter(t => TARJETAS_GRUPO_CARTAS_VISTAS.has(t.view));
@@ -463,12 +470,14 @@ function categoriaJuegosHTML(vista, categoria, clase, icono, titulo, sub){
 
 function categoriasJuegosHTML(vista){
   return categoriaJuegosHTML(vista, 'solo', 'categoria-juegos-solo', '🧠', 'Desafiá tu mente', `${TARJETAS_SOLO.length} juegos para vos solo`) +
-    categoriaJuegosHTML(vista, 'grupoCartas', 'categoria-juegos-cartas', '🃏', 'Juegos de cartas', `${TARJETAS_GRUPO_CARTAS.length} juegos de cartas en grupo`) +
-    categoriaJuegosHTML(vista, 'grupoOtros', 'categoria-juegos-grupo', '🤝', 'Jugar en grupo, conecta.', `${TARJETAS_GRUPO_OTROS.length} juegos para tu grupo`);
+    categoriaJuegosHTML(vista, 'video', 'categoria-juegos-video', '🎮', 'Video juegos', `${TARJETAS_VIDEO.length} juegos de acción`) +
+    categoriaJuegosHTML(vista, 'grupoCartas', 'categoria-juegos-cartas', '🃏', 'Juegos de cartas', `${TARJETAS_GRUPO_CARTAS.length} juegos de cartas`) +
+    categoriaJuegosHTML(vista, 'grupoOtros', 'categoria-juegos-grupo', '🤝', 'Jugar en grupo', `${TARJETAS_GRUPO_OTROS.length} juegos para tu grupo`);
 }
 
 function renderCategoriasEnListas(vista){
   if(juegosAbiertos.solo) renderTarjetas(TARJETAS_SOLO, `lista-${vista}-solo`);
+  if(juegosAbiertos.video) renderTarjetas(TARJETAS_VIDEO, `lista-${vista}-video`);
   if(juegosAbiertos.grupoCartas) renderTarjetas(TARJETAS_GRUPO_CARTAS, `lista-${vista}-grupoCartas`);
   if(juegosAbiertos.grupoOtros) renderTarjetas(TARJETAS_GRUPO_OTROS, `lista-${vista}-grupoOtros`);
 }
@@ -480,7 +489,7 @@ function renderJuegos(){
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -555,6 +564,7 @@ function showView(name){
   if(name==='cuatrouno'){ iniciarCuatrouno(); }
   if(name==='valija'){ iniciarValija(); }
   if(name==='memoria'){ iniciarMemoria(); }
+  if(name==='corredor' || name==='vuelo' || name==='serpiente'){ arcIniciarVista(name); }
   if(name==='sudoku'){ iniciarSudoku(); }
   if(name==='patrones'){ iniciarPatrones(); }
   if(name==='sopa'){ iniciarSopa(); }

@@ -34,6 +34,8 @@ const ICONOS = {
   patrones: '<rect x="2" y="9" width="6" height="6" rx="1.2"/><rect x="10" y="9" width="6" height="6" rx="1.2"/><rect x="18" y="9" width="4" height="6" rx="1.2" stroke-dasharray="2 2"/>',
   buscolor: '<rect x="4" y="3" width="16" height="18" rx="3"/><circle cx="12" cy="12" r="4.2"/><path d="M12 7.8v8.4M7.8 12h8.4"/>',
   sopaletras: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h6M7 16h8"/><circle cx="17.5" cy="16.5" r="3"/><path d="m19.8 18.8 2.2 2.2"/>',
+  micro: '<rect x="5" y="3" width="14" height="17" rx="3"/><path d="M7 6.5h10v4H7z"/><circle cx="8.5" cy="16" r="1"/><circle cx="15.5" cy="16" r="1"/><path d="M7 20v1.5M17 20v1.5"/>',
+  serpiente: '<path d="M4 18c3.5 3 6.5 1 8-1.5S15 12 17.5 11"/><path d="M4 18c-1-3 1-5 4-5.5"/><circle cx="18.5" cy="9" r="2.5"/><circle cx="18" cy="8.5" r=".6" fill="currentColor" stroke="none"/>',
   tienda: '<path d="M4 4h16l1.5 5h-19Z"/><path d="M4.5 9V20h15V9"/><path d="M9.5 20v-6h5v6"/>'
 };
 

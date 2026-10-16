@@ -708,6 +708,7 @@ button.tcarta{cursor:default;}
 .juego-tile-solo{background:linear-gradient(180deg,#5B7BE0,#2E4FB8);}
 .juego-tile-cartas{background:linear-gradient(180deg,#3FBF73,#1E8A4E);}
 .juego-tile-grupo{background:linear-gradient(180deg,#FFC247,#F08A1C);}
+.juego-tile-video{background:linear-gradient(180deg,#F0647B,#B03060);}
 
 /* Ranking: podio */
 .rk-podio{display:flex; align-items:flex-end; justify-content:center; gap:8px; margin:6px 0 12px; min-height:200px;}
@@ -834,3 +835,11 @@ button.tcarta{cursor:default;}
   display:flex; align-self:flex-start; margin:2px 0 6px 2px;
   width:34px; height:34px; font-size:19px;
 }
+
+/* ---- Juegos de acción (canvas): corredor, vuelo, serpiente ---- */
+.arc-caja{position:relative; margin:0 auto; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.25); line-height:0;}
+.arc-canvas{display:block; width:100%; height:auto; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent;}
+.arc-overlay{position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:16px; background:rgba(8,20,45,.58); line-height:1.3; text-align:center;}
+.arc-overlay .g-acciones{width:100%;}
+.arc-fin-icono{font-size:54px; line-height:1;}
+.arc-escena .g-hud{justify-content:center;}
