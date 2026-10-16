@@ -9,8 +9,8 @@
 
 const MIC = { abierto: false, piso: 'abajo', pas: {}, pres: {}, cap: 0, sel: null, oyentes: [], avisado: false };
 const MIC_SALIDA_Y = 372;             // donde aparece quien baja del micro (frente a la puerta)
-const MIC_ABAJO = 12;                // asientos del piso de abajo (los demás van arriba)
-const MIC_ASIENTOS = 60;             // si el viaje no dice cuántos son: 12 abajo + 48 arriba
+const MIC_ABAJO = 12;                // asientos del piso de abajo (los últimos números)
+const MIC_ASIENTOS = 60;             // si el viaje no dice cuántos son: 1 al 48 arriba + 49 al 60 abajo
 const MIC_MAX = 100;                 // tope de asientos dibujados
 const MIC_INACTIVO_MS = 180000;      // sin hacer nada: vuelve al micro
 const MIC_AVISO_MS = 150000;         // y se le avisa 30 s antes
@@ -31,8 +31,9 @@ function microAsientos(){
   return lista;
 }
 function microPisos(){
-  const l = microAsientos();
-  return { abajo: l.slice(0, MIC_ABAJO), arriba: l.slice(MIC_ABAJO) };
+  // Arriba van del 1 en adelante; los últimos 12 números son el piso de abajo.
+  const l = microAsientos(), base = l.filter(a => /^\d+$/.test(a) && parseInt(a, 10) <= MIC_MAX), raros = l.filter(a => !base.includes(a));
+  return { arriba: base.slice(0, -MIC_ABAJO).concat(raros), abajo: base.slice(-MIC_ABAJO) };
 }
 function microPisoDe(a){ return microPisos().arriba.includes(String(a)) ? 'arriba' : 'abajo'; }
 
