@@ -48,6 +48,36 @@ const TARJETAS_GRUPO = [
 ];
 
 
+// ---- Póker: queda apagado por defecto en cada viaje y lo enciende el
+// organizador (salas/{codigo}/ajustes/poker). Sirve para dejarlo afuera, por
+// ejemplo, de los viajes de estudiantes. Las fichas del póker no suman
+// monedas ni ranking. ----
+const TARJETA_VIDEOPOKER = { icon: "naipe", title: "Póker de video", sub: "Elegí las cartas y armá la mejor mano", view: "videopoker" };
+const VISTAS_POKER = ['videopoker', 'texas'];
+let pokerHabilitado = false, pokerCodigoEscuchado = '', pokerRefEscuchada = null;
+
+function pokerAplicarAjuste(habilitado){
+  pokerHabilitado = !!habilitado;
+  const pares = [[TARJETAS_SOLO, TARJETA_VIDEOPOKER]];
+  if(typeof TARJETAS_GRUPO_CARTAS !== 'undefined' && typeof TARJETA_TEXAS !== 'undefined') pares.push([TARJETAS_GRUPO_CARTAS, TARJETA_TEXAS]);
+  pares.forEach(([lista, tarjeta]) => {
+    const i = lista.indexOf(tarjeta);
+    if(i >= 0) lista.splice(i, 1);
+    if(pokerHabilitado) lista.push(tarjeta);
+  });
+  const activa = document.querySelector('.view.active');
+  if(!pokerHabilitado && activa && VISTAS_POKER.includes(activa.id.replace('view-', ''))) showView('juegos');
+  else if(typeof renderJuegos === 'function' && document.getElementById('juegos-content')) renderJuegos();
+}
+
+function pokerEscucharAjuste(){
+  if(!codigoViaje || pokerCodigoEscuchado === codigoViaje) return;
+  if(pokerRefEscuchada) pokerRefEscuchada.off();
+  pokerCodigoEscuchado = codigoViaje;
+  pokerRefEscuchada = db.ref('salas/' + codigoViaje + '/ajustes/poker');
+  pokerRefEscuchada.on('value', snap => pokerAplicarAjuste(snap.val() === true));
+}
+
 // ---- Código de viaje: agrupa Bingo/Ranking/DJ bajo un mismo código, para
 // poder arrancar un viaje nuevo (pasajeros y nombres nuevos) sin mezclarlo
 // con datos de un viaje anterior, y para poder borrar viajes ya terminados. ----
@@ -260,6 +290,7 @@ function renderAdminViajes(){
           <span>${pasajeros}${capacidad ? '/' + capacidad : ''} pasajero${pasajeros === 1 ? '' : 's'}</span>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleLista('${c}')" title="Cargar lista de pasajeros">📋${listaLen ? ' ' + listaLen : ''}</button>
           ${datos[c].destino ? `<button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCanjes('${c}')" title="Ver canjes de comercios">🏪</button>` : ''}
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTogglePoker('${c}',${!(datos[c].ajustes && datos[c].ajustes.poker === true)})" title="Póker en este viaje (apagado para estudiantiles)">🃏 ${datos[c].ajustes && datos[c].ajustes.poker === true ? 'Sí' : 'No'}</button>
           <button class="btn-finalizar-viaje" onclick="toggleCerrarViaje('${c}',${!cerrado})">${cerrado ? 'Reabrir' : 'Finalizar'}</button>
           <button class="btn-eliminar-pasajero" onclick="eliminarViaje('${c}')" title="Eliminar viaje">✕</button>
         </span>
@@ -297,6 +328,13 @@ function adminGuardarLista(codigo){
   listaPasajerosGuardarEnViaje(codigo, texto).then(cantidad => {
     mostrarToast(cantidad ? `Lista cargada: ${cantidad} pasajeros` : 'Lista borrada');
     adminListaAbiertaPara = null;
+    renderAdminViajes();
+  });
+}
+
+function adminTogglePoker(codigo, habilitar){
+  db.ref('salas/' + codigo + '/ajustes/poker').set(habilitar).then(() => {
+    mostrarToast(habilitar ? 'Póker habilitado en este viaje' : 'Póker apagado en este viaje');
     renderAdminViajes();
   });
 }
@@ -422,6 +460,7 @@ function renderTarjetas(lista, contenedorId){
 }
 
 function renderHome(){
+  pokerEscucharAjuste();
   document.getElementById('home-saludo').textContent = `${miEmoji} Hola, ${miNombre}`;
   // El link para entrar directo al viaje lo ve solo quien organiza: si lo
   // tuviera cualquier pasajero, podría reenviarlo a gente que no va en el micro.
@@ -492,13 +531,14 @@ function renderCategoriasEnListas(vista){
 }
 
 function renderJuegos(){
+  pokerEscucharAjuste();
   document.getElementById('juegos-content').innerHTML = gEscenaHTML('neon', categoriasJuegosHTML('juegos'), 'juegos-escena');
   renderCategoriasEnListas('juegos');
 }
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -574,6 +614,7 @@ function showView(name){
   if(name==='valija'){ iniciarValija(); }
   if(name==='memoria'){ iniciarMemoria(); }
   if(name==='solitario'){ iniciarSolitario(); }
+  if(name==='videopoker'){ iniciarVideoPoker(); }
   if(typeof ARC_JUEGOS !== 'undefined' && ARC_JUEGOS[name]){ arcIniciarVista(name); }
   if(name==='sudoku'){ iniciarSudoku(); }
   if(name==='patrones'){ iniciarPatrones(); }
