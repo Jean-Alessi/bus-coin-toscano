@@ -39,6 +39,9 @@ const ICONOS = {
   tetris: '<rect x="3" y="13" width="6" height="6" rx="1"/><rect x="9" y="13" width="6" height="6" rx="1"/><rect x="15" y="13" width="6" height="6" rx="1"/><rect x="9" y="7" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/>',
   ladrillos: '<rect x="3" y="4" width="8" height="4" rx="1"/><rect x="13" y="4" width="8" height="4" rx="1"/><rect x="3" y="10" width="18" height="3.5" rx="1"/><circle cx="12" cy="17" r="1.6"/><path d="M8 21h8"/>',
   parking: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9.5 17V7h3.5a3 3 0 0 1 0 6H9.5"/>',
+  laberinto: '<path d="M4 4h16v16H4z"/><path d="M4 10h8M12 4v6M12 14h8M8 14v6M16 10v4"/>',
+  tanque: '<rect x="4" y="10" width="14" height="8" rx="2"/><path d="M18 13h4"/><circle cx="8" cy="14" r="1.2"/><circle cx="14" cy="14" r="1.2"/><path d="M8 10V7h6v3"/>',
+  pinball: '<circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1.6"/><circle cx="15" cy="9" r="1.6"/><path d="M7 17l3-2M17 17l-3-2"/>',
   tienda: '<path d="M4 4h16l1.5 5h-19Z"/><path d="M4.5 9V20h15V9"/><path d="M9.5 20v-6h5v6"/>'
 };
 

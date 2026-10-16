@@ -64,6 +64,7 @@ function arcCrearTetris(){
       j.flash = { filas: llenas, t: 0.22 };
       j.puntaje += PUNTOS_LINEAS[llenas.length] * j.nivel;
       j.lineas += llenas.length;
+      if(j.premio) j.premio(llenas.length);
       j.nivel = 1 + Math.floor(j.lineas / 8);
       reproducirTono('bonus');
       j.pieza = null;
@@ -155,7 +156,7 @@ function arcCrearTetris(){
     for(let x = 1; x < COLS; x++){ ctx.beginPath(); ctx.moveTo(x * C, 0); ctx.lineTo(x * C, ALTO); ctx.stroke(); }
     for(let y = 1; y < FILAS; y++){ ctx.beginPath(); ctx.moveTo(0, y * C); ctx.lineTo(COLS * C, y * C); ctx.stroke(); }
 
-    j.tablero.forEach((fila, y) => fila.forEach((tipo, x) => { if(tipo) celda(ctx, x * C, y * C, COLORES[tipo]); }));
+    j.tablero.forEach((fila, y) => fila.forEach((tipo, x) => { if(tipo){ celda(ctx, x * C, y * C, COLORES[tipo]); if(tipo === 'O') arcLogo(ctx, x * C + C / 2, y * C + C / 2, 15); } }));
 
     if(j.pieza && !j.muriendo){
       let gy = j.pieza.y;
@@ -167,6 +168,7 @@ function arcCrearTetris(){
             arcRR(ctx, (j.pieza.x + c) * C + 2, (gy + r) * C + 2, C - 4, C - 4, 4); ctx.stroke(); ctx.globalAlpha = 1;
           }
           celda(ctx, (j.pieza.x + c) * C, (j.pieza.y + r) * C, COLORES[j.pieza.tipo]);
+          if(j.pieza.tipo === 'O') arcLogo(ctx, (j.pieza.x + c) * C + C / 2, (j.pieza.y + r) * C + C / 2, 15);
         }
       }));
     }
@@ -198,6 +200,7 @@ function arcCrearTetris(){
     };
     dato('NIVEL', j.nivel, 110);
     dato('LÍNEAS', j.lineas, 166);
+    arcLogo(ctx, px + 36, 250, 56);
     if(j.muriendo){
       ctx.fillStyle = `rgba(229,72,77,${Math.min(.5, j.muriendo * .8)})`;
       ctx.fillRect(0, 0, ANCHO, ALTO);
@@ -210,7 +213,7 @@ function arcCrearTetris(){
 // ---- Ladrillos (Arkanoid): rebotá la pelota y rompé todo ----
 
 function arcCrearLadrillos(){
-  const ANCHO = 300, ALTO = 460, PALA_W = 58, PALA_H = 10, PALA_Y = 428, R = 5;
+  const ANCHO = 300, ALTO = 460, PALA_W = 58, PALA_H = 10, PALA_Y = 428, R = 6;
   const COLS = 8, BW = 33, BH = 14, GAP = 2, X0 = 11, Y0 = 56;
   const COLORES = ['#FF5E62', '#FF9A3D', '#FFD84D', '#5BE88D', '#4FB8FF', '#B66DFF'];
 
@@ -286,7 +289,7 @@ function arcCrearLadrillos(){
       if(penX < penY) p.vx = -p.vx; else p.vy = -p.vy;
       b.vida--;
       j.puntaje += 10;
-      if(b.vida <= 0){ j.ladrillos.splice(i, 1); reproducirTono('correcto'); } else reproducirTono('tick');
+      if(b.vida <= 0){ j.ladrillos.splice(i, 1); reproducirTono('correcto'); j.rotos = (j.rotos || 0) + 1; if(j.premio && j.rotos % 6 === 0) j.premio(1); } else reproducirTono('tick');
       break;
     }
   }
@@ -316,6 +319,7 @@ function arcCrearLadrillos(){
     }
     if(!j.ladrillos.length){
       j.puntaje += 50;
+      if(j.premio) j.premio(5);
       j.nivel++;
       armar();
       reproducirTono('bonus');
@@ -347,8 +351,8 @@ function arcCrearLadrillos(){
     for(let k = 0; k < 4; k++) ctx.fillRect(px + 8 + k * 11, PALA_Y + 3, 7, 3);
 
     const p = j.pelota;
-    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(p.x, p.y, R + 3, 0, 7); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.beginPath(); ctx.arc(p.x, p.y, R + 4, 0, 7); ctx.fill();
+    arcLogo(ctx, p.x, p.y, R * 2.7, '#fff');
 
     ctx.fillStyle = '#fff'; ctx.font = '800 13px Poppins, sans-serif'; ctx.textBaseline = 'middle';
     ctx.textAlign = 'left'; ctx.fillText('Nivel ' + j.nivel, 10, 22);
@@ -467,6 +471,7 @@ function arcCrearParking(){
       const torcido = Math.abs(b.a + Math.PI / 2);
       if(torcido > 0.26){ fallar('¡Quedó torcido!'); return; }
       j.estado = 'ok'; j.espera = 0.9; j.puntaje = j.nivel;
+      if(j.premio) j.premio(3);
       j.cartelTexto = '¡Bien estacionado!'; j.cartel = 1.2;
       reproducirTono('bonus');
     }
@@ -483,6 +488,7 @@ function arcCrearParking(){
     ctx.fillStyle = '#E6A817'; ctx.fillRect(-19, -3, 38, 7);
     ctx.fillStyle = '#BFE6FF'; arcRR(ctx, -15, -29, 30, 14, 4); ctx.fill();
     ctx.fillStyle = '#1D4378'; arcRR(ctx, -14, 7, 28, 20, 4); ctx.fill();
+    arcLogo(ctx, 0, 17, 17, '#fff');
     ctx.fillStyle = '#FFF3B0'; ctx.beginPath(); ctx.arc(-13, -32, 3, 0, 7); ctx.arc(13, -32, 3, 0, 7); ctx.fill();
     ctx.fillStyle = '#E5484D'; ctx.fillRect(-16, 30, 7, 3); ctx.fillRect(9, 30, 7, 3);
     ctx.restore();

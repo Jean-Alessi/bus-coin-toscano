@@ -8,6 +8,7 @@
 // día sin parar. Todo es habilidad: no hay azar de por medio.
 
 const ARC_TOPE_DIA = 40; // monedas por juego por día
+const ARC_TOPE_PARTIDA = 15; // monedas por partida
 
 function arcFechaHoy(){ return new Date().toLocaleDateString('en-CA'); }
 function arcLeer(clave, defecto){
@@ -42,6 +43,26 @@ function arcRR(ctx, x, y, w, h, r){
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+// El logo de Busmac (la B) para usarlo como pieza o adorno dentro de los juegos.
+// 'fondo' (opcional) le dibuja un disco detrás para que se lea sobre colores oscuros.
+const ARC_LOGO = new Image();
+ARC_LOGO.src = 'logo-empresa.png';
+function arcLogo(ctx, x, y, tam, fondo){
+  if(fondo){
+    ctx.fillStyle = fondo;
+    ctx.beginPath(); ctx.arc(x, y, tam * 0.62, 0, 7); ctx.fill();
+  }
+  if(ARC_LOGO.complete && ARC_LOGO.naturalWidth){
+    const w = tam * ARC_LOGO.naturalWidth / ARC_LOGO.naturalHeight;
+    ctx.drawImage(ARC_LOGO, x - w / 2, y - tam / 2, w, tam);
+  } else {
+    ctx.fillStyle = '#F28A1E';
+    ctx.font = '800 ' + Math.round(tam) + 'px "Baloo 2", Poppins, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('b', x, y);
+  }
 }
 
 function arcEmoji(ctx, emoji, x, y, tam){
@@ -159,6 +180,7 @@ function arcCrearCorredor(){
       if(!choca) continue;
       if(o.tipo === 'moneda'){
         j.monedas++;
+        if(j.premio && j.monedas % 4 === 0) j.premio(1);
         j.obst.splice(i, 1);
         reproducirTono('correcto');
       } else {
@@ -206,10 +228,7 @@ function arcCrearCorredor(){
         ctx.beginPath(); ctx.arc(x, o.y, 11, 0, 7); ctx.fill();
         ctx.fillStyle = '#FFD84D';
         ctx.beginPath(); ctx.arc(x, o.y, 8.5, 0, 7); ctx.fill();
-        ctx.fillStyle = '#C9A227';
-        ctx.font = '800 11px Poppins, sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('$', x, o.y + 0.5);
+        arcLogo(ctx, x, o.y + 0.5, 14);
       } else {
         arcEmoji(ctx, o.e, x, o.y, o.tam);
       }
@@ -229,6 +248,7 @@ function arcCrearCorredor(){
     arcRR(ctx, -15, 4, 30, 14, 4); ctx.fill();
     ctx.fillStyle = '#1D4378';
     arcRR(ctx, -14, 40, 28, 20, 4); ctx.fill();
+    arcLogo(ctx, 0, 50, 17, '#fff');
     ctx.fillStyle = '#FFF3B0';
     ctx.beginPath(); ctx.arc(-13, 1, 3, 0, 7); ctx.arc(13, 1, 3, 0, 7); ctx.fill();
     ctx.fillStyle = '#E5484D';
@@ -295,6 +315,7 @@ function arcCrearVuelo(){
     j.torres.forEach(t => {
       if(!t.pasada && t.x + TORRE_W < px - 10){
         t.pasada = true; j.puntaje++;
+        if(j.premio && j.puntaje % 2 === 0) j.premio(1);
         reproducirTono('correcto');
       }
       const dentroX = px + 9 > t.x + 3 && px - 9 < t.x + TORRE_W - 3;
@@ -338,6 +359,8 @@ function arcCrearVuelo(){
     j.torres.forEach(t => {
       torre(ctx, t.x, 0, TORRE_W, t.centro - HUECO / 2, true);
       torre(ctx, t.x, t.centro + HUECO / 2, TORRE_W, SUELO - (t.centro + HUECO / 2), false);
+      arcLogo(ctx, t.x + TORRE_W / 2, t.centro - HUECO / 2 - 26, 22, 'rgba(255,255,255,.92)');
+      arcLogo(ctx, t.x + TORRE_W / 2, t.centro + HUECO / 2 + 26, 22, 'rgba(255,255,255,.92)');
     });
 
     ctx.fillStyle = '#5BBF5A'; ctx.fillRect(0, SUELO, ANCHO, ALTO - SUELO);
@@ -385,7 +408,7 @@ function arcCrearVuelo(){
 
 function arcCrearSerpiente(){
   const COLS = 15, FILAS = 21, C = 20, ANCHO = COLS * C, ALTO = FILAS * C;
-  const FRUTAS = ['🥐', '🧉', '🍪', '🍎'];
+  const FRUTAS = ['🥐', '🧉', '🍪', 'B', 'B'];
   const DIR = { izq: [-1, 0], der: [1, 0], arr: [0, -1], abj: [0, 1] };
   const j = {
     ancho: ANCHO, alto: ALTO,
@@ -448,6 +471,7 @@ function arcCrearSerpiente(){
       j.cuerpo.unshift([nx, ny]);
       if(come){
         j.puntaje++;
+        if(j.premio && j.puntaje % 2 === 0) j.premio(1);
         reproducirTono('correcto');
         ponerFruta();
       } else {
@@ -463,7 +487,8 @@ function arcCrearSerpiente(){
         ctx.fillRect(x * C, y * C, C, C);
       }
     }
-    arcEmoji(ctx, j.frutaE, j.fruta[0] * C + C / 2, j.fruta[1] * C + C / 2 + 1, 17 + Math.sin(j.t * 6) * 1.5);
+    if(j.frutaE === 'B') arcLogo(ctx, j.fruta[0] * C + C / 2, j.fruta[1] * C + C / 2, 17 + Math.sin(j.t * 6) * 1.5, '#FFF3B0');
+    else arcEmoji(ctx, j.frutaE, j.fruta[0] * C + C / 2, j.fruta[1] * C + C / 2 + 1, 17 + Math.sin(j.t * 6) * 1.5);
 
     const n = j.cuerpo.length;
     for(let i = n - 1; i >= 0; i--){
@@ -515,7 +540,18 @@ const ARC_JUEGOS = {
   },
 };
 
-const arc = { id: null, def: null, juego: null, fase: 'menu', raf: 0, ultimo: 0, canvas: null, ctx: null, puntosMostrados: -1 };
+const arc = { enVivo: 0, id: null, def: null, juego: null, fase: 'menu', raf: 0, ultimo: 0, canvas: null, ctx: null, puntosMostrados: -1 };
+
+// Monedas durante la partida (al pasar de nivel, completar una línea, etc.):
+// cada juego llama j.premio(n). Cuentan para el tope de la partida y del día.
+function arcPremioVivo(n){
+  if(!arc.id || arc.fase !== 'jugando') return;
+  const permitido = Math.min(n, ARC_TOPE_PARTIDA - arc.enVivo);
+  if(permitido <= 0) return;
+  const dado = arcOtorgarMonedas(arc.id, permitido);
+  arc.enVivo += dado;
+  if(dado > 0 && typeof mostrarToast === 'function') mostrarToast('+' + dado + ' 🪙', 'gain');
+}
 
 function arcDetener(){
   cancelAnimationFrame(arc.raf);
@@ -592,6 +628,8 @@ function arcJugar(){
   if(!arc.id) return;
   cancelAnimationFrame(arc.raf);
   arc.juego = arc.def.crear();
+  arc.juego.premio = arcPremioVivo;
+  arc.enVivo = 0;
   arc.fase = 'jugando';
   arc.puntosMostrados = -1;
   document.getElementById('view-' + arc.id).classList.add('juego-inmersivo');
@@ -634,8 +672,8 @@ function arcTerminar(){
   const anterior = arcMejor(id);
   const record = p > anterior;
   if(record) arcGuardar('arcade-mejor-' + id, p);
-  const queria = arc.def.monedas(p);
-  const dadas = arcOtorgarMonedas(id, queria);
+  const queria = Math.min(ARC_TOPE_PARTIDA, arc.def.monedas(p));
+  const dadas = arc.enVivo + arcOtorgarMonedas(id, Math.max(0, queria - arc.enVivo));
   document.getElementById('view-' + id).classList.remove('juego-inmersivo');
   const mejor = Math.max(p, anterior);
   const elMejor = document.querySelector('#view-' + id + ' .arc-mejor');
@@ -656,6 +694,10 @@ function arcTerminar(){
 //  tecla(k) / teclaSuelta(k)   teclado, para probar desde la compu
 function arcEntrada(canvas){
   let origen = null, inicio = null;
+  // Para juegos que usan varios dedos a la vez (flippers, joystick + botones):
+  // punteros(lista) recibe todos los puntos apoyados, en coordenadas del juego.
+  const punteros = new Map();
+  const avisar = () => { const g = arc.juego; if(g && g.punteros) g.punteros(Array.from(punteros.values())); };
   const logico = e => {
     const r = canvas.getBoundingClientRect();
     return [(e.clientX - r.left) * arc.juego.ancho / r.width, (e.clientY - r.top) * arc.juego.alto / r.height];
@@ -667,10 +709,14 @@ function arcEntrada(canvas){
     inicio = { x: e.clientX, y: e.clientY, t: performance.now(), movido: false };
     const [x, y] = logico(e);
     const j = arc.juego;
+    punteros.set(e.pointerId, [x, y]);
+    try { canvas.setPointerCapture(e.pointerId); } catch(err){}
+    avisar();
     if(j.arrastrar) j.arrastrar(x, y);
     if(j.toque && !j.toqueAlSoltar) j.toque(x, y);
   });
   canvas.addEventListener('pointermove', e => {
+    if(punteros.has(e.pointerId) && arc.fase === 'jugando'){ punteros.set(e.pointerId, logico(e)); avisar(); }
     if(!origen || arc.fase !== 'jugando') return;
     const j = arc.juego;
     if(j.arrastrar){ const [x, y] = logico(e); j.arrastrar(x, y); }
@@ -690,6 +736,7 @@ function arcEntrada(canvas){
         j.lanzar(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'izq' : 'der') : (dy < 0 ? 'arr' : 'abj'));
       }
     }
+    if(e.type !== 'pointerleave'){ punteros.delete(e.pointerId); avisar(); }
     if(arc.juego && arc.juego.soltar) arc.juego.soltar();
     origen = null; inicio = null;
   };

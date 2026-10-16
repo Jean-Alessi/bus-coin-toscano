@@ -27,6 +27,9 @@ const TARJETAS_VIDEO = [
   { icon: "tetris", title: "Tetris", sub: "Encajá las piezas y completá líneas", view: "tetris" },
   { icon: "ladrillos", title: "Ladrillos", sub: "Rebotá la pelota y rompé todo", view: "ladrillos" },
   { icon: "parking", title: "Estacionar el Micro", sub: "Entrá derecho al lugar libre", view: "parking" },
+  { icon: "laberinto", title: "Laberinto del Micro", sub: "Juntá todo y escapá de los camiones", view: "laberinto" },
+  { icon: "tanque", title: "Defensa del Garage", sub: "Protegé el garage de Busmac", view: "tanque" },
+  { icon: "pinball", title: "Pinball", sub: "Paletas, rebotadores y puntos", view: "pinball" },
 ];
 
 const TARJETAS_GRUPO = [
@@ -492,7 +495,7 @@ function renderJuegos(){
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
