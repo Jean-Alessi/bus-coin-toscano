@@ -114,7 +114,8 @@ function microDetalleHTML(){
   const donde = st === 'plaza'
     ? `🚶 En la plaza${!yo && MIC.pres[a] && typeof plazaEtiquetaSala === 'function' ? ' · ' + micEsc(plazaEtiquetaSala(MIC.pres[a].sala)) : ''}`
     : '💺 En el micro, en su asiento';
-  const boton = !yo && st === 'plaza' ? `<button class="gbtn gbtn-ancho" data-a="${micEsc(a)}" onclick="microBuscar(this.dataset.a)">📍 Ir a buscar a ${micEsc(nombre)}</button>` : '';
+  const boton = (!yo && st === 'plaza' ? `<button class="gbtn gbtn-ancho" data-a="${micEsc(a)}" onclick="microBuscar(this.dataset.a)">📍 Ir a buscar a ${micEsc(nombre)}</button>` : '')
+    + (!yo && p && typeof cartitasActivas === 'function' && cartitasActivas() ? `<button class="gbtn gbtn-ancho" data-a="${micEsc(a)}" onclick="cartitasNuevaPara(this.dataset.a)">💌 Mandar una cartita</button>` : '');
   return `<div class="mic-detalle"><div class="mic-det-av">${dibujo}</div><div><div class="fer-texto"><b>${micEsc(nombre)}</b></div><div class="fer-sub">Asiento ${micEsc(a)}${p && p.curso ? ' · ' + micEsc(p.curso) : ''}<br>${donde}</div></div></div>${boton}`;
 }
 

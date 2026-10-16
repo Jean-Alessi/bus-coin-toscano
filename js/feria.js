@@ -574,6 +574,10 @@ function adminToggleFeria(codigo){
   renderAdminViajes();
 }
 
+function adminCartitasModo(codigo, valor){
+  db.ref('salas/' + codigo + '/ajustes/cartitas').set(valor === 'amistad' || valor === 'todo' ? valor : null).then(() => { feriaToast('Cartitas: ' + (valor === 'todo' ? 'con cartas de amor' : valor === 'amistad' ? 'solo amistad' : 'apagadas')); renderAdminViajes(); });
+}
+
 function adminFeriaGuardarLista(codigo, clave){
   const el = document.getElementById('admin-feria-' + clave + '-' + codigo);
   const items = (el ? el.value : '').split('\n').map(l => l.trim().slice(0, 60)).filter(Boolean).slice(0, 14);
@@ -651,6 +655,9 @@ function adminFeriaPanelHTML(codigo, viaje){
     <div class="fer-botones-admin"><button class="btn-primary" onclick="adminFeriaSortear('${codigo}')">🎲 Sortear ahora</button><button class="fer-mini" onclick="adminFeriaReiniciarSorteo('${codigo}')">Reiniciar</button></div>
     <div class="fer-aviso">Antes de sortear premios de verdad, consultá si tu provincia exige autorización para sorteos.</div>
 
+    <div class="fer-admin-t">💌 Cartitas entre pasajeros <small>(frases armadas, sin texto libre)</small></div>
+    <select class="fer-select" onchange="adminCartitasModo('${codigo}', this.value)"><option value="off" ${!(viaje && viaje.ajustes && (viaje.ajustes.cartitas === 'amistad' || viaje.ajustes.cartitas === 'todo')) ? 'selected' : ''}>Apagadas</option><option value="amistad" ${viaje && viaje.ajustes && viaje.ajustes.cartitas === 'amistad' ? 'selected' : ''}>Solo amistad (mate, juegos, charla)</option><option value="todo" ${viaje && viaje.ajustes && viaje.ajustes.cartitas === 'todo' ? 'selected' : ''}>Con cartas de amor ("te espero en el banco")</option></select>
+    <div class="fer-aviso">En viajes con menores recomendamos "Solo amistad" o dejarlas apagadas. Cada pasajero puede mandar 3 en todo el viaje, quien recibe puede bloquear o avisarte, y los avisos llegan a la bandeja 📥 como 🚩.</div>
     <div class="fer-admin-t">📮 Buzón del viaje <small>(${enc.length} respuestas)</small></div>
     <div class="fer-sub-admin">General: <b>${prom('a')}</b> · Coordinador: <b>${prom('b')}</b> · Volverían: <b>${prom('c')}</b> <small>(de 5)</small></div>
     <div class="fer-admin-t">📒 Pasaportes completados: <b>${pasaportes}</b></div>

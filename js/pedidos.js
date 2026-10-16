@@ -8,13 +8,14 @@
 // Se abre con el botón 📥 de cada viaje en el panel del organizador.
 
 const PED_TIPOS = {
+  reportes:  { carpeta: 'cartitasReportes', emoji: '🚩', nombre: 'Reportes', hecho: 'revisado', pendiente: 'nuevo', boton: 'Revisado' },
   farmacia:  { carpeta: 'farmacia',  emoji: '💊', nombre: 'Farmacia',     hecho: 'atendido',  pendiente: 'pendiente', boton: 'Atendido' },
   servicios: { carpeta: 'servicios', emoji: '🧑‍✈️', nombre: 'Coordinador',  hecho: 'atendido',  pendiente: 'pendiente', boton: 'Atendido' },
   pedidos:   { carpeta: 'pedidos',   emoji: '🍬', nombre: 'Kiosco',       hecho: 'entregado', pendiente: 'pendiente', boton: 'Entregado' },
   cumples:   { carpeta: 'cumples',   emoji: '🎂', nombre: 'Cumpleaños',   hecho: 'avisado',   pendiente: 'nuevo',     boton: 'Avisado' },
   consultas: { carpeta: 'consultas', emoji: '✈️', nombre: 'Agencia',      hecho: 'contactado', pendiente: 'nueva',    boton: 'Contactado' },
 };
-const PED_ORDEN = ['farmacia', 'servicios', 'pedidos', 'cumples', 'consultas'];
+const PED_ORDEN = ['reportes', 'farmacia', 'servicios', 'pedidos', 'cumples', 'consultas'];
 
 let pedidosAbiertoPara = null;
 let pedidosDatos = {};     // viaje → { farmacia:{}, servicios:{}, ... }
@@ -102,6 +103,7 @@ function pedidosDetalle(p){
   if(p.tipo === 'servicios') return pedEsc(x.tipo);
   if(p.tipo === 'pedidos') return 'Quiere: ' + pedEsc(x.item);
   if(p.tipo === 'cumples') return '¡Cumple años hoy!';
+  if(p.tipo === 'reportes') return '🚩 ' + pedEsc(x.paraN) + ' (asiento ' + pedEsc(x.para) + ') avisó por una cartita de ' + pedEsc(x.n) + ' (asiento ' + pedEsc(x.de) + ')';
   return pedEsc(x.promo) + (Number(x.off) ? ' (' + Number(x.off) + '% off)' : '') + ' · cupón ' + pedEsc(x.cupon);
 }
 
@@ -125,7 +127,7 @@ function pedidosPanelHTML(viaje, siempre){
     <div class="ped-lista">${lista.length ? lista.map(p => `
       <div class="ped-fila ${p.hecho ? 'ped-hecho' : ''} ${p.urgente ? 'ped-urgente' : ''}">
         <div class="ped-emoji">${PED_TIPOS[p.tipo].emoji}</div>
-        <div class="ped-txt"><b>${pedEsc(p.x.n || 'Pasajero')}</b> <small>asiento ${pedEsc(p.asiento)} · ${pedidosHora(p.t)}</small><div>${pedidosDetalle(p)}</div></div>
+        <div class="ped-txt"><b>${pedEsc(p.x.n || 'Pasajero')}</b> <small>asiento ${pedEsc(p.tipo === 'reportes' ? p.x.de : p.asiento)} · ${pedidosHora(p.t)}</small><div>${pedidosDetalle(p)}</div></div>
         ${p.hecho ? '<span class="ped-ok">✓</span>' : `<button class="fer-mini" onclick="pedidosMarcar('${viaje}','${p.tipo}','${pedEsc(p.asiento)}')">${PED_TIPOS[p.tipo].boton}</button>`}
       </div>`).join('') : '<div class="fer-vacio">No hay pedidos todavía. Cuando un pasajero pida algo en la plaza, aparece acá.</div>'}</div>
     <div class="fer-botones-admin"><button class="fer-mini" onclick="pedidosLimpiarHechos('${viaje}')">🧹 Limpiar atendidos</button></div>

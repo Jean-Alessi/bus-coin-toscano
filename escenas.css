@@ -1158,3 +1158,14 @@ button.tcarta{cursor:default;}
 .plz-accion{min-height:48px; margin:4px 0 2px;}
 .plz-botones{gap:5px; margin-top:2px;}
 .plz-botones .gbtn{min-height:36px; height:36px; padding:0 4px; font-size:12.5px;}
+
+/* ---- Cartitas ---- */
+.car-input{width:100%; box-sizing:border-box; border:1.5px solid #ccd; border-radius:12px; padding:9px; font-size:15px; text-align:center; font-family:inherit; margin:4px 0 8px;}
+.car-item{background:#EEF4FF; border-radius:12px; padding:8px 10px; margin-bottom:6px; text-align:left; font-size:13px; color:#0F2A4D;}
+.car-item small{color:#5b6673; font-weight:600;}
+.car-txt{font-weight:700; margin:2px 0 4px;}
+.car-botones{display:flex; gap:6px; margin-top:6px;} .car-botones .gbtn{flex:1; min-height:34px; height:34px;}
+.car-mas{margin-top:6px; font-size:11px; color:#8793a1;}
+.car-chico{border:none; background:none; color:#8793a1; font-size:11px; text-decoration:underline; cursor:pointer; font-family:inherit; padding:0;}
+.car-tipos{grid-template-columns:1fr;} .car-tipo{flex-direction:row; justify-content:flex-start; gap:8px; text-align:left; padding:8px 10px;} .car-tipo span{font-size:22px;}
+.fer-select{width:100%; box-sizing:border-box; border:1px solid #ccd; border-radius:10px; padding:8px; font-size:13px; font-family:inherit; margin-bottom:4px; background:#fff;}

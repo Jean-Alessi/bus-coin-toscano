@@ -47,6 +47,7 @@ const PLZ_ATRACCIONES = [
   { id: 'trampolin', nombre: 'Cama elástica', emoji: '🤸', verbo: 'Saltar', sub: '¡Saltá todo lo que quieras!', pose: 2, zona: { x: 438, y: 296, w: 124, h: 70 } },
   { id: 'banco1', nombre: 'Banco', emoji: '🪑', verbo: 'Sentarte', sub: 'Descansá y mirá la plaza', pose: 3, zona: { x: 60, y: 420, w: 110, h: 60 }, slots: [{ x: 96, y: 452 }, { x: 134, y: 452 }] },
   { id: 'banco2', nombre: 'Banco', emoji: '🪑', verbo: 'Sentarte', sub: 'Descansá y mirá la plaza', pose: 3, zona: { x: 470, y: 420, w: 110, h: 60 }, slots: [{ x: 506, y: 452 }, { x: 544, y: 452 }] },
+  { id: 'correo', nombre: 'Correo', emoji: '💌', verbo: 'Abrir el buzón', sub: 'Invitaciones entre pasajeros', fn: 'cartitasAbrir', zona: { x: 284, y: 424, w: 72, h: 70 } },
   { id: 'fuente', nombre: 'Fuente de los deseos', emoji: '🪙', verbo: 'Pedir un deseo', sub: 'Tirá una moneda (gratis) y mirá qué sale', deseo: true, dentro: (x, y) => { const d = Math.hypot(x - PLZ_FUENTE.x, y - (PLZ_FUENTE.y + 4)); return d > 36 && d < 78; } },
 ];
 const PLZ_DESEOS = ['Vas a conocer un lugar mágico ✨', 'Hoy te toca la mejor vista 🌄', 'Alguien te invita un mate 🧉', 'Se viene una gran aventura 🚌', 'Vas a hacer un amigo nuevo 🤝', 'Mañana sale un día de sol ☀️', 'Ganás la próxima partida 🎮', 'Te espera una sorpresa 🎁'];
@@ -141,6 +142,7 @@ function iniciarPlaza(){
   plazaRender();
   plazaActualizarCantidad();
   if(typeof feriaIniciar === 'function') feriaIniciar();
+  if(typeof cartitasIniciar === 'function') cartitasIniciar();
   const online = typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre;
   if(online) plazaConectar();
   plz.ultimo = 0;
@@ -233,6 +235,7 @@ function plazaAlSalir(silencioso){
   if(plz.activo && !plz.enMicro) plz.posGuardada = { x: plz.yo.x, y: plz.yo.y, t: Date.now(), viaje: (typeof codigoViaje !== 'undefined' ? codigoViaje : '') };
   plz.pose = null;
   if(typeof feriaAlSalir === 'function') feriaAlSalir();
+  if(typeof cartitasAlSalir === 'function') cartitasAlSalir();
   if(plz.ref){
     try {
       if(plz.listener) plz.ref.off('value', plz.listener);
@@ -303,6 +306,7 @@ function plazaRender(){
     <div id="plaza-modal"></div>
     <div id="plaza-salas"></div>
     <div id="plaza-micro"></div>
+    <div id="plaza-cartas"></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
     <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrir()">🚌 Micro</button></div>`, 'plz-escena');
@@ -364,6 +368,7 @@ function plazaOcupada(slot, pose){
 }
 function plazaAtraccion(a){
   if(a.deseo){ plazaDeseo(); return; }
+  if(a.fn){ if(typeof window[a.fn] === 'function') window[a.fn](); return; }
   let pos = { x: plz.yo.x, y: plz.yo.y };
   if(a.slots){
     const libres = a.slots.filter(s => !plazaOcupada(s, a.pose)).sort((s, t) => Math.hypot(s.x - plz.yo.x, s.y - plz.yo.y) - Math.hypot(t.x - plz.yo.x, t.y - plz.yo.y));
@@ -566,8 +571,9 @@ function plazaDibujarParque(ctx){
     ctx.fillStyle = '#B8793B'; arcRR(ctx, x - 22, y - 12, 82, 12, 4); ctx.fill();
     ctx.fillStyle = '#5A3A22'; ctx.fillRect(x - 18, y, 5, 10); ctx.fillRect(x + 49, y, 5, 10);
   });
+  if(typeof cartitasDibujarBuzon === 'function') cartitasDibujarBuzon(ctx);
   // Flores
-  [[240, 410], [400, 410], [215, 250], [430, 240], [300, 480], [350, 480]].forEach(([x, y], i) => arcEmoji(ctx, i % 2 ? '🌼' : '🌷', x, y, 20));
+  [[240, 410], [400, 410], [215, 250], [430, 240], [270, 485], [372, 485]].forEach(([x, y], i) => arcEmoji(ctx, i % 2 ? '🌼' : '🌷', x, y, 20));
 }
 
 function plazaDibujarFuente(ctx){
