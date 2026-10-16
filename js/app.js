@@ -3,7 +3,12 @@
 // hay riesgo, solo premio por acertar. Sirven para el ranking del viaje y
 // para elegir premio al final. Como nadie paga para jugar, esto es una
 // promoción de fidelización gratuita, no un juego de azar.
-let monedasCoin = 0;
+// La billetera se guarda en el celular y sirve para vestir al personaje. Los
+// puntos del ranking del viaje son otra cosa y no se tocan al gastar.
+let monedasCoin = (() => { try { return Math.max(0, Number(localStorage.getItem('busmac-monedas')) || 0); } catch(e){ return 0; } })();
+function guardarMonedas(){ try { localStorage.setItem('busmac-monedas', String(monedasCoin)); } catch(e){} }
+// Suma solo a la billetera (regalos): no cuenta para el ranking.
+function regalarMonedas(n){ monedasCoin += n; guardarMonedas(); actualizarMonedasEnPantalla(); }
 
 const EMOJIS_DISPONIBLES = ['😊', '😎', '🤩', '😜', '🥳', '😇', '🤠', '🧐', '🤓', '💃', '🕺', '😴'];
 
@@ -369,6 +374,7 @@ function rankingUnirse(){
   const ref = rankingRefPuntos().child(String(miAsiento));
   ref.once('value').then(snap => {
     if(snap.val() == null) ref.set({ nombre: miNombre, pts: 0, mayorDe12: !!miMayorDe12 });
+    if(typeof avatarSincronizar === 'function') avatarSincronizar();
   });
   if(!rankingListener){
     rankingListener = rankingRefPuntos().on('value', snap => {
@@ -462,7 +468,16 @@ function renderTarjetas(lista, contenedorId){
 
 function renderHome(){
   pokerEscucharAjuste();
-  document.getElementById('home-saludo').textContent = `${miEmoji} Hola, ${miNombre}`;
+  const saludo = document.getElementById('home-saludo');
+  saludo.textContent = '';
+  if(typeof avatarMiniHTML === 'function'){
+    const av = document.createElement('span');
+    av.className = 'home-avatar';
+    av.innerHTML = avatarMiniHTML(avatarPuestoActual(), 38);
+    av.onclick = () => showView('avatar');
+    saludo.appendChild(av);
+    saludo.appendChild(document.createTextNode(' Hola, ' + miNombre));
+  } else saludo.textContent = `${miEmoji} Hola, ${miNombre}`;
   // El link para entrar directo al viaje lo ve solo quien organiza: si lo
   // tuviera cualquier pasajero, podría reenviarlo a gente que no va en el micro.
   const elViaje = document.getElementById('home-viaje');
@@ -480,6 +495,7 @@ function renderHome(){
   // ruleta del día, sin repetir lo que ya está a un toque de distancia.
   document.getElementById('home-content').innerHTML = gEscenaHTML('cielo', `
     <div class="home-logo-banner"><img src="logo-empresa.png" alt="Logo"></div>
+    ${typeof avatarTarjetaHomeHTML === 'function' ? avatarTarjetaHomeHTML() : ''}
     ${pwaInstalarHTML()}
     ${ruletaHTML()}`);
 }
@@ -603,7 +619,7 @@ function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  const tabName = TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : name;
+  const tabName = TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : (name === 'avatar' ? 'home' : name);
   const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
   if(tab) tab.classList.add('active');
   if(name==='juegos'){ renderJuegos(); }
@@ -617,6 +633,7 @@ function showView(name){
   if(name==='solitario'){ iniciarSolitario(); }
   if(name==='videopoker'){ iniciarVideoPoker(); }
   if(name==='texas'){ iniciarTexas(); }
+  if(name==='avatar'){ iniciarAvatar(); }
   if(typeof ARC_JUEGOS !== 'undefined' && ARC_JUEGOS[name]){ arcIniciarVista(name); }
   if(name==='sudoku'){ iniciarSudoku(); }
   if(name==='patrones'){ iniciarPatrones(); }
@@ -643,7 +660,7 @@ function renderRanking(){
   const list = document.getElementById('ranking-list');
   if(!list) return;
   const filas = Object.keys(rankingPuntos)
-    .map(asiento => ({ asiento, nombre: rankingPuntos[asiento].nombre, pts: rankingPuntos[asiento].pts, me: asiento === String(miAsiento) }))
+    .map(asiento => ({ asiento, nombre: rankingPuntos[asiento].nombre, pts: rankingPuntos[asiento].pts, avatar: rankingPuntos[asiento].avatar, me: asiento === String(miAsiento) }))
     .sort((a,b)=> b.pts - a.pts);
   if(!filas.length){
     list.innerHTML = gEscenaHTML('noche', gDialogoHTML('🏆 Todavía nadie sumó puntos', 'Jugá y sumá monedas para aparecer acá.'));
@@ -651,6 +668,7 @@ function renderRanking(){
   }
 
   const iniciales = nombre => String(nombre || '?').slice(0, 2).toUpperCase();
+  const carita = (r, tam) => (typeof avatarMiniHTML === 'function' && (r.me || r.avatar)) ? avatarMiniHTML(r.me ? avatarPuestoActual() : r.avatar, tam) : iniciales(r.nombre);
   const miPuesto = filas.findIndex(r => r.me);
   // Podio: el 1° al centro y más alto, el 2° a su izquierda y el 3° a su derecha.
   const lugares = [{ pos: 1, clase: 'rk-2' }, { pos: 0, clase: 'rk-1' }, { pos: 2, clase: 'rk-3' }];
@@ -658,7 +676,7 @@ function renderRanking(){
     const r = filas[l.pos];
     return `<div class="rk-puesto ${l.clase} ${r.me ? 'rk-yo' : ''}">
       ${l.pos === 0 ? '<div class="rk-corona">👑</div>' : ''}
-      <div class="rk-avatar">${iniciales(r.nombre)}</div>
+      <div class="rk-avatar">${carita(r, 62)}</div>
       <div class="rk-nombre">${r.me ? 'Vos' : r.nombre}</div>
       <div class="rk-pts">${r.pts} pts</div>
       <div class="rk-base"><span>${MEDALLAS_RANKING[l.pos]}</span></div>
@@ -668,7 +686,7 @@ function renderRanking(){
   const restoHTML = filas.slice(3).map((r, i) => `
     <div class="rk-fila ${r.me ? 'rk-fila-yo' : ''}">
       <span class="rk-fila-num">${i + 4}</span>
-      <span class="rk-fila-avatar">${iniciales(r.nombre)}</span>
+      <span class="rk-fila-avatar">${carita(r, 34)}</span>
       <span class="rk-fila-nombre">${r.me ? 'Vos' : r.nombre}<small>asiento ${r.asiento}</small></span>
       <span class="rk-fila-pts">${r.pts} pts</span>
     </div>`).join('');
@@ -690,6 +708,7 @@ function alcanzanMonedas(cantidad){
 function gastarMonedas(cantidad){
   if(!alcanzanMonedas(cantidad)) return false;
   monedasCoin -= cantidad;
+  guardarMonedas();
   actualizarMonedasEnPantalla();
   return true;
 }
@@ -705,6 +724,7 @@ function actualizarMonedasEnPantalla(){
 // y también actualiza el Ranking en vivo con el mismo número.
 function ganarMonedas(cantidad){
   monedasCoin = Math.max(0, monedasCoin + cantidad);
+  guardarMonedas();
   actualizarMonedasEnPantalla();
   if(!miNombre || !miAsiento) return;
   const asiento = String(miAsiento);
