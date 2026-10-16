@@ -1053,3 +1053,32 @@ button.tcarta{cursor:default;}
 .cat-mazo-wrap{position:relative;}
 .cat-mazo-cuenta{position:absolute; top:-6px; right:-6px; background:#fff; color:#0F2A4D; border-radius:10px; font-size:11px; font-weight:800; padding:1px 7px; box-shadow:0 1px 3px rgba(0,0,0,.4);}
 .cat-fin{margin-top:10px;}
+
+/* ---- Feria de la plaza ---- */
+.plz-escena{position:relative;}
+.plz-modal{position:absolute; inset:0; z-index:30; background:rgba(8,20,45,.72); display:flex; align-items:center; justify-content:center; padding:14px; border-radius:inherit;}
+.plz-modal-caja{background:#fff; color:#0F2A4D; border-radius:20px; padding:16px; width:100%; max-height:100%; overflow:auto; box-shadow:0 8px 24px rgba(0,0,0,.4); text-align:center;}
+.fer-titulo{margin:0 0 6px; font-size:20px; font-family:var(--font-juego);}
+.fer-texto{font-size:14px; font-weight:700; margin:6px 0;}
+.fer-sub{font-size:12px; color:#5b6673; margin:4px 0 8px; font-weight:600;}
+.fer-grande{font-size:56px; line-height:1.1;}
+.fer-pos{font-size:54px; font-weight:800; color:var(--orange,#E6A817); font-family:var(--font-juego); line-height:1.1; margin:2px 0;}
+.fer-cupon{display:inline-block; font-size:28px; font-weight:800; letter-spacing:2px; color:#0F2A4D; background:#FFF3B0; border:3px dashed #E6A817; border-radius:14px; padding:8px 16px; margin:6px 0; font-family:var(--font-juego);}
+.fer-items{display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin:10px 0;}
+.fer-item{display:flex; flex-direction:column; align-items:center; gap:2px; border:none; background:#FFF3D6; color:#0F2A4D; font-weight:800; font-size:13px; border-radius:14px; padding:10px 4px; font-family:inherit; cursor:pointer;}
+.fer-item span{font-size:30px;}
+.fer-promos{display:flex; flex-direction:column; gap:8px; margin:10px 0; text-align:left;}
+.fer-promo{display:flex; align-items:center; justify-content:space-between; gap:8px; background:#EEF4FF; border-radius:14px; padding:8px 10px; font-size:13px;}
+.fer-botones{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+.fer-admin{background:#F7F5F0; border-radius:12px; padding:10px; margin:-6px 0 10px; color:#0F2A4D; font-size:12.5px;}
+.fer-admin textarea, .fer-admin input[type=text]{width:100%; box-sizing:border-box; font-size:13px; border:1px solid #ccd; border-radius:10px; padding:8px; margin-bottom:6px; font-family:inherit;}
+.fer-admin-t{font-weight:800; margin:12px 0 4px;} .fer-admin-t:first-child{margin-top:0;}
+.fer-admin-t small{font-weight:600; color:#5b6673;}
+.fer-check{display:flex; align-items:center; gap:6px; margin:4px 0 6px; font-weight:700;}
+.fer-fila{display:flex; align-items:center; justify-content:space-between; gap:8px; background:#fff; border-radius:10px; padding:6px 8px; margin-bottom:4px;}
+.fer-fila-ok{opacity:.6;}
+.fer-mini{border:1.5px solid var(--orange,#E6A817); color:#B8830A; background:none; border-radius:14px; padding:4px 9px; font-size:11px; font-weight:800; cursor:pointer; font-family:inherit; flex-shrink:0;}
+.fer-vacio{color:#8793a1; padding:4px 2px;}
+.fer-sub-admin{margin:6px 0;}
+.fer-botones-admin{display:flex; gap:8px; align-items:center;}
+.fer-aviso{font-size:11px; color:#8a5a00; background:#FFF3D6; border-radius:8px; padding:6px 8px; margin-top:8px;}

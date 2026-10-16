@@ -8,7 +8,7 @@
 // Cada celular escribe su posición en Firebase (salas/{viaje}/plaza/{sala}/
 // {asiento}) unas 3 veces por segundo mientras camina, y la borra al salir.
 
-const PLZ = { W: 640, H: 700, VW: 300, VH: 440, SALA_MAX: 12, VEL: 96, VIVO_MS: 25000 };
+const PLZ = { W: 640, H: 900, VW: 300, VH: 440, SALA_MAX: 12, VEL: 96, VIVO_MS: 25000 };
 const PLZ_FRASES = ['¡Hola! 👋', '¿Jugamos?', '¡Buen viaje! 🚌', '¡Vamos!', 'Buena jugada 👏', '😂', '¡Qué calor!', 'Gracias 🙌'];
 
 // Edificios: puertas a otras pantallas. 'lado' dice hacia dónde mira la puerta.
@@ -16,9 +16,13 @@ const PLZ_EDIFICIOS = [
   { id: 'arcade', nombre: 'Arcade', sub: 'Video juegos', emoji: '🎮', x: 24, y: 24, w: 188, h: 120, color: '#E5586E', lado: 'abajo', ir: () => { if(typeof juegosAbiertos !== 'undefined') juegosAbiertos.video = true; showView('juegos'); } },
   { id: 'cartas', nombre: 'Salón de cartas', sub: 'Truco, Chinchón y más', emoji: '🃏', x: 226, y: 24, w: 188, h: 120, color: '#3B9B5A', lado: 'abajo', ir: () => { if(typeof juegosAbiertos !== 'undefined') juegosAbiertos.grupoCartas = true; showView('juegos'); } },
   { id: 'boutique', nombre: 'Boutique', sub: 'Vestí a tu personaje', emoji: '👕', x: 428, y: 24, w: 188, h: 120, color: '#7E57FF', lado: 'abajo', ir: () => showView('avatar') },
-  { id: 'ranking', nombre: 'Ranking', sub: 'Mirá cómo vas', emoji: '🏆', x: 24, y: 556, w: 188, h: 120, color: '#E6A817', lado: 'arriba', ir: () => showView('ranking') },
-  { id: 'comercios', nombre: 'Comercios', sub: 'Descuentos del destino', emoji: '🏪', x: 226, y: 556, w: 188, h: 120, color: '#2FB5B5', lado: 'arriba', ir: () => showView('comercios') },
-  { id: 'premios', nombre: 'Premios', sub: 'Lo que podés ganar', emoji: '🎁', x: 428, y: 556, w: 188, h: 120, color: '#FF7A1A', lado: 'arriba', ir: () => showView('tienda') },
+  { id: 'ranking', nombre: 'Ranking', sub: 'Mirá cómo vas', emoji: '🏆', x: 24, y: 756, w: 188, h: 120, color: '#E6A817', lado: 'arriba', ir: () => showView('ranking') },
+  { id: 'comercios', nombre: 'Comercios', sub: 'Descuentos del destino', emoji: '🏪', x: 226, y: 756, w: 188, h: 120, color: '#2FB5B5', lado: 'arriba', ir: () => showView('comercios') },
+  { id: 'premios', nombre: 'Premios', sub: 'Lo que podés ganar', emoji: '🎁', x: 428, y: 756, w: 188, h: 120, color: '#FF7A1A', lado: 'arriba', ir: () => showView('tienda') },
+  // Feria: puestos donde se pasa una sola vez y se hace fila (ver feria.js).
+  { id: 'kiosco', puesto: true, nombre: 'Kiosco', sub: 'Pedí una golosina de cortesía', emoji: '🍬', x: 24, y: 520, w: 188, h: 100, color: '#F28482', lado: 'abajo', ir: () => feriaIntentar('kiosco') },
+  { id: 'agencia', puesto: true, nombre: 'Agencia de viajes', sub: 'Promos y descuentos', emoji: '✈️', x: 226, y: 520, w: 188, h: 100, color: '#3A86FF', lado: 'abajo', ir: () => feriaIntentar('agencia') },
+  { id: 'sorteo', puesto: true, nombre: 'Sorteo', sub: 'Retirá tu número', emoji: '🎟️', x: 428, y: 520, w: 188, h: 100, color: '#9D4EDD', lado: 'abajo', ir: () => feriaIntentar('sorteo') },
 ];
 const PLZ_FUENTE = { x: 320, y: 350, r: 44 };
 const plazaNombre = () => 'Plaza ' + marcaCorta();
@@ -106,6 +110,7 @@ function iniciarPlaza(){
   plz.bots = plazaEsDemo() ? plazaCrearBots() : [];
   plazaRender();
   plazaActualizarCantidad();
+  if(typeof feriaIniciar === 'function') feriaIniciar();
   const online = typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre;
   if(online) plazaConectar();
   plz.ultimo = 0;
@@ -139,6 +144,7 @@ async function plazaConectar(){
 
 function plazaAlSalir(silencioso){
   cancelAnimationFrame(plz.raf);
+  if(typeof feriaAlSalir === 'function') feriaAlSalir();
   if(plz.ref){
     try {
       if(plz.listener) plz.ref.off('value', plz.listener);
@@ -203,6 +209,7 @@ function plazaRender(){
   cont.innerHTML = gEscenaHTML('cielo', `
     <div class="g-hud"><span class="g-pill" id="plaza-cantidad">1 en la plaza</span><span class="g-pill">${plazaNombre()}</span></div>
     <div class="plz-caja"><canvas class="plz-canvas"></canvas></div>
+    <div id="plaza-modal"></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
     <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir algo</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Mi personaje</button></div>`, 'plz-escena');
@@ -242,7 +249,7 @@ function plazaRenderAccion(){
   if(!el) return;
   const e = plz.puerta;
   el.innerHTML = e
-    ? `<button class="gbtn gbtn-ancho" onclick="plazaEntrar('${e.id}')">${e.emoji} Entrar: ${e.nombre}</button><div class="plz-accion-sub">${e.sub}</div>`
+    ? `<button class="gbtn gbtn-ancho" onclick="plazaEntrar('${e.id}')">${e.emoji} Entrar: ${e.nombre}</button><div class="plz-accion-sub">${e.puesto && typeof feriaSubtitulo === 'function' ? feriaSubtitulo(e.id) : e.sub}</div>`
     : '<div class="plz-accion-sub">Tocá un lugar para caminar. Acercate a una puerta para entrar.</div>';
 }
 
@@ -377,6 +384,23 @@ function plazaDibujarFuente(ctx){
   arcLogo(ctx, f.x, f.y - 38, 30, '#fff');
 }
 
+// Toldo a rayas y cartel con la gente que espera, para los puestos de la feria.
+function plazaDibujarToldo(ctx, e){
+  const alto = 16;
+  for(let i = 0; i < 10; i++){
+    ctx.fillStyle = i % 2 ? '#fff' : 'rgba(0,0,0,.28)';
+    ctx.fillRect(e.x + i * (e.w / 10), e.y + e.h - alto - 40, e.w / 10 + 0.5, alto);
+    ctx.beginPath(); ctx.arc(e.x + (i + 0.5) * (e.w / 10), e.y + e.h - 40, e.w / 20, 0, Math.PI); ctx.fillStyle = i % 2 ? '#fff' : 'rgba(0,0,0,.28)'; ctx.fill();
+  }
+  const ins = typeof feriaInsignia === 'function' ? feriaInsignia(e.id) : null;
+  if(ins){
+    ctx.font = '800 12px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const w = ctx.measureText(ins).width + 16;
+    ctx.fillStyle = '#0F2A4D'; arcRR(ctx, e.x + e.w - w - 6, e.y - 10, w, 20, 10); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillText(ins, e.x + e.w - w / 2 - 6, e.y + 0.5);
+  }
+}
+
 function plazaDibujarEdificio(ctx, e){
   const abajo = e.lado === 'abajo'; // la puerta mira hacia abajo y el cartel va arriba (o al revés)
   const bandaY = abajo ? e.y : e.y + e.h - 26;
@@ -388,6 +412,7 @@ function plazaDibujarEdificio(ctx, e){
   const centroY = abajo ? e.y + e.h / 2 + 8 : e.y + e.h / 2 - 6;
   arcEmoji(ctx, e.emoji, e.x + e.w / 2, centroY, 34);
   [e.x + 24, e.x + e.w - 24].forEach(vx => { ctx.fillStyle = 'rgba(255,255,255,.55)'; arcRR(ctx, vx - 14, abajo ? e.y + 40 : e.y + 44, 28, 26, 5); ctx.fill(); });
+  if(e.puesto) plazaDibujarToldo(ctx, e);
   // Puerta y baldosa de entrada
   const z = plazaZonaPuerta(e);
   ctx.fillStyle = 'rgba(255,255,255,.4)'; arcRR(ctx, z.x, z.y, z.w, z.h, 10); ctx.fill();

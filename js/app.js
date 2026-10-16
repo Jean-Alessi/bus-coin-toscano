@@ -298,6 +298,7 @@ function renderAdminViajes(){
           <span>${pasajeros}${capacidad ? '/' + capacidad : ''} pasajero${pasajeros === 1 ? '' : 's'}</span>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleLista('${c}')" title="Cargar lista de pasajeros">📋${listaLen ? ' ' + listaLen : ''}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCursos('${c}')" title="Cursos para la Guerra de cursos">🎓${listaCursos.length ? ' ' + listaCursos.length : ''}</button>
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleFeria('${c}')" title="Feria de la plaza: kiosco, agencia y sorteo">🎪</button>
           ${datos[c].destino ? `<button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCanjes('${c}')" title="Ver canjes de comercios">🏪</button>` : ''}
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTogglePoker('${c}',${!(datos[c].ajustes && datos[c].ajustes.poker === true)})" title="Póker en este viaje (apagado para estudiantiles)">🃏 ${datos[c].ajustes && datos[c].ajustes.poker === true ? 'Sí' : 'No'}</button>
           <button class="btn-finalizar-viaje" onclick="toggleCerrarViaje('${c}',${!cerrado})">${cerrado ? 'Reabrir' : 'Finalizar'}</button>
@@ -305,6 +306,7 @@ function renderAdminViajes(){
         </span>
       </div>
       ${typeof adminCursosPanelHTML === 'function' ? adminCursosPanelHTML(c, listaCursos) : ''}
+      ${typeof adminFeriaPanelHTML === 'function' ? adminFeriaPanelHTML(c, datos[c]) : ''}
       ${listaAbierta ? `
       <div style="margin:-6px 0 10px;">
         <textarea id="admin-lista-input-${c}" rows="4" style="width:100%;font-family:monospace;font-size:12.5px;border:1px solid var(--line-color,#ccc);border-radius:10px;padding:10px;margin-bottom:6px;" placeholder="Seleccioná en Excel las columnas Apellido, Nombre y (si querés) Curso, copialas (Ctrl+C) y pegalas acá (Ctrl+V). El curso tiene que estar cargado antes en el botón 🎓, con el mismo nombre.">${(datos[c].listaPasajeros || []).map(p => `${p.apellido}\t${p.nombre}${p.curso ? '\t' + p.curso : ''}`).join('\n')}</textarea>
