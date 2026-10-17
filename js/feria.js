@@ -574,6 +574,19 @@ function adminToggleFeria(codigo){
   renderAdminViajes();
 }
 
+function adminModoApp(codigo, valor){
+  db.ref('salas/' + codigo + '/ajustes/modo').set(valor === 'clasico' ? 'clasico' : null).then(() => { feriaToast(valor === 'clasico' ? 'Modo clásico: sin mundo' : 'Modo mundo: micro y paradas'); renderAdminViajes(); });
+}
+function adminParadaReal(codigo, valor){
+  const n = parseInt(valor, 10);
+  db.ref('salas/' + codigo + '/ajustes/paradaReal').set(isNaN(n) || n < 0 ? null : n).then(() => { feriaToast('Recorrido actualizado'); renderAdminViajes(); });
+}
+function adminProximoBingo(codigo){
+  const el = document.getElementById('admin-bingo-' + codigo);
+  const v = (el ? el.value : '').trim().slice(0, 40);
+  db.ref('salas/' + codigo + '/ajustes/proximoBingo').set(v || null).then(() => { feriaToast(v ? 'Bingo anunciado: ' + v : 'Aviso de bingo borrado'); renderAdminViajes(); });
+}
+
 function adminCartitasModo(codigo, valor){
   db.ref('salas/' + codigo + '/ajustes/cartitas').set(valor === 'amistad' || valor === 'todo' ? valor : null).then(() => { feriaToast('Cartitas: ' + (valor === 'todo' ? 'con cartas de amor' : valor === 'amistad' ? 'solo amistad' : 'apagadas')); renderAdminViajes(); });
 }
@@ -655,6 +668,13 @@ function adminFeriaPanelHTML(codigo, viaje){
     <div class="fer-botones-admin"><button class="btn-primary" onclick="adminFeriaSortear('${codigo}')">🎲 Sortear ahora</button><button class="fer-mini" onclick="adminFeriaReiniciarSorteo('${codigo}')">Reiniciar</button></div>
     <div class="fer-aviso">Antes de sortear premios de verdad, consultá si tu provincia exige autorización para sorteos.</div>
 
+    <div class="fer-admin-t">🌎 Modo de la app <small>(cómo la ven los pasajeros)</small></div>
+    <select class="fer-select" onchange="adminModoApp('${codigo}', this.value)"><option value="mundo" ${viaje && viaje.ajustes && viaje.ajustes.modo === 'clasico' ? '' : 'selected'}>Mundo: micro con 5 paradas y personajes</option><option value="clasico" ${viaje && viaje.ajustes && viaje.ajustes.modo === 'clasico' ? 'selected' : ''}>Clásico: menú de siempre, sin mundo</option></select>
+    <div class="fer-admin-t">🗺️ Recorrido real <small>(dónde está el micro ahora; usa las líneas de la cartelera)</small></div>
+    <select class="fer-select" onchange="adminParadaReal('${codigo}', this.value)"><option value="-1">Todavía no salimos</option>${de('cartelera').map((l, i) => `<option value="${i}" ${viaje && viaje.ajustes && viaje.ajustes.paradaReal === i ? 'selected' : ''}>${feriaEsc(l)}</option>`).join('')}</select>
+    <div class="fer-admin-t">🎱 Próximo bingo <small>(se ve en todas las paradas; hora tipo 21:30 o un texto)</small></div>
+    <input type="text" id="admin-bingo-${codigo}" value="${feriaEsc((viaje && viaje.ajustes && viaje.ajustes.proximoBingo) || '')}" placeholder="Ej: 21:30">
+    <button class="btn-primary" onclick="adminProximoBingo('${codigo}')">Anunciar bingo</button>
     <div class="fer-admin-t">💌 Cartitas entre pasajeros <small>(frases armadas, sin texto libre)</small></div>
     <select class="fer-select" onchange="adminCartitasModo('${codigo}', this.value)"><option value="off" ${!(viaje && viaje.ajustes && (viaje.ajustes.cartitas === 'amistad' || viaje.ajustes.cartitas === 'todo')) ? 'selected' : ''}>Apagadas</option><option value="amistad" ${viaje && viaje.ajustes && viaje.ajustes.cartitas === 'amistad' ? 'selected' : ''}>Solo amistad (mate, juegos, charla)</option><option value="todo" ${viaje && viaje.ajustes && viaje.ajustes.cartitas === 'todo' ? 'selected' : ''}>Con cartas de amor ("te espero en el banco")</option></select>
     <div class="fer-aviso">En viajes con menores recomendamos "Solo amistad" o dejarlas apagadas. Cada pasajero puede mandar 3 en todo el viaje, quien recibe puede bloquear o avisarte, y los avisos llegan a la bandeja 📥 como 🚩.</div>

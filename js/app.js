@@ -491,6 +491,7 @@ function organizadorTarjetaHomeHTML(){
 
 function renderHome(){
   pokerEscucharAjuste();
+  if(typeof mundoEscuchar === 'function') mundoEscuchar();
   const saludo = document.getElementById('home-saludo');
   saludo.textContent = '';
   if(typeof avatarMiniHTML === 'function'){
@@ -520,7 +521,7 @@ function renderHome(){
     <div class="home-logo-banner"><img src="logo-empresa.png?v=2" alt="Logo"></div>
     ${organizadorTarjetaHomeHTML()}
     ${typeof plazaTarjetaHomeHTML === 'function' ? plazaTarjetaHomeHTML() : ''}
-    ${typeof avatarTarjetaHomeHTML === 'function' ? avatarTarjetaHomeHTML() : ''}
+    ${typeof avatarTarjetaHomeHTML === 'function' && (typeof mundoActivo !== 'function' || mundoActivo()) ? avatarTarjetaHomeHTML() : ''}
     ${pwaInstalarHTML()}
     ${ruletaHTML()}`);
 }
@@ -580,7 +581,7 @@ function renderJuegos(){
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas', 'plaza', 'categorias'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas', 'plaza', 'estacion', 'categorias'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -590,7 +591,7 @@ let plazaOrigen = null;
 function volverALaPlaza(){ plazaOrigen = null; showView('plaza'); }
 function plazaActualizarBotonVolver(vista){
   let b = document.getElementById('btn-volver-plaza');
-  if(!b){ b = document.createElement('button'); b.id = 'btn-volver-plaza'; b.className = 'btn-volver-plaza'; b.textContent = '🏘️ Volver a la plaza'; b.onclick = volverALaPlaza; document.body.appendChild(b); }
+  if(!b){ b = document.createElement('button'); b.id = 'btn-volver-plaza'; b.className = 'btn-volver-plaza'; b.textContent = '🏘️ Volver'; b.onclick = volverALaPlaza; document.body.appendChild(b); }
   b.classList.toggle('visible', !!plazaOrigen && vista === plazaOrigen && vista !== 'plaza');
 }
 
@@ -598,7 +599,8 @@ function volverDeJuego(){
   const activa = document.querySelector('.view.active');
   if(plazaOrigen && activa && activa.id === 'view-' + plazaOrigen){ volverALaPlaza(); return; }
   if(activa && activa.id === 'view-trivia'){ triviaVolver(); return; }
-  if(activa && activa.id === 'view-plaza'){ showView('home'); return; }
+  if(activa && activa.id === 'view-plaza'){ showView('estacion'); return; }
+  if(activa && activa.id === 'view-estacion'){ showView('home'); return; }
   showView('juegos');
 }
 
@@ -645,6 +647,7 @@ window.addEventListener('popstate', () => {
 
 function showView(name){
   const activaAntes = document.querySelector('.view.active');
+  if(activaAntes && activaAntes.id === 'view-estacion' && name !== 'estacion' && typeof estacionSoltar === 'function') estacionSoltar();
   if(activaAntes && activaAntes.id === 'view-plaza' && name !== 'plaza' && name !== 'home') plazaOrigen = name;
   else if(name === 'plaza' || name === 'home') plazaOrigen = null;
   if(activaAntes && activaAntes.id === 'view-plaza' && name !== 'plaza' && typeof plazaAlSalir === 'function') plazaAlSalir();
@@ -660,7 +663,7 @@ function showView(name){
   document.getElementById('view-'+name).classList.add('active');
   plazaActualizarBotonVolver(name);
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  const tabName = (name === 'avatar' || name === 'plaza') ? 'home' : (TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : name);
+  const tabName = (name === 'avatar' || name === 'plaza' || name === 'estacion') ? 'home' : (TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : name);
   const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
   if(tab) tab.classList.add('active');
   if(name==='juegos'){ renderJuegos(); }
@@ -677,6 +680,7 @@ function showView(name){
   if(name==='texas'){ iniciarTexas(); }
   if(name==='avatar'){ iniciarAvatar(); }
   if(name==='plaza'){ iniciarPlaza(); }
+  if(name==='estacion'){ iniciarEstacion(); }
   if(typeof ARC_JUEGOS !== 'undefined' && ARC_JUEGOS[name]){ arcIniciarVista(name); }
   if(name==='sudoku'){ iniciarSudoku(); }
   if(name==='patrones'){ iniciarPatrones(); }

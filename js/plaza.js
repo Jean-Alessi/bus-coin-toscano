@@ -8,53 +8,32 @@
 // Cada celular escribe su posición en Firebase (salas/{viaje}/plaza/{sala}/
 // {asiento}) unas 3 veces por segundo mientras camina, y la borra al salir.
 
-const PLZ = { W: 640, H: 1200, VW: 340, VH: 450, SALA_MAX: 12, VEL: 96, VIVO_MS: 25000 };
-const PLZ_SUELO = 1040; // la plaza llega hasta acá; más abajo está la calle donde para el micro
+const PLZ = { W: 640, H: 740, VW: 340, VH: 450, SALA_MAX: 12, VEL: 96, VIVO_MS: 25000 };
 const PLZ_FRASES = ['¡Hola! 👋', '¿Jugamos?', '¡Buen viaje! 🚌', '¡Vamos!', 'Buena jugada 👏', '😂', '¡Qué calor!', 'Gracias 🙌'];
 
 // Edificios: puertas a otras pantallas. 'lado' dice hacia dónde mira la puerta.
 const PLZ_COL = [16, 180, 344, 508]; // 4 columnas de 116 de ancho con pasillos de 48
-const PLZ_EDIFICIOS = [
-  // Arriba: edificios con puerta hacia abajo.
-  { id: 'arcade', nombre: 'Arcade', sub: 'Video juegos', emoji: '🎮', x: PLZ_COL[0], y: 24, w: 116, h: 120, color: '#E5586E', lado: 'abajo', ir: () => { if(typeof juegosAbiertos !== 'undefined') juegosAbiertos.video = true; showView('juegos'); } },
-  { id: 'cartas', nombre: 'Salón de cartas', sub: 'Truco, Chinchón y más', emoji: '🃏', x: PLZ_COL[1], y: 24, w: 116, h: 120, color: '#3B9B5A', lado: 'abajo', ir: () => { if(typeof juegosAbiertos !== 'undefined') juegosAbiertos.grupoCartas = true; showView('juegos'); } },
-  { id: 'boutique', nombre: 'Boutique', sub: 'Vestí a tu personaje', emoji: '👕', x: PLZ_COL[2], y: 24, w: 116, h: 120, color: '#7E57FF', lado: 'abajo', ir: () => showView('avatar') },
-  { id: 'escenario', nombre: 'Escenario', sub: 'Trivia y bingo en vivo', emoji: '🎤', x: PLZ_COL[3], y: 24, w: 116, h: 120, color: '#D62839', lado: 'abajo', ir: () => feriaEscenario() },
-  // El micro de dos pisos, estacionado en la calle (afuera de la plaza): de acá bajan todos (ver micro.js).
-  { id: 'micro', micro: true, nombre: 'Micro', sub: 'Mirá quién sigue arriba y buscá a alguien', emoji: '🚌', x: 170, y: 1090, w: 300, h: 100, color: '#0F2A4D', lado: 'arriba', ir: () => microAbrir() },
-  // Feria, primera fila: puestos donde se pasa una vez y se hace fila (ver feria.js).
-  { id: 'kiosco', puesto: true, nombre: 'Kiosco', sub: 'Pedí una golosina de cortesía', emoji: '🍬', x: PLZ_COL[0], y: 520, w: 116, h: 100, color: '#F28482', lado: 'abajo', ir: () => feriaIntentar('kiosco') },
-  { id: 'agencia', puesto: true, nombre: 'Agencia', sub: 'Promos y descuentos', emoji: '✈️', x: PLZ_COL[1], y: 520, w: 116, h: 100, color: '#3A86FF', lado: 'abajo', ir: () => feriaIntentar('agencia') },
-  { id: 'sorteo', puesto: true, nombre: 'Sorteo', sub: 'Retirá tu número', emoji: '🎟️', x: PLZ_COL[2], y: 520, w: 116, h: 100, color: '#9D4EDD', lado: 'abajo', ir: () => feriaIntentar('sorteo') },
-  { id: 'radio', puesto: true, nombre: 'Radio', sub: 'Votá la música del micro', emoji: '📻', x: PLZ_COL[3], y: 520, w: 116, h: 100, color: '#FF9F1C', lado: 'abajo', ir: () => feriaIntentar('radio') },
-  // Feria, segunda fila.
-  { id: 'coordinador', puesto: true, nombre: 'Coordinador', sub: 'Pedí algo para el viaje', emoji: '🧑‍✈️', x: PLZ_COL[0], y: 700, w: 116, h: 100, color: '#2A9D8F', lado: 'abajo', ir: () => feriaIntentar('coordinador') },
-  { id: 'farmacia', puesto: true, nombre: 'Farmacia', sub: '¿Te sentís mal? Avisá acá', emoji: '💊', x: PLZ_COL[1], y: 700, w: 116, h: 100, color: '#D62839', lado: 'abajo', ir: () => feriaIntentar('farmacia') },
-  { id: 'buzon', puesto: true, nombre: 'Buzón', sub: 'Contanos cómo viajás', emoji: '📮', x: PLZ_COL[2], y: 700, w: 116, h: 100, color: '#E76F51', lado: 'abajo', ir: () => feriaIntentar('buzon') },
-  { id: 'cartelera', puesto: true, nombre: 'Cartelera', sub: 'Horarios y actividades', emoji: '📋', x: PLZ_COL[3], y: 700, w: 116, h: 100, color: '#577590', lado: 'abajo', ir: () => feriaIntentar('cartelera') },
-  // Abajo: edificios con puerta hacia arriba.
-  { id: 'ranking', nombre: 'Ranking', sub: 'Mirá cómo vas', emoji: '🏆', x: PLZ_COL[0], y: 900, w: 116, h: 120, color: '#E6A817', lado: 'arriba', ir: () => showView('ranking') },
-  { id: 'comercios', nombre: 'Comercios', sub: 'Descuentos del destino', emoji: '🏪', x: PLZ_COL[1], y: 900, w: 116, h: 120, color: '#2FB5B5', lado: 'arriba', ir: () => showView('comercios') },
-  { id: 'premios', nombre: 'Premios', sub: 'Lo que podés ganar', emoji: '🎁', x: PLZ_COL[2], y: 900, w: 116, h: 120, color: '#FF7A1A', lado: 'arriba', ir: () => showView('tienda') },
-  { id: 'foto', nombre: 'Fotos', sub: 'Foto grupal con marco', emoji: '📸', x: PLZ_COL[3], y: 900, w: 116, h: 120, color: '#4361EE', lado: 'arriba', ir: () => feriaFotoGrupal() },
-];
-const PLZ_FUENTE = { x: 320, y: 340, r: 44 };
-
-// El parque del centro: cosas para hacer. 'zona' es donde hay que pararse para usarlas;
-// 'pose' es cómo se ve el personaje (1 hamaca, 2 salto, 3 sentado) y lo ven todos.
-const PLZ_ATRACCIONES = [
-  { id: 'hamacas', nombre: 'Hamacas', emoji: '🛝', verbo: 'Hamacarte', sub: 'Se hamacan hasta 3 a la vez', pose: 1, zona: { x: 36, y: 290, w: 178, h: 80 }, slots: [{ x: 78, y: 322 }, { x: 124, y: 322 }, { x: 170, y: 322 }] },
-  { id: 'trampolin', nombre: 'Cama elástica', emoji: '🤸', verbo: 'Saltar', sub: '¡Saltá todo lo que quieras!', pose: 2, zona: { x: 438, y: 296, w: 124, h: 70 } },
-  { id: 'banco1', nombre: 'Banco', emoji: '🪑', verbo: 'Sentarte', sub: 'Descansá y mirá la plaza', pose: 3, zona: { x: 60, y: 420, w: 110, h: 60 }, slots: [{ x: 96, y: 452 }, { x: 134, y: 452 }] },
-  { id: 'banco2', nombre: 'Banco', emoji: '🪑', verbo: 'Sentarte', sub: 'Descansá y mirá la plaza', pose: 3, zona: { x: 470, y: 420, w: 110, h: 60 }, slots: [{ x: 506, y: 452 }, { x: 544, y: 452 }] },
-  { id: 'correo', nombre: 'Correo', emoji: '💌', verbo: 'Abrir el buzón', sub: 'Invitaciones entre pasajeros', fn: 'cartitasAbrir', zona: { x: 284, y: 424, w: 72, h: 70 } },
-  { id: 'fuente', nombre: 'Fuente de los deseos', emoji: '🪙', verbo: 'Pedir un deseo', sub: 'Tirá una moneda (gratis) y mirá qué sale', deseo: true, dentro: (x, y) => { const d = Math.hypot(x - PLZ_FUENTE.x, y - (PLZ_FUENTE.y + 4)); return d > 36 && d < 78; } },
-];
+// Lo que hay en el sector donde estoy (se carga con plazaCargarSector, ver sectores.js).
+let PLZ_EDIFICIOS = [], PLZ_ATRACCIONES = [], PLZ_FUENTE = null, PLZ_SECTOR = null;
 const PLZ_DESEOS = ['Vas a conocer un lugar mágico ✨', 'Hoy te toca la mejor vista 🌄', 'Alguien te invita un mate 🧉', 'Se viene una gran aventura 🚌', 'Vas a hacer un amigo nuevo 🤝', 'Mañana sale un día de sol ☀️', 'Ganás la próxima partida 🎮', 'Te espera una sorpresa 🎁'];
-const plazaNombre = () => 'Plaza ' + marcaCorta();
+
+function plazaCargarSector(id){
+  const s = PLZ_SECTORES[id] || PLZ_SECTORES.plaza;
+  const a = s.armar();
+  PLZ_SECTOR = s; PLZ.H = s.H;
+  PLZ_EDIFICIOS = a.edificios; PLZ_ATRACCIONES = a.atracciones; PLZ_FUENTE = s.fuente || null;
+  plz.sector = s.id;
+  return s;
+}
+// Nombre del sector actual (Plaza y Shopping llevan el nombre de la agencia).
+const plazaNombre = () => {
+  const s = PLZ_SECTOR || (typeof PLZ_SECTORES !== 'undefined' && PLZ_SECTORES.plaza);
+  if(!s) return 'Plaza';
+  return s.id === 'plaza' || s.id === 'shopping' ? s.corto + ' ' + marcaCorta() : s.nombre;
+};
 
 let plz = {
-  activo: false, sala: 1, yo: { x: 320, y: 440, dir: 1 }, obj: null, otros: {}, cam: { x: 0, y: 0 }, t: 0, ultimoEnvio: 0, ultimoLatido: 0,
+  activo: false, sector: 'plaza', sala: 1, yo: { x: 320, y: 440, dir: 1 }, obj: null, otros: {}, cam: { x: 0, y: 0 }, t: 0, ultimoEnvio: 0, ultimoLatido: 0,
   bots: [], offset: 0, listener: null, ref: null, raf: 0, ultimo: 0, burbuja: null, menuAbierto: false, puerta: null, canvas: null, ctx: null, conectado: false,
 };
 
@@ -75,10 +54,11 @@ const PLZ_BOTS = [
 
 function plazaPuntoLibre(){
   for(let i = 0; i < 40; i++){
-    const x = 50 + Math.random() * 540, y = 190 + Math.random() * 350;
+    const l = (PLZ_SECTOR && PLZ_SECTOR.libre) || { x0: 50, x1: 590, y0: 190, y1: 540 };
+    const x = l.x0 + Math.random() * (l.x1 - l.x0), y = l.y0 + Math.random() * (l.y1 - l.y0);
     if(!plazaChoca(x, y)) return { x, y };
   }
-  return { x: 320, y: 450 };
+  return PLZ_SECTOR ? { x: PLZ_SECTOR.spawn.x, y: PLZ_SECTOR.spawn.y } : { x: 320, y: 450 };
 }
 
 function plazaCrearBots(){
@@ -111,11 +91,11 @@ function plazaMoverBots(dt){
 
 function plazaActualizarCantidad(){
   const el = document.getElementById('plaza-cantidad');
-  if(el) el.textContent = (Object.keys(plz.otros).length + plz.bots.length + 1) + ' en la plaza' + (plazaEsDemo() ? ' (demo)' : '');
+  if(el) el.textContent = (Object.keys(plz.otros).length + plz.bots.length + 1) + ' aquí' + (plazaEsDemo() ? ' (demo)' : '');
 }
 
 function plazaAhora(){ return Date.now() + (plz.offset || 0); }
-function plazaRefSala(){ return db.ref(`salas/${codigoViaje}/plaza/${plz.sala}`); }
+function plazaRefSala(){ return db.ref(`salas/${codigoViaje}/plaza/${plz.sector}/${plz.sala}`); }
 
 function plazaZonaPuerta(e){
   return e.lado === 'abajo'
@@ -125,18 +105,27 @@ function plazaZonaPuerta(e){
 
 // ---- Entrada y salida ----
 
+// Cambia de parada: se despide de la sala actual y entra al otro sector.
+function plazaIrASector(id){
+  plz.sector = id; plz.posGuardada = null;
+  iniciarPlaza();
+}
+
 function iniciarPlaza(){
   plazaAlSalir(true);
+  plazaCargarSector(plz.sector || 'plaza');
   const titulo = document.querySelector('#view-plaza h1');
   if(titulo) titulo.textContent = plazaNombre();
+  const sub = document.querySelector('#view-plaza .sub');
+  if(sub) sub.textContent = PLZ_SECTOR.desc;
   plz.activo = true;
   plz.otros = {}; plz.obj = null; plz.puerta = null; plz.menuAbierto = false; plz.burbuja = null;
   const g = plz.posGuardada;
-  plz.yo = g && g.viaje === (typeof codigoViaje !== 'undefined' ? codigoViaje : '') && Date.now() - g.t < 600000
+  plz.yo = g && g.sector === plz.sector && g.viaje === (typeof codigoViaje !== 'undefined' ? codigoViaje : '') && Date.now() - g.t < 600000
     ? { x: g.x, y: g.y, dir: 1 }
-    : { x: 320 + Math.floor((Math.random() - 0.5) * 16), y: (typeof MIC_SALIDA_Y === 'number' ? MIC_SALIDA_Y : 1036), dir: 1 };
+    : { x: PLZ_SECTOR.spawn.x + Math.floor((Math.random() - 0.5) * 24), y: PLZ_SECTOR.spawn.y, dir: 1 };
   plz.pose = null;
-  plz.enMicro = false; plz.buscado = null; plz.ultimaActividad = performance.now();
+  plz.enMicro = false; plz.buscado = plz.buscadoPendiente || null; plz.buscadoPendiente = null; plz.ultimaActividad = performance.now();
   plz.t = 0; plz.conectado = false;
   plz.bots = plazaEsDemo() ? plazaCrearBots() : [];
   plazaRender();
@@ -144,7 +133,7 @@ function iniciarPlaza(){
   if(typeof feriaIniciar === 'function') feriaIniciar();
   if(typeof cartitasIniciar === 'function') cartitasIniciar();
   const online = typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre;
-  if(online) plazaConectar();
+  if(online){ const pref = plz.salaPreferida; plz.salaPreferida = null; plazaConectar(pref || undefined); }
   plz.ultimo = 0;
   plz.raf = requestAnimationFrame(plazaBucle);
 }
@@ -155,7 +144,7 @@ function iniciarPlaza(){
 async function plazaConectar(forzada){
   try {
     db.ref('.info/serverTimeOffset').once('value').then(s => { plz.offset = s.val() || 0; });
-    const [snap, snapCursos] = await Promise.all([db.ref(`salas/${codigoViaje}/plaza`).once('value'), db.ref(`salas/${codigoViaje}/cursos`).once('value')]);
+    const [snap, snapCursos] = await Promise.all([db.ref(`salas/${codigoViaje}/plaza/${plz.sector}`).once('value'), db.ref(`salas/${codigoViaje}/cursos`).once('value')]);
     const salas = snap.val() || {};
     const cv = snapCursos.val();
     plz.cursos = (Array.isArray(cv) ? cv : (cv ? Object.keys(cv).map(k => cv[k]) : [])).map(String);
@@ -197,14 +186,14 @@ function plazaEtiquetaSala(k){
 
 function plazaActualizarSala(){
   const el = document.getElementById('plaza-sala');
-  if(el) el.textContent = plz.conectado ? plazaEtiquetaSala(plz.sala) : plazaNombre();
+  if(el) el.textContent = plz.conectado ? (PLZ_SECTOR ? PLZ_SECTOR.emoji + ' ' : '') + plazaEtiquetaSala(plz.sala) : plazaNombre();
 }
 
 async function plazaAbrirSalas(){
   const cont = document.getElementById('plaza-salas');
   if(!cont) return;
   if(!plz.conectado){ if(typeof mostrarToast === 'function') mostrarToast('Entrá a un viaje para cambiar de sala'); return; }
-  const snap = await db.ref(`salas/${codigoViaje}/plaza`).once('value');
+  const snap = await db.ref(`salas/${codigoViaje}/plaza/${plz.sector}`).once('value');
   const salas = snap.val() || {};
   const ahora = plazaAhora(), yo = String(miAsiento);
   const cuenta = k => Object.keys(salas[k] || {}).filter(a => ahora - (((salas[k] || {})[a] || {}).t || 0) < PLZ.VIVO_MS).length;
@@ -216,10 +205,18 @@ async function plazaAbrirSalas(){
   for(let i = 1; i <= 30; i++){ if(!claves.has(String(i)) || cuenta(String(i)) < PLZ.SALA_MAX){ claves.add(String(i)); break; } }
   const orden = k => { const m = /^c(\d+)-(\d+)$/.exec(k); return m ? [0, Number(m[1]), Number(m[2])] : [1, Number(k), 0]; };
   const lista = Array.from(claves).sort((a, b) => { const x = orden(a), y = orden(b); return x[0] - y[0] || x[1] - y[1] || x[2] - y[2]; });
-  cont.innerHTML = `<div class="plz-modal"><div class="plz-modal-caja"><h3 class="fer-titulo">🚪 Salas de la plaza</h3><p class="fer-sub">Elegí dónde querés estar. Cada sala admite ${PLZ.SALA_MAX} personas.</p>${lista.map(k => {
+  cont.innerHTML = `<div class="plz-modal"><div class="plz-modal-caja"><h3 class="fer-titulo">🚪 Salas: ${PLZ_SECTOR ? PLZ_SECTOR.corto : 'Plaza'}</h3><p class="fer-sub">Elegí dónde querés estar. Cada sala admite ${PLZ.SALA_MAX} personas.</p>${lista.map(k => {
     const n = cuenta(k) + (String(k) === String(plz.sala) && !salas[k] ? 1 : 0), actual = String(k) === String(plz.sala), llena = !actual && n >= PLZ.SALA_MAX;
     return `<div class="plz-sala-fila${actual ? ' actual' : ''}"><span>${plazaEtiquetaSala(k)}<small>${n}/${PLZ.SALA_MAX}</small></span>${actual ? '<b>Estás acá</b>' : `<button class="gbtn gbtn-chico-texto" ${llena ? 'disabled' : ''} onclick="plazaIrASala('${k}')">${llena ? 'Llena' : 'Entrar'}</button>`}</div>`;
   }).join('')}<div class="fer-botones"><button class="gbtn gbtn-ancho gbtn-no" onclick="plazaCerrarSalas()">Cerrar</button></div></div></div>`;
+}
+
+// Aviso del próximo bingo (si el coordinador lo cargó), arriba del mapa en todas las paradas.
+function plazaActualizarAviso(){
+  const el = document.getElementById('plaza-aviso');
+  if(!el) return;
+  const t = typeof mundoTextoBingo === 'function' ? mundoTextoBingo() : '';
+  el.innerHTML = t && PLZ_SECTOR && PLZ_SECTOR.id !== 'eventos' ? `<button onclick="mundoIrA('eventos')">🎱 Próximo bingo: <b>${t}</b> · Ir ›</button>` : '';
 }
 
 function plazaCerrarSalas(){ const c = document.getElementById('plaza-salas'); if(c) c.innerHTML = ''; }
@@ -232,7 +229,7 @@ async function plazaIrASala(k){
 
 function plazaAlSalir(silencioso){
   cancelAnimationFrame(plz.raf);
-  if(plz.activo && !plz.enMicro) plz.posGuardada = { x: plz.yo.x, y: plz.yo.y, t: Date.now(), viaje: (typeof codigoViaje !== 'undefined' ? codigoViaje : '') };
+  if(plz.activo && !plz.enMicro) plz.posGuardada = { x: plz.yo.x, y: plz.yo.y, t: Date.now(), viaje: (typeof codigoViaje !== 'undefined' ? codigoViaje : ''), sector: plz.sector };
   plz.pose = null;
   if(typeof feriaAlSalir === 'function') feriaAlSalir();
   if(typeof cartitasAlSalir === 'function') cartitasAlSalir();
@@ -301,7 +298,8 @@ function plazaRender(){
   if(!cont) return;
   document.getElementById('view-plaza').classList.add('juego-inmersivo');
   cont.innerHTML = gEscenaHTML('cielo', `
-    <div class="g-hud"><span class="g-pill" id="plaza-cantidad">1 en la plaza</span><span class="g-pill" id="plaza-sala">${plazaNombre()}</span></div>
+    <div class="g-hud"><span class="g-pill" id="plaza-cantidad">1 aquí</span><span class="g-pill" id="plaza-sala">${plazaNombre()}</span></div>
+    <div id="plaza-aviso" class="plz-aviso"></div>
     <div class="plz-caja"><canvas class="plz-canvas"></canvas></div>
     <div id="plaza-modal"></div>
     <div id="plaza-salas"></div>
@@ -309,7 +307,7 @@ function plazaRender(){
     <div id="plaza-cartas"></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
-    <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrir()">🚌 Micro</button></div>`, 'plz-escena');
+    <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrirParadas()">🚌 Micro</button></div>`, 'plz-escena');
   plz.canvas = cont.querySelector('canvas');
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   plz.canvas.width = PLZ.VW * dpr; plz.canvas.height = PLZ.VH * dpr;
@@ -320,6 +318,7 @@ function plazaRender(){
   setTimeout(plazaAjustar, 250);
   plazaRenderMenu();
   plazaRenderAccion();
+  plazaActualizarAviso();
 }
 
 function plazaAjustar(){
@@ -424,7 +423,7 @@ document.addEventListener('keyup', e => { delete plazaTeclas[e.key]; });
 
 function plazaChoca(x, y){
   if(x < 14 || x > PLZ.W - 14 || y < 22 || y > PLZ.H - 8) return true;
-  if(Math.hypot(x - PLZ_FUENTE.x, y - (PLZ_FUENTE.y + 4)) < PLZ_FUENTE.r - 4) return true;
+  if(PLZ_FUENTE && Math.hypot(x - PLZ_FUENTE.x, y - (PLZ_FUENTE.y + 4)) < PLZ_FUENTE.r - 4) return true;
   for(const e of PLZ_EDIFICIOS){
     if(x > e.x - 6 && x < e.x + e.w + 6 && y > e.y + 24 && y < e.y + e.h) return true;
   }
@@ -509,29 +508,26 @@ function plazaPaso(dt){
 // ---- Dibujo ----
 
 function plazaDibujarFondo(ctx){
-  ctx.fillStyle = '#7FC77A'; ctx.fillRect(0, 0, PLZ.W, PLZ.H);
-  // Calle de abajo, donde estaciona el micro
-  ctx.fillStyle = '#C9CED8'; ctx.fillRect(0, PLZ_SUELO, PLZ.W, 14);
-  ctx.fillStyle = '#7C8493'; ctx.fillRect(0, PLZ_SUELO + 14, PLZ.W, PLZ.H - PLZ_SUELO - 14);
-  ctx.fillStyle = 'rgba(255,216,77,.9)';
-  for(let x = 6; x < PLZ.W; x += 56) ctx.fillRect(x, PLZ_SUELO + 78, 30, 4);
-  // Plaza de baldosas
-  ctx.fillStyle = '#E7DCC5'; arcRR(ctx, 10, 10, PLZ.W - 20, PLZ_SUELO - 20, 22); ctx.fill();
-  for(let y = 0; y < PLZ_SUELO - 10; y += 40){
+  const s = PLZ_SECTOR;
+  ctx.fillStyle = s.fuera; ctx.fillRect(0, 0, PLZ.W, PLZ.H);
+  ctx.fillStyle = s.suelo; arcRR(ctx, 10, 10, PLZ.W - 20, PLZ.H - 20, 22); ctx.fill();
+  if(s.borde){ ctx.strokeStyle = s.borde; ctx.lineWidth = 4; arcRR(ctx, 12, 12, PLZ.W - 24, PLZ.H - 24, 20); ctx.stroke(); }
+  for(let y = 0; y < PLZ.H - 10; y += 40){
     for(let x = 0; x < PLZ.W; x += 40){
-      if(((x + y) / 40) % 2 === 0){ ctx.fillStyle = 'rgba(160,130,90,.10)'; ctx.fillRect(x, y, 40, 40); }
+      if(((x + y) / 40) % 2 === 0){ ctx.fillStyle = s.baldosa; ctx.fillRect(x, y, 40, 40); }
     }
   }
-  // Césped del parque del centro
-  ctx.fillStyle = 'rgba(127,199,122,.6)'; arcRR(ctx, 26, 196, PLZ.W - 52, 316, 44); ctx.fill();
-  // Caminos principales
-  ctx.fillStyle = 'rgba(255,255,255,.35)';
-  ctx.fillRect(PLZ.W / 2 - 34, 150, 68, PLZ_SUELO - 190);
-  for(let i = 0; i < 3; i++){ // pasillos entre columnas de edificios
+  if(s.decor && PLZ_DECOR[s.decor] && s.decor === 'plaza') PLZ_DECOR.plaza(ctx); // césped del parque, debajo de los pasillos
+  // Pasillo del medio y pasillos entre columnas
+  ctx.fillStyle = 'rgba(255,255,255,.28)';
+  ctx.fillRect(PLZ.W / 2 - 34, 150, 68, PLZ.H - 190);
+  for(let i = 0; i < 3; i++){
     const gx = PLZ_COL[i] + 116;
-    ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(gx, 150, 48, PLZ_SUELO - 190);
-    ctx.fillStyle = 'rgba(160,130,90,.25)'; for(let y = 160; y < PLZ_SUELO - 50; y += 26) ctx.fillRect(gx + 23, y, 2, 12);
+    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(gx, 100, 48, PLZ.H - 140);
+    ctx.fillStyle = 'rgba(160,130,90,.22)'; for(let y = 110; y < PLZ.H - 50; y += 26) ctx.fillRect(gx + 23, y, 2, 12);
   }
+  if(s.decor && s.decor !== 'plaza' && PLZ_DECOR[s.decor]) PLZ_DECOR[s.decor](ctx);
+  if(s.parada) plazaDibujarParada(ctx, s.parada);
 }
 
 // Parque: hamacas, cama elástica y bancos (las poses de la gente se dibujan con cada personaje).
@@ -545,7 +541,7 @@ function plazaPosOcupadas(pose){
 function plazaDibujarParque(ctx){
   const ocupa = (l, s) => l.some(o => Math.abs(o.x - s.x) < 8 && Math.abs(o.y - s.y) < 8);
   // Hamacas: estructura con tres asientos
-  const barra = 244, ham = PLZ_ATRACCIONES[0];
+  const barra = 244, ham = PLZ_ATRACCIONES.find(a => a.id === 'hamacas');
   ctx.strokeStyle = '#8A5A2B'; ctx.lineWidth = 6; ctx.lineCap = 'round';
   ctx.beginPath();
   [[50, 40, 62], [198, 186, 210]].forEach(([ax, b1, b2]) => { ctx.moveTo(b1, 336); ctx.lineTo(ax, barra); ctx.lineTo(b2, 336); });
@@ -571,7 +567,6 @@ function plazaDibujarParque(ctx){
     ctx.fillStyle = '#B8793B'; arcRR(ctx, x - 22, y - 12, 82, 12, 4); ctx.fill();
     ctx.fillStyle = '#5A3A22'; ctx.fillRect(x - 18, y, 5, 10); ctx.fillRect(x + 49, y, 5, 10);
   });
-  if(typeof cartitasDibujarBuzon === 'function') cartitasDibujarBuzon(ctx);
   // Flores
   [[240, 410], [400, 410], [215, 250], [430, 240], [270, 485], [372, 485]].forEach(([x, y], i) => arcEmoji(ctx, i % 2 ? '🌼' : '🌷', x, y, 20));
 }
@@ -616,7 +611,6 @@ function plazaDibujarToldo(ctx, e){
 }
 
 function plazaDibujarEdificio(ctx, e){
-  if(e.micro && typeof plazaDibujarMicro === 'function'){ plazaDibujarMicro(ctx, e); return; }
   const abajo = e.lado === 'abajo'; // la puerta mira hacia abajo y el cartel va arriba (o al revés)
   const bandaY = abajo ? e.y : e.y + e.h - 26;
   ctx.fillStyle = 'rgba(0,0,0,.14)'; arcRR(ctx, e.x + 4, e.y + 8, e.w, e.h, 12); ctx.fill();
@@ -625,9 +619,9 @@ function plazaDibujarEdificio(ctx, e){
   ctx.fillStyle = '#fff'; ctx.font = '800 14px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   let tam = 14; while(tam > 9 && ctx.measureText(e.nombre).width > e.w - 12){ tam--; ctx.font = '800 ' + tam + 'px Poppins, sans-serif'; }
   ctx.fillText(e.nombre, e.x + e.w / 2, bandaY + 13.5);
-  const centroY = abajo ? e.y + e.h / 2 + 8 : e.y + e.h / 2 - 6;
-  if(!e.puesto) arcEmoji(ctx, e.emoji, e.x + e.w / 2, centroY, 34);
-  [e.x + 24, e.x + e.w - 24].forEach(vx => { ctx.fillStyle = 'rgba(255,255,255,.55)'; arcRR(ctx, vx - 14, abajo ? e.y + 40 : e.y + 44, 28, 26, 5); ctx.fill(); });
+  const centroY = e.compacto ? e.y + 43 : (abajo ? e.y + e.h / 2 + 8 : e.y + e.h / 2 - 6);
+  if(!e.puesto) arcEmoji(ctx, e.emoji, e.x + e.w / 2, centroY, e.compacto ? 26 : 34);
+  if(!e.compacto) [e.x + 24, e.x + e.w - 24].forEach(vx => { ctx.fillStyle = 'rgba(255,255,255,.55)'; arcRR(ctx, vx - 14, abajo ? e.y + 40 : e.y + 44, 28, 26, 5); ctx.fill(); });
   if(e.puesto){
     plazaDibujarToldo(ctx, e);
     ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(e.x + e.w / 2, e.y + 42, 17, 0, 7); ctx.fill();
@@ -636,9 +630,9 @@ function plazaDibujarEdificio(ctx, e){
   // Puerta y baldosa de entrada
   const z = plazaZonaPuerta(e);
   ctx.fillStyle = 'rgba(255,255,255,.4)'; arcRR(ctx, z.x, z.y, z.w, z.h, 10); ctx.fill();
-  const px = e.x + e.w / 2 - 15, py = abajo ? e.y + e.h - 36 : e.y;
-  ctx.fillStyle = '#5A3A22'; arcRR(ctx, px, py, 30, 36, 6); ctx.fill();
-  ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(px + 24, py + 20, 2.4, 0, 7); ctx.fill();
+  const px = e.x + e.w / 2 - 15, py = abajo ? e.y + e.h - (e.compacto ? 26 : 36) : e.y;
+  ctx.fillStyle = '#5A3A22'; arcRR(ctx, px, py, 30, e.compacto ? 26 : 36, 6); ctx.fill();
+  ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(px + 24, py + (e.compacto ? 15 : 20), 2.4, 0, 7); ctx.fill();
 }
 
 // Patitas cortas debajo del cuerpo (el sprite del personaje termina en la cintura).
@@ -702,13 +696,15 @@ function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuj
 
 function plazaDibujar(ctx){
   ctx.save();
-  ctx.fillStyle = '#7FC77A'; ctx.fillRect(0, 0, PLZ.VW, PLZ.VH);
+  ctx.fillStyle = PLZ_SECTOR.fuera; ctx.fillRect(0, 0, PLZ.VW, PLZ.VH);
   ctx.translate(-Math.round(plz.cam.x), -Math.round(plz.cam.y));
   plazaDibujarFondo(ctx);
-  // Adornos en los bordes
-  [[26, 200], [614, 200], [26, 400], [614, 400], [26, 470], [614, 470], [26, 850], [614, 850]].forEach(([x, y], i) => arcEmoji(ctx, i % 3 === 0 ? '🌳' : i % 3 === 1 ? '🌷' : '🌲', x, y, 28));
-  plazaDibujarParque(ctx);
-  plazaDibujarFuente(ctx);
+  if(PLZ_SECTOR.parque){
+    // Adornos en los bordes y parque del centro
+    [[26, 200], [614, 200], [26, 400], [614, 400], [26, 470], [614, 470]].forEach(([x, y], i) => arcEmoji(ctx, i % 3 === 0 ? '🌳' : i % 3 === 1 ? '🌷' : '🌲', x, y, 28));
+    plazaDibujarParque(ctx);
+    plazaDibujarFuente(ctx);
+  }
   PLZ_EDIFICIOS.forEach(e => plazaDibujarEdificio(ctx, e));
 
   const ahoraMs = performance.now(), ahoraServidor = plazaAhora();
@@ -740,7 +736,8 @@ function plazaDibujar(ctx){
   if(typeof microDibujarFlechaBorde === 'function') microDibujarFlechaBorde(ctx);
 }
 
-// Tarjeta de Inicio: lleva a la plaza.
+// Tarjeta de Inicio: lleva a la Estación (el mundo). En modo clásico no se muestra.
 function plazaTarjetaHomeHTML(){
-  return `<div class="av-home plz-home" onclick="showView('plaza')"><div class="plz-home-img">🏘️</div><div class="av-home-txt"><h3>${plazaNombre()}</h3><p>Encontrate con los del viaje y entrá a los juegos</p></div><span class="av-home-flecha">›</span></div>`;
+  if(typeof mundoActivo === 'function' && !mundoActivo()) return '';
+  return `<div class="av-home plz-home" onclick="showView('estacion')"><div class="plz-home-img">🚌</div><div class="av-home-txt"><h3>Subite al micro</h3><p>5 paradas: shopping, juegos, mesas, eventos y plaza</p></div><span class="av-home-flecha">›</span></div>`;
 }
