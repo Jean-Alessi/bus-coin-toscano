@@ -556,7 +556,7 @@ function plazaDibujarParque(ctx){
     const th = Math.sin(plz.t * 1.2 + i) * 0.12, L = 62, sx = s.x + L * Math.sin(th), sy = barra + L * Math.cos(th);
     ctx.strokeStyle = '#444'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(s.x - 9, barra); ctx.lineTo(sx - 9, sy); ctx.moveTo(s.x + 9, barra); ctx.lineTo(sx + 9, sy); ctx.stroke();
-    ctx.fillStyle = '#E5586E'; arcRR(ctx, sx - 13, sy - 3, 26, 7, 3); ctx.fill();
+    ctx.fillStyle = '#E5586E'; arcRR(ctx, sx - 13, sy - 8, 26, 7, 3); ctx.fill();
   });
   // Cama elástica
   ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.beginPath(); ctx.ellipse(500, 340, 66, 24, 0, 0, 7); ctx.fill();
@@ -641,33 +641,49 @@ function plazaDibujarEdificio(ctx, e){
   ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(px + 24, py + 20, 2.4, 0, 7); ctx.fill();
 }
 
+// Patitas cortas debajo del cuerpo (el sprite del personaje termina en la cintura).
+const PLZ_PATA = 13;
+function plazaDibujarPatas(ctx, X, Y, dir, caminando, saltando){
+  const paso = caminando ? Math.sin(plz.t * 11) : 0;
+  const alza = [Math.max(0, paso) * 4, Math.max(0, -paso) * 4];
+  [-1, 1].forEach((lado, i) => {
+    const px = X + lado * 5.5, base = Y - alza[i] - (saltando ? 3 : 0);
+    ctx.fillStyle = '#34476F'; arcRR(ctx, px - 4.5, Y - PLZ_PATA - 1, 9, PLZ_PATA - alza[i] + (saltando ? -3 : 0) + 1, 3.5); ctx.fill();
+    ctx.fillStyle = '#fff'; arcRR(ctx, px - 5 + (dir > 0 ? 1 : -1), base - 4.5, 11, 5.5, 2.8); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(px - 5 + (dir > 0 ? 1 : -1), base - 1.5, 11, 1.5);
+  });
+}
+
 function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuja, cumple, pose, fase){
   fase = fase || 0;
   let dx = 0, alto = 0;
-  if(pose === 1){ // en la hamaca: péndulo
+  const PATA = pose === 3 ? 4 : PLZ_PATA; // sentado: sin patas visibles, apoyado en el banco
+  if(pose === 1){ // en la hamaca: péndulo, con las patitas colgando
     const th = Math.sin(plz.t * 2.4 + fase) * 0.5, L = 62;
     dx = L * Math.sin(th); alto = 76 - L * Math.cos(th);
     ctx.strokeStyle = '#444'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x - 9, y - 78); ctx.lineTo(x + dx - 9, y - alto - 4); ctx.moveTo(x + 9, y - 78); ctx.lineTo(x + dx + 9, y - alto - 4); ctx.stroke();
-    ctx.fillStyle = '#E5586E'; arcRR(ctx, x + dx - 13, y - alto - 4, 26, 7, 3); ctx.fill();
+    const py = y - alto - PATA + 3;
+    ctx.beginPath(); ctx.moveTo(x - 9, y - 78); ctx.lineTo(x + dx - 9, py); ctx.moveTo(x + 9, y - 78); ctx.lineTo(x + dx + 9, py); ctx.stroke();
+    ctx.fillStyle = '#E5586E'; arcRR(ctx, x + dx - 13, py, 26, 7, 3); ctx.fill();
   } else if(pose === 2){ alto = Math.abs(Math.sin(plz.t * 5 + fase)) * 50; }
-  const bob = pose ? 0 : (caminando ? Math.abs(Math.sin(plz.t * 11)) * 3 : 0);
+  const bob = pose ? 0 : (caminando ? Math.abs(Math.sin(plz.t * 11)) * 2 : 0);
   const X = x + dx, Y = y - alto - bob + (pose === 3 ? 6 : 0);
   const sombra = 1 - Math.min(0.5, alto / 100);
   ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(pose === 1 ? x : X, y, 13 * sombra, 5 * sombra, 0, 0, 7); ctx.fill();
+  if(pose !== 3) plazaDibujarPatas(ctx, X, Y, dir, caminando && !pose, pose === 2);
   const img = (typeof avatarSprite === 'function') ? avatarSprite(puesto) : null;
   const w = 46, h = 55;
   if(img && img.complete && img.naturalWidth){
     ctx.save();
-    ctx.translate(X, Y);
+    ctx.translate(X, Y - PATA);
     if(dir < 0) ctx.scale(-1, 1);
     ctx.drawImage(img, -w / 2, -h + 2, w, h);
     ctx.restore();
   } else {
-    ctx.fillStyle = '#F5C29B'; ctx.beginPath(); ctx.arc(X, Y - 30, 14, 0, 7); ctx.fill();
+    ctx.fillStyle = '#F5C29B'; ctx.beginPath(); ctx.arc(X, Y - 30 - PATA, 14, 0, 7); ctx.fill();
   }
   if(pose === 3){ ctx.fillStyle = '#B8793B'; arcRR(ctx, X - 16, Y - 6, 32, 6, 3); ctx.fill(); }
-  if(cumple) arcEmoji(ctx, '🎂', X + 17, Y - h + 8, 18);
+  if(cumple) arcEmoji(ctx, '🎂', X + 17, Y - PATA - h + 8, 18);
   // Nombre
   ctx.font = '700 10px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const tw = ctx.measureText(nombre).width + 10;
@@ -677,7 +693,7 @@ function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuj
   if(burbuja){
     ctx.font = '700 11px Poppins, sans-serif';
     const bw = ctx.measureText(burbuja).width + 16;
-    const by = Y - h - 24;
+    const by = Y - PATA - h - 24;
     ctx.fillStyle = '#fff'; arcRR(ctx, X - bw / 2, by, bw, 22, 11); ctx.fill();
     ctx.beginPath(); ctx.moveTo(X - 5, by + 21); ctx.lineTo(X, by + 28); ctx.lineTo(X + 5, by + 21); ctx.fill();
     ctx.fillStyle = '#0F2A4D'; ctx.fillText(burbuja, X, by + 11.5);

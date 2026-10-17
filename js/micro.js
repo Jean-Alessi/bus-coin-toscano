@@ -237,7 +237,7 @@ function microDibujarBuscado(ctx, ahoraMs){
   ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 4;
   ctx.beginPath(); ctx.ellipse(o.x, o.y, 24 + pulso * 3, 10 + pulso * 1.5, 0, 0, 7); ctx.stroke();
   ctx.fillStyle = '#FFD84D';
-  const fy = o.y - 86 + Math.abs(pulso) * 5;
+  const fy = o.y - 100 + Math.abs(pulso) * 5;
   ctx.beginPath(); ctx.moveTo(o.x - 9, fy); ctx.lineTo(o.x + 9, fy); ctx.lineTo(o.x, fy + 13); ctx.fill();
 }
 
