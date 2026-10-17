@@ -6,7 +6,8 @@
 // Datos en salas/{viaje}/: ajustes/modo, ajustes/paradaReal (número de línea), ajustes/proximoBingo,
 // feriaConfig/cartelera (líneas "Hora | Lugar").
 
-const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true };
+const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, tunelOn: true, tunelMsg: '', tunelDesc: {} };
+const MUNDO_EVENTO_MS = 3 * 3600 * 1000; // un aviso de evento dura 3 horas
 
 const mundoActivo = () => mundo.modo !== 'clasico';
 const mundoEsc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -22,12 +23,28 @@ function mundoEscuchar(){
     mundo.modo = v.modo === 'clasico' ? 'clasico' : 'mundo';
     mundo.actual = typeof v.paradaReal === 'number' ? v.paradaReal : -1;
     mundo.bingo = typeof v.proximoBingo === 'string' ? v.proximoBingo : '';
+    const eventoAntes = mundo.evento;
+    mundo.evento = v.evento && v.evento.texto && PLZ_SECTORES[v.evento.sector] ? v.evento : null;
+    mundo.tunelOn = v.tunel !== 'off';
+    mundo.tunelMsg = typeof v.tunelMensaje === 'string' ? v.tunelMensaje : '';
     mundoAlCambiar(antes);
+    if(!mundo.primera && mundo.evento && mundoEventoActivo() && (!eventoAntes || eventoAntes.t !== mundo.evento.t) && typeof mostrarToast === 'function'){
+      mostrarToast('📢 ' + mundo.evento.texto + ' · en ' + PLZ_SECTORES[mundo.evento.sector].corto, 'gain');
+      if(typeof reproducirMelodia === 'function') reproducirMelodia([784, 988, 1175, 988], 120, 'sine');
+    }
   });
+  escuchar('tunel/descubridores', v => { mundo.tunelDesc = v || {}; if(typeof estacionRender === 'function') estacionRender(); });
   escuchar('feriaConfig/cartelera', v => {
     mundo.recorrido = (Array.isArray(v) ? v : (v ? Object.keys(v).map(k => v[k]) : [])).filter(x => x != null).map(String);
     if(typeof estacionRender === 'function') estacionRender();
   });
+}
+
+// El evento que anunció el organizador, mientras siga vigente.
+function mundoEventoActivo(){
+  const e = mundo.evento;
+  if(!e) return null;
+  return Date.now() - (Number(e.t) || 0) < MUNDO_EVENTO_MS ? e : null;
 }
 
 function mundoSoltar(){

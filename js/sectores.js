@@ -38,7 +38,9 @@ const PLZ_SECTORES = {
       ], 24, 0);
       const sorteo = plzPuesto('sorteo', 'Sorteo', '🎟️', '#9D4EDD', 'Retirá tu número para el sorteo');
       sorteo.x = PLZ_COL[1]; sorteo.y = 300;
-      return { edificios: arriba.concat([sorteo]), atracciones: [plzParada(this)] };
+      const tienda = plzItem('tienda', 'Tienda Busmac', '👕', '#FF7A1A', 'Remeras Busmac: se sortean entre los pasajeros', () => feriaTienda());
+      tienda.x = PLZ_COL[2]; tienda.y = 300;
+      return { edificios: arriba.concat([sorteo, tienda]), atracciones: [plzParada(this)] };
     },
   },
   arcade: {
@@ -72,18 +74,19 @@ const PLZ_SECTORES = {
     H: 520, fuera: '#1E4D31', suelo: '#2F7D4F', baldosa: 'rgba(255,255,255,.07)', borde: '#E6A817',
     parada: { x: 320, y: 450 }, spawn: { x: 320, y: 372 }, libre: { x0: 40, x1: 600, y0: 180, y1: 270 }, decor: null,
     armar(){
-      const v = (id, nombre, emoji, color, sub, vista) => plzItem(id, nombre, emoji, color, sub, () => showView(vista));
+      // Cada juego es una mesa redonda con sillas: se ve cuántas esperan jugadores (ver mesas.js).
+      const v = (id, nombre, emoji, color, sub, vista, juego) => plzItem(id, nombre, emoji, color, sub, () => showView(vista), { mesa: true, juego, insignia: juego ? () => mesasInsignia(juego) : null, subDin: juego ? () => mesasSubtitulo(juego, sub) : null });
       const lista = [
-        v('truco', 'Truco', '🃏', '#D62839', 'De a 2, 4 o 6, con envido', 'truco'),
-        v('chinchon', 'Chinchón', '🂡', '#3A86FF', 'De 2 a 4: grupos y escaleras', 'chinchon'),
-        v('escoba', 'Escoba de 15', '🧹', '#E6A817', 'De a 2: sumá 15', 'escoba'),
-        v('buscolor', 'BusColor', '🎨', '#9D4EDD', 'De 2 a 6: quedate sin cartas', 'buscolor'),
+        v('truco', 'Truco', '🃏', '#D62839', 'De a 2, 4 o 6, con envido', 'truco', 'truco'),
+        v('chinchon', 'Chinchón', '🂡', '#3A86FF', 'De 2 a 4: grupos y escaleras', 'chinchon', 'chinchon'),
+        v('escoba', 'Escoba de 15', '🧹', '#E6A817', 'De a 2: sumá 15', 'escoba', 'escoba'),
+        v('buscolor', 'BusColor', '🎨', '#9D4EDD', 'De 2 a 6: quedate sin cartas', 'buscolor', 'buscolor'),
       ];
       plzGrilla(lista, 24, 0);
       if(typeof pokerHabilitado !== 'undefined' && pokerHabilitado){
         const poker = plzGrilla([
           v('videopoker', 'Póker de video', '♠️', '#2A9D8F', 'Armá la mejor mano', 'videopoker'),
-          v('texas', 'Texas Hold\'em', '🤠', '#577590', 'De 2 a 6 en la mesa', 'texas'),
+          v('texas', 'Texas Hold\'em', '🤠', '#577590', 'De 2 a 6 en la mesa', 'texas', 'texas'),
         ], 200, 0);
         return { edificios: lista.concat(poker), atracciones: [plzParada(this)] };
       }
@@ -145,20 +148,16 @@ const PLZ_SECTORES = {
 
 const PLZ_DECOR = {
   shopping(ctx){
-    const x = 352, y = 300, w = 264, h = 100;
-    ctx.fillStyle = 'rgba(0,0,0,.12)'; arcRR(ctx, x + 4, y + 6, w, h, 14); ctx.fill();
-    ctx.fillStyle = '#fff'; arcRR(ctx, x, y, w, h, 14); ctx.fill();
-    ctx.strokeStyle = '#E5586E'; ctx.lineWidth = 4; arcRR(ctx, x, y, w, h, 14); ctx.stroke();
-    arcEmoji(ctx, '👕', x + 44, y + 50, 46);
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#E5586E'; ctx.font = '800 13px Poppins, sans-serif'; ctx.fillText('SORTEO DE REMERAS', x + 80, y + 28);
-    const premio = (typeof feria !== 'undefined' && feria.sorteo && feria.sorteo.premio) || 'Remera Busmac';
-    ctx.fillStyle = '#0F2A4D'; ctx.font = '700 12px Poppins, sans-serif';
-    let t = premio; while(t.length > 3 && ctx.measureText(t).width > w - 96) t = t.slice(0, -2);
-    ctx.fillText(t === premio ? t : t + '…', x + 80, y + 52);
-    ctx.fillStyle = '#5b6673'; ctx.font = '600 10px Poppins, sans-serif'; ctx.fillText('Retirá tu número en el puesto', x + 80, y + 76);
+    [[60, 235], [580, 265], [300, 250]].forEach(([x, y], i) => arcEmoji(ctx, '🎈', x + Math.sin(plz.t * 0.7 + i) * 10, y + Math.sin(plz.t * 0.5 + i * 2) * 8, 26));
+  },
+  arcade(ctx){
+    ctx.strokeStyle = 'rgba(120,255,255,' + (0.35 + 0.25 * Math.sin(plz.t * 3)).toFixed(2) + ')'; ctx.lineWidth = 3; arcRR(ctx, 18, 18, PLZ.W - 36, PLZ.H - 36, 18); ctx.stroke();
+    for(let i = 0; i < 3; i++) { ctx.fillStyle = 'rgba(120,140,255,' + (0.10 + 0.08 * Math.sin(plz.t * 2 + i)).toFixed(2) + ')'; ctx.fillRect(PLZ_COL[i] + 116 + 20, 100, 8, PLZ.H - 140); }
   },
   eventos(ctx){
+    const sx = 470 + Math.sin(plz.t * 0.9) * 90; // reflectores que barren el salón
+    ctx.fillStyle = 'rgba(255,240,150,.10)'; ctx.beginPath(); ctx.moveTo(sx, 12); ctx.lineTo(sx - 60, 330); ctx.lineTo(sx + 60, 330); ctx.closePath(); ctx.fill();
+    const sx2 = 170 - Math.sin(plz.t * 0.7) * 80; ctx.fillStyle = 'rgba(180,220,255,.08)'; ctx.beginPath(); ctx.moveTo(sx2, 12); ctx.lineTo(sx2 - 60, 330); ctx.lineTo(sx2 + 60, 330); ctx.closePath(); ctx.fill();
     const x = 344, y = 200, w = 272, h = 120;
     ctx.fillStyle = 'rgba(0,0,0,.25)'; arcRR(ctx, x + 4, y + 6, w, h, 12); ctx.fill();
     ctx.fillStyle = '#1B1B2F'; arcRR(ctx, x, y, w, h, 12); ctx.fill();
@@ -173,6 +172,7 @@ const PLZ_DECOR = {
   },
   plaza(ctx){
     ctx.fillStyle = 'rgba(127,199,122,.6)'; arcRR(ctx, 26, 196, PLZ.W - 52, 316, 44); ctx.fill();
+    [[200, 235, 0], [440, 425, 2]].forEach(([x, y, f]) => arcEmoji(ctx, '🦋', x + Math.sin(plz.t * 0.8 + f) * 50, y + Math.cos(plz.t * 1.1 + f) * 28, 18));
   },
 };
 

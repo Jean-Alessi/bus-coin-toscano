@@ -33,6 +33,26 @@ function reproducirTono(tipo){
   } catch(e){ /* si el navegador bloquea el audio, seguimos sin sonido */ }
 }
 
+// Una nota suelta (frecuencia en Hz) y una melodía corta: lista de notas separadas por 'paso' ms.
+function reproducirNota(freq, dur, onda){
+  if(!sonidoActivado) return;
+  try {
+    if(!sonidoAudioCtx) sonidoAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = sonidoAudioCtx;
+    if(ctx.state === 'suspended') ctx.resume();
+    const ahora = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = onda || 'sine'; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.12, ahora);
+    gain.gain.exponentialRampToValueAtTime(0.001, ahora + (dur || 0.2));
+    osc.start(ahora); osc.stop(ahora + (dur || 0.2));
+  } catch(e){}
+}
+function reproducirMelodia(notas, paso, onda){
+  if(!sonidoActivado) return;
+  (notas || []).forEach((f, i) => setTimeout(() => reproducirNota(f, 0.22, onda), i * (paso || 120)));
+}
+
 function iconoSonido(){
   return sonidoActivado ? '🔊' : '🔇';
 }

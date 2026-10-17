@@ -132,6 +132,9 @@ function iniciarPlaza(){
   plazaActualizarCantidad();
   if(typeof feriaIniciar === 'function') feriaIniciar();
   if(typeof cartitasIniciar === 'function') cartitasIniciar();
+  if(typeof tunelIniciar === 'function') tunelIniciar();
+  if(PLZ_SECTOR.id === 'mesas' && typeof mesasIniciar === 'function') mesasIniciar();
+  plazaSonidoSector(PLZ_SECTOR.id);
   const online = typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre;
   if(online){ const pref = plz.salaPreferida; plz.salaPreferida = null; plazaConectar(pref || undefined); }
   plz.ultimo = 0;
@@ -216,7 +219,34 @@ function plazaActualizarAviso(){
   const el = document.getElementById('plaza-aviso');
   if(!el) return;
   const t = typeof mundoTextoBingo === 'function' ? mundoTextoBingo() : '';
-  el.innerHTML = t && PLZ_SECTOR && PLZ_SECTOR.id !== 'eventos' ? `<button onclick="mundoIrA('eventos')">🎱 Próximo bingo: <b>${t}</b> · Ir ›</button>` : '';
+  const ev = typeof mundoEventoActivo === 'function' ? mundoEventoActivo() : null;
+  el.innerHTML = (ev && PLZ_SECTOR && ev.sector !== PLZ_SECTOR.id ? `<button onclick="mundoIrA('${ev.sector}')">📢 ${mundoEsc(ev.texto)} · Ir ›</button>` : '') + (t && PLZ_SECTOR && PLZ_SECTOR.id !== 'eventos' ? `<button onclick="mundoIrA('eventos')">🎱 Próximo bingo: <b>${t}</b> · Ir ›</button>` : '');
+}
+
+// Camina hasta la puerta de un lugar (para los botones "ir al puesto").
+function plazaCaminarA(id){
+  const e = PLZ_EDIFICIOS.find(x => x.id === id);
+  if(!e) return false;
+  const z = plazaZonaPuerta(e);
+  plz.obj = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+  plz.ultimaActividad = performance.now();
+  return true;
+}
+
+// Sonidito de bienvenida distinto en cada parada.
+const PLZ_MELODIAS = { shopping: [660, 784, 988], arcade: [440, 660, 880, 660], mesas: [330, 392, 330], eventos: [523, 659, 784, 1046], plaza: [523, 659, 784] };
+function plazaSonidoSector(id){
+  if(typeof reproducirMelodia === 'function' && PLZ_MELODIAS[id]) reproducirMelodia(PLZ_MELODIAS[id], 110, 'triangle');
+}
+
+// De noche (21 a 5) la plaza se oscurece; al amanecer y atardecer cambia de a poco.
+function plazaNoche(ctx){
+  if(!PLZ_SECTOR || !PLZ_SECTOR.parque) return;
+  const d = new Date(), h = plz.horaForzada != null ? plz.horaForzada : d.getHours() + d.getMinutes() / 60;
+  let a = 0;
+  if(h >= 21 || h < 5) a = 0.36; else if(h >= 18) a = 0.36 * (h - 18) / 3; else if(h < 8) a = 0.36 * (8 - h) / 3;
+  if(a <= 0.01) return;
+  ctx.fillStyle = 'rgba(8,14,58,' + a.toFixed(3) + ')'; ctx.fillRect(0, 0, PLZ.VW, PLZ.VH);
 }
 
 function plazaCerrarSalas(){ const c = document.getElementById('plaza-salas'); if(c) c.innerHTML = ''; }
@@ -233,6 +263,8 @@ function plazaAlSalir(silencioso){
   plz.pose = null;
   if(typeof feriaAlSalir === 'function') feriaAlSalir();
   if(typeof cartitasAlSalir === 'function') cartitasAlSalir();
+  if(typeof tunelAlSalir === 'function') tunelAlSalir();
+  if(typeof mesasAlSalir === 'function') mesasAlSalir();
   if(plz.ref){
     try {
       if(plz.listener) plz.ref.off('value', plz.listener);
@@ -305,6 +337,7 @@ function plazaRender(){
     <div id="plaza-salas"></div>
     <div id="plaza-micro"></div>
     <div id="plaza-cartas"></div>
+    <div id="plaza-tunel"></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
     <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrirParadas()">🚌 Micro</button></div>`, 'plz-escena');
@@ -349,11 +382,12 @@ function plazaRenderAccion(){
   const e = plz.puerta;
   if(plz.pose){ el.innerHTML = '<button class="gbtn gbtn-ancho" onclick="plazaSoltarPose()">⬇️ Bajarme</button><div class="plz-accion-sub">O tocá un lugar para irte caminando.</div>'; return; }
   el.innerHTML = e
-    ? `<button class="gbtn gbtn-ancho" onclick="plazaEntrar('${e.id}')">${e.emoji} ${e.verbo ? e.verbo : 'Entrar: ' + e.nombre}</button><div class="plz-accion-sub">${e.puesto && typeof feriaSubtitulo === 'function' ? feriaSubtitulo(e.id) : e.sub}</div>`
+    ? `<button class="gbtn gbtn-ancho" onclick="plazaEntrar('${e.id}')">${e.emoji} ${e.verbo ? e.verbo : 'Entrar: ' + e.nombre}</button><div class="plz-accion-sub">${e.subDin ? e.subDin() : (e.puesto && typeof feriaSubtitulo === 'function' ? feriaSubtitulo(e.id) : e.sub)}</div>`
     : '<div class="plz-accion-sub">Tocá un lugar para caminar. Acercate a una puerta o a una atracción del parque.</div>';
 }
 
 function plazaEntrar(id){
+  if(id === 'tunel'){ if(typeof tunelAbrirPanel === 'function') tunelAbrirPanel(); return; }
   const a = PLZ_ATRACCIONES.find(x => x.id === id);
   if(a){ plazaAtraccion(a); return; }
   const e = PLZ_EDIFICIOS.find(x => x.id === id);
@@ -465,7 +499,7 @@ function plazaPuertaCercana(){
     const z = a.zona;
     if(a.dentro ? a.dentro(yo.x, yo.y) : (yo.x > z.x && yo.x < z.x + z.w && yo.y > z.y && yo.y < z.y + z.h)) return a;
   }
-  return null;
+  return typeof tunelAtraccion === 'function' ? tunelAtraccion() : null;
 }
 
 // ---- Bucle ----
@@ -497,6 +531,7 @@ function plazaPaso(dt){
   });
   plazaMoverBots(dt);
   if(typeof microControlarInactividad === 'function') microControlarInactividad(ahora);
+  if(typeof tunelPaso === 'function') tunelPaso(dt);
   // Cámara
   plz.cam.x = Math.max(0, Math.min(PLZ.W - PLZ.VW, plz.yo.x - PLZ.VW / 2));
   plz.cam.y = Math.max(0, Math.min(PLZ.H - PLZ.VH, plz.yo.y - PLZ.VH / 2 - 20));
@@ -610,7 +645,18 @@ function plazaDibujarToldo(ctx, e){
   }
 }
 
+// Cartelito redondo arriba a la derecha con lo que pasa en el lugar (fila, mesas esperando...).
+function plazaDibujarInsignia(ctx, e){
+  const ins = e.insignia ? e.insignia() : null;
+  if(!ins) return;
+  ctx.font = '800 12px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(ins).width + 16;
+  ctx.fillStyle = '#0F2A4D'; arcRR(ctx, e.x + e.w - w - 6, e.y - 10, w, 20, 10); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText(ins, e.x + e.w - w / 2 - 6, e.y + 0.5);
+}
+
 function plazaDibujarEdificio(ctx, e){
+  if(e.mesa && typeof plazaDibujarMesa === 'function'){ plazaDibujarMesa(ctx, e); plazaDibujarInsignia(ctx, e); return; }
   const abajo = e.lado === 'abajo'; // la puerta mira hacia abajo y el cartel va arriba (o al revés)
   const bandaY = abajo ? e.y : e.y + e.h - 26;
   ctx.fillStyle = 'rgba(0,0,0,.14)'; arcRR(ctx, e.x + 4, e.y + 8, e.w, e.h, 12); ctx.fill();
@@ -633,6 +679,7 @@ function plazaDibujarEdificio(ctx, e){
   const px = e.x + e.w / 2 - 15, py = abajo ? e.y + e.h - (e.compacto ? 26 : 36) : e.y;
   ctx.fillStyle = '#5A3A22'; arcRR(ctx, px, py, 30, e.compacto ? 26 : 36, 6); ctx.fill();
   ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(px + 24, py + (e.compacto ? 15 : 20), 2.4, 0, 7); ctx.fill();
+  if(!e.puesto) plazaDibujarInsignia(ctx, e);
 }
 
 // Patitas cortas debajo del cuerpo (el sprite del personaje termina en la cintura).
@@ -705,6 +752,7 @@ function plazaDibujar(ctx){
     plazaDibujarParque(ctx);
     plazaDibujarFuente(ctx);
   }
+  if(typeof tunelDibujar === 'function') tunelDibujar(ctx);
   PLZ_EDIFICIOS.forEach(e => plazaDibujarEdificio(ctx, e));
 
   const ahoraMs = performance.now(), ahoraServidor = plazaAhora();
@@ -733,6 +781,7 @@ function plazaDibujar(ctx){
     ctx.beginPath(); ctx.arc(plz.obj.x, plz.obj.y, 6 + Math.sin(plz.t * 8) * 1.5, 0, 7); ctx.stroke();
   }
   ctx.restore();
+  plazaNoche(ctx);
   if(typeof microDibujarFlechaBorde === 'function') microDibujarFlechaBorde(ctx);
 }
 

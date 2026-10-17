@@ -22,6 +22,15 @@ function estacionSoltar(){
   estacionRefPlaza = null; estacionOyente = null;
 }
 
+// Pista del túnel secreto: cuando ya lo encontraron un par, corre el rumor (sin decir dónde exactamente).
+function estacionRumorTunel(){
+  if(typeof tunelSpot !== 'function' || !tunelActivo() || !mundoActivo()) return '';
+  const n = Object.keys(mundo.tunelDesc || {}).length;
+  if(n < 2 || (mundo.tunelDesc || {})[String(miAsiento)]) return '';
+  const s = PLZ_SECTORES[tunelSpot().sector];
+  return `<div class="est-rumor">🕳️ Corre el rumor: ${n} pasajeros encontraron un túnel secreto por el lado de <b>${mundoEsc(s.corto)}</b>… ¿lo encontrás?</div>`;
+}
+
 function estacionBusSVG(){
   return `<svg class="est-bus" viewBox="0 0 220 90" aria-hidden="true">
     <rect x="6" y="8" width="208" height="64" rx="14" fill="#0F2A4D"/>
@@ -41,8 +50,10 @@ function estacionRender(){
   const bingo = typeof mundoTextoBingo === 'function' ? mundoTextoBingo() : '';
   cont.innerHTML = gEscenaHTML('cielo', `
     <div class="est-cabecera">${estacionBusSVG()}<div class="est-titulo">Estación ${typeof marcaCorta === 'function' ? mundoEsc(marcaCorta()) : 'Busmac'}</div><div class="est-sub">Subite al micro y elegí a dónde ir. ¡Cuando quieras volvés!</div></div>
+    ${(() => { const ev = typeof mundoEventoActivo === 'function' ? mundoEventoActivo() : null; return ev ? `<button class="est-evento" onclick="mundoIrA('${ev.sector}')">📢 ${mundoEsc(ev.texto)} <span>Ir a ${mundoEsc(PLZ_SECTORES[ev.sector].nombre)} ›</span></button>` : ''; })()}
     ${bingo ? `<button class="est-bingo" onclick="mundoIrA('eventos')">🎱 Próximo bingo: <b>${mundoEsc(bingo)}</b> <span>Ir al Salón de eventos ›</span></button>` : ''}
     ${typeof mundoRecorridoHTML === 'function' ? mundoRecorridoHTML() : ''}
+    ${estacionRumorTunel()}
     <div class="est-lista">${mundoParadasHTML(estacionConteos, null, 'mundoIrA')}</div>
     <div class="est-botones">
       <button class="gbtn gbtn-ancho" onclick="microAbrir()">💺 El micro por dentro</button>

@@ -51,7 +51,7 @@ function cartitasIniciar(){
     if(cartitas.primera){
       if(nuevas.length && cartitasActivas()) carToast('💌 Tenés ' + nuevas.length + ' cartita' + (nuevas.length === 1 ? '' : 's') + ' esperándote en el buzón del parque');
     } else {
-      nuevas.filter(a => !previas[a]).forEach(a => carToast('💌 ' + (cartitas.recibidas[a].n || 'Alguien') + ' te mandó una cartita', 'gain'));
+      nuevas.filter(a => !previas[a]).forEach(a => { carToast('💌 ' + (cartitas.recibidas[a].n || 'Alguien') + ' te mandó una cartita', 'gain'); if(typeof reproducirMelodia === 'function') reproducirMelodia([880, 1175], 110, 'sine'); });
     }
     cartitas.primera = false;
     cartitasRender();
