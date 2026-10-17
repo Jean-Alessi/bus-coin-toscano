@@ -591,7 +591,7 @@ let plazaOrigen = null;
 function volverALaPlaza(){ plazaOrigen = null; showView('plaza'); }
 function plazaActualizarBotonVolver(vista){
   let b = document.getElementById('btn-volver-plaza');
-  if(!b){ b = document.createElement('button'); b.id = 'btn-volver-plaza'; b.className = 'btn-volver-plaza'; b.textContent = '🏘️ Volver'; b.onclick = volverALaPlaza; document.body.appendChild(b); }
+  if(!b){ b = document.createElement('button'); b.id = 'btn-volver-plaza'; b.className = 'btn-volver-plaza'; b.textContent = '🏘️ Volver'; b.onclick = volverALaPlaza; (document.querySelector('.screen') || document.body).appendChild(b); }
   b.classList.toggle('visible', !!plazaOrigen && vista === plazaOrigen && vista !== 'plaza');
 }
 
