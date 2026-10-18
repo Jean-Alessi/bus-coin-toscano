@@ -16,13 +16,28 @@ const BOLICHE_ESTILOS = {
   lento: { nombre: 'Lento', emoji: '💞', bpm: 72, kick: [0, 10], snare: [8], hat: [0, 4, 8, 12],
     bajo: [87, 0, 0, 0, 87, 0, 0, 0, 98, 0, 0, 0, 82, 0, 0, 0], lead: [349, 0, 0, 0, 0, 0, 440, 0, 392, 0, 0, 0, 0, 0, 330, 0] },
 };
+// Música de fondo de cada lugar del mundo (más suave que la del boliche). Mismo motor, otros patrones.
+const MUSICA_AMBIENTE = {
+  estacion: { nombre: 'Viaje', emoji: '🚌', bpm: 92, kick: [0, 8], snare: [], hat: [4, 12],
+    bajo: [131, 0, 0, 0, 196, 0, 0, 0, 175, 0, 0, 0, 196, 0, 0, 0], lead: [523, 0, 659, 0, 784, 0, 659, 0, 587, 0, 698, 0, 880, 0, 698, 0] },
+  shopping: { nombre: 'Bossa', emoji: '🛍️', bpm: 104, kick: [0, 6, 10], snare: [4, 12], hat: [2, 6, 10, 14],
+    bajo: [110, 0, 0, 110, 0, 0, 131, 0, 147, 0, 0, 147, 0, 0, 131, 0], lead: [0, 0, 440, 0, 0, 523, 0, 0, 0, 0, 494, 0, 0, 440, 0, 0] },
+  arcade: { nombre: 'Chiptune', emoji: '🎮', bpm: 140, kick: [0, 8], snare: [4, 12], hat: [2, 6, 10, 14],
+    bajo: [110, 110, 0, 110, 131, 131, 0, 131, 98, 98, 0, 98, 147, 147, 0, 147], lead: [880, 0, 1047, 0, 880, 0, 784, 0, 659, 0, 784, 0, 880, 0, 0, 0] },
+  mesas: { nombre: 'Lounge', emoji: '🃏', bpm: 80, kick: [0], snare: [8], hat: [0, 4, 8, 12],
+    bajo: [98, 0, 0, 0, 110, 0, 0, 0, 123, 0, 0, 0, 110, 0, 0, 0], lead: [0, 0, 0, 392, 0, 0, 330, 0, 0, 0, 0, 440, 0, 0, 392, 0] },
+  eventos: { nombre: 'Fiesta', emoji: '📣', bpm: 112, kick: [0, 4, 8, 12], snare: [4, 12], hat: [2, 6, 10, 14],
+    bajo: [131, 0, 131, 0, 165, 0, 165, 0, 196, 0, 196, 0, 165, 0, 131, 0], lead: [523, 0, 0, 659, 0, 523, 0, 784, 0, 0, 659, 0, 587, 0, 523, 0] },
+  plaza: { nombre: 'Plaza', emoji: '🏘️', bpm: 90, kick: [0, 10], snare: [], hat: [4, 12],
+    bajo: [147, 0, 0, 0, 110, 0, 0, 0, 123, 0, 0, 0, 131, 0, 0, 0], lead: [587, 0, 0, 0, 659, 0, 0, 0, 523, 0, 0, 0, 494, 0, 440, 0] },
+};
 const BOLICHE_BEBIDAS = ['Jugo de naranja', 'Limonada', 'Gaseosa', 'Agua con gas', 'Café', 'Licuado de frutilla'];
 const BOLICHE_ESPERA_DJ_MS = 15000;
 const BOLICHE_MAX_BEBIDAS = 3;       // cuántas bebidas se pueden tener en la mano
 const BOLICHE_BEBIDA_MS = 180000;    // y cuánto dura cada una
 const BOLICHE_BARMAN = ['¡Salud! 🥂', 'Buena elección 😉', 'Marchando, bien fría ❄️', 'Invita la casa (es de mentirita 😄)', '¡Ahí va!'];
 
-const bol = { bebidas: [], brindis: 0, ctx: null, master: null, ruido: null, timer: null, paso: 0, proximo: 0, t0: 0, estilo: 'cumbia', quien: '', on: true, ref: null, oyente: null, panel: null, ultimoDj: 0 };
+const bol = { bebidas: [], brindis: 0, ambiente: null, vol: 0.55, ctx: null, master: null, ruido: null, timer: null, paso: 0, proximo: 0, t0: 0, estilo: 'cumbia', quien: '', on: (function(){ try { return localStorage.getItem('busmac-musica') !== 'no'; } catch(e){ return true; } })(), ref: null, oyente: null, panel: null, ultimoDj: 0 };
 
 const bolEsc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const bolEnLinea = () => !!(typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre);
@@ -31,7 +46,7 @@ const bolEnLinea = () => !!(typeof codigoViaje !== 'undefined' && codigoViaje &&
 
 function bolicheIniciar(){
   bolicheAlSalir();
-  bol.panel = null;
+  bol.panel = null; bol.ambiente = null; bol.vol = 0.55;
   if(bolEnLinea()){
     bol.ref = db.ref('salas/' + codigoViaje + '/boliche/dj');
     bol.oyente = bol.ref.on('value', s => {
@@ -63,13 +78,30 @@ function bolicheSalir(){
 
 // ---- Música (Web Audio, sin archivos) ----
 
-function bolicheEstilo(){ return BOLICHE_ESTILOS[bol.estilo] || BOLICHE_ESTILOS.cumbia; }
+function bolicheEstilo(){ return bol.ambiente || BOLICHE_ESTILOS[bol.estilo] || BOLICHE_ESTILOS.cumbia; }
+
+// Música de fondo del lugar donde estoy (Estación o una parada). Se puede silenciar con el botón 🎵.
+function musicaSector(id){
+  bolicheMusicaParar();
+  bol.ambiente = MUSICA_AMBIENTE[id] || null; bol.vol = 0.2;
+  bolicheMusicaIniciar();
+  musicaActualizarBotones();
+}
+function musicaAlternar(){
+  bol.on = !bol.on;
+  try { localStorage.setItem('busmac-musica', bol.on ? 'si' : 'no'); } catch(e){}
+  if(bol.on) bolicheMusicaIniciar(); else bolicheMusicaParar();
+  musicaActualizarBotones();
+  if(typeof bolicheRender === 'function') bolicheRender();
+}
+function musicaBotonHTML(){ return '<button type="button" class="mus-btn" onclick="musicaAlternar()" title="Música">' + (bol.on && !(typeof sonidoActivado !== 'undefined' && !sonidoActivado) ? '🎵' : '🔇') + '</button>'; }
+function musicaActualizarBotones(){ document.querySelectorAll('.mus-btn').forEach(b => { b.textContent = bol.on && !(typeof sonidoActivado !== 'undefined' && !sonidoActivado) ? '🎵' : '🔇'; }); }
 
 function bolicheContexto(){
   if(bol.ctx) return bol.ctx;
   try {
     bol.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    bol.master = bol.ctx.createGain(); bol.master.gain.value = 0.55; bol.master.connect(bol.ctx.destination);
+    bol.master = bol.ctx.createGain(); bol.master.gain.value = bol.vol; bol.master.connect(bol.ctx.destination);
     const n = bol.ctx.sampleRate * 0.5, b = bol.ctx.createBuffer(1, n, bol.ctx.sampleRate), d = b.getChannelData(0);
     for(let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
     bol.ruido = b;
@@ -154,11 +186,7 @@ function bolicheElegirEstilo(id){
   bolicheRender();
 }
 
-function bolicheAlternarMusica(){
-  bol.on = !bol.on;
-  if(bol.on) bolicheMusicaIniciar(); else bolicheMusicaParar();
-  bolicheRender();
-}
+function bolicheAlternarMusica(){ musicaAlternar(); }
 
 function bolicheBebidas(){
   const l = typeof feria !== 'undefined' && feria.config ? feriaListaDe(feria.config.barra).map(String).filter(Boolean) : [];

@@ -244,7 +244,8 @@ function plazaCaminarA(id){
 // Sonidito de bienvenida distinto en cada parada.
 const PLZ_MELODIAS = { shopping: [660, 784, 988], arcade: [440, 660, 880, 660], mesas: [330, 392, 330], eventos: [523, 659, 784, 1046], plaza: [523, 659, 784] };
 function plazaSonidoSector(id){
-  if(typeof reproducirMelodia === 'function' && PLZ_MELODIAS[id]) reproducirMelodia(PLZ_MELODIAS[id], 110, 'triangle');
+  if(id !== 'boliche' && typeof musicaSector === 'function') musicaSector(id); // música de fondo del lugar
+  else if(typeof reproducirMelodia === 'function' && PLZ_MELODIAS[id]) reproducirMelodia(PLZ_MELODIAS[id], 110, 'triangle');
 }
 
 // De noche (21 a 5) la plaza se oscurece; al amanecer y atardecer cambia de a poco.
@@ -344,7 +345,7 @@ function plazaRender(){
   if(!cont) return;
   document.getElementById('view-plaza').classList.add('juego-inmersivo');
   cont.innerHTML = gEscenaHTML('cielo', `
-    <div class="g-hud"><span class="g-pill" id="plaza-cantidad">1 aquí</span><span class="g-pill" id="plaza-sala">${plazaNombre()}</span></div>
+    <div class="g-hud"><span class="g-pill" id="plaza-cantidad">1 aquí</span><span class="g-pill" id="plaza-sala">${plazaNombre()}</span>${typeof musicaBotonHTML === 'function' ? musicaBotonHTML() : ''}</div>
     <div id="plaza-aviso" class="plz-aviso"></div>
     <div class="plz-caja"><canvas class="plz-canvas"></canvas></div>
     <div id="plaza-modal"></div>

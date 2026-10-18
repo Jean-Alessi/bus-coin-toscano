@@ -6,6 +6,7 @@ let estacionOyente = null, estacionRefPlaza = null, estacionConteos = {};
 
 function iniciarEstacion(){
   estacionSoltar();
+  if(typeof musicaSector === 'function') musicaSector('estacion');
   if(typeof mundoEscuchar === 'function') mundoEscuchar();
   estacionRender();
   if(typeof codigoViaje !== 'undefined' && codigoViaje){
@@ -18,6 +19,7 @@ function iniciarEstacion(){
 }
 
 function estacionSoltar(){
+  if(typeof bolicheMusicaParar === 'function') bolicheMusicaParar();
   if(estacionRefPlaza && estacionOyente){ try { estacionRefPlaza.off('value', estacionOyente); } catch(e){} }
   estacionRefPlaza = null; estacionOyente = null;
 }
@@ -49,7 +51,7 @@ function estacionRender(){
   if(!activa || activa.id !== 'view-estacion') return;
   const bingo = typeof mundoTextoBingo === 'function' ? mundoTextoBingo() : '';
   cont.innerHTML = gEscenaHTML('cielo', `
-    <div class="est-cabecera">${estacionBusSVG()}<div class="est-titulo">Estación ${typeof marcaCorta === 'function' ? mundoEsc(marcaCorta()) : 'Busmac'}</div><div class="est-sub">Subite al micro y elegí a dónde ir. ¡Cuando quieras volvés!</div></div>
+    <div class="est-cabecera">${estacionBusSVG()}<div class="est-titulo">Estación ${typeof marcaCorta === 'function' ? mundoEsc(marcaCorta()) : 'Busmac'} ${typeof musicaBotonHTML === 'function' ? musicaBotonHTML() : ''}</div><div class="est-sub">Subite al micro y elegí a dónde ir. ¡Cuando quieras volvés!</div></div>
     ${(() => { const ev = typeof mundoEventoActivo === 'function' ? mundoEventoActivo() : null; return ev ? `<button class="est-evento" onclick="mundoIrA('${ev.sector}')">📢 ${mundoEsc(ev.texto)} <span>Ir a ${mundoEsc(PLZ_SECTORES[ev.sector].nombre)} ›</span></button>` : ''; })()}
     ${bingo ? `<button class="est-bingo" onclick="mundoIrA('eventos')">🎱 Próximo bingo: <b>${mundoEsc(bingo)}</b> <span>Ir al Salón de eventos ›</span></button>` : ''}
     ${typeof mundoRecorridoHTML === 'function' ? mundoRecorridoHTML() : ''}
