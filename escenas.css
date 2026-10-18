@@ -152,8 +152,8 @@ button.tcarta{cursor:default;}
 }
 .g-dialogo-titulo{font-size:19px; font-weight:800; line-height:1.15; text-shadow:0 2px 4px rgba(0,0,0,.6);}
 .g-dialogo-sub{font-size:12px; opacity:.88; margin-top:4px;}
-.g-pie{display:flex; justify-content:space-between; gap:8px; font-size:11px; opacity:.9; margin-top:4px;}
-.g-pie span{cursor:pointer; text-decoration:underline;}
+.g-pie{display:flex; justify-content:space-between; gap:8px; font-size:14px; font-weight:700; opacity:1; margin-top:8px;}
+.g-pie span{cursor:pointer; text-decoration:underline; padding:6px 4px;}
 
 /* ---- Trivia: neón violeta, pregunta con borde luminoso y respuestas-pastilla ---- */
 .tv-escena{min-height:470px;}
