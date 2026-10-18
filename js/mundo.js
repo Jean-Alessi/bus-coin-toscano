@@ -99,7 +99,11 @@ function mundoParadasHTML(conteos, actualId, accion){
       <span class="est-info"><b>${mundoEsc(id === 'plaza' || id === 'shopping' ? s.corto + ' ' + (typeof marcaCorta === 'function' ? marcaCorta() : '') : s.nombre)}</b><small>${mundoEsc(s.desc)}</small></span>
       <span class="est-cant">${aca ? 'Estás acá' : (n ? '👥 ' + n : 'Ir')}</span>
     </button>`;
-  }).join('');
+  }).join('') + (mundo.bolicheOn ? `<button class="est-parada est-boliche" style="--c:#FF4DDB" onclick="mundoIrAlBoliche()">
+      <span class="est-emoji">🕺</span>
+      <span class="est-info"><b>Confitería bailable</b><small>Música, luces, bola de espejos y barra. Se entra por la Plaza.</small></span>
+      <span class="est-cant">${conteos && conteos.boliche ? '👥 ' + conteos.boliche : 'Ir'}</span>
+    </button>` : '');
 }
 
 // El recorrido real del viaje: dónde estamos y qué sigue.

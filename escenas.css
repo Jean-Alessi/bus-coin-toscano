@@ -1215,3 +1215,5 @@ button.tcarta{cursor:default;}
 
 .bol-mano{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:4px 0 8px;}
 .bol-copa{border:none; background:#3a2a66; color:#fff; border-radius:14px; padding:5px 10px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;} .bol-copa span{font-size:16px; margin-right:4px;}
+
+.est-boliche{background:linear-gradient(90deg,#1b1038,#3b1a6b); color:#fff; border-left-color:#FF4DDB;} .est-boliche .est-info small{color:#d9c7ff;}
