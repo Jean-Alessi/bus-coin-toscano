@@ -174,7 +174,11 @@ function renderComercios(){
     if(!c){ comerciosVerCodigoDe = null; renderComercios(); return; }
     const flyerBoxId = `comercio-flyer-${comerciosVerCodigoDe}`;
     const flyerUrlSeguro = (c.flyerUrl || '').replace(/"/g, '&quot;');
-    const flyerHTML = c.flyerUrl ? `
+    const flyerHTML = c.flyerSubido ? `
+      <div class="comercio-flyer-box">
+        <p class="section-label" style="margin-top:0;">Productos de ${c.nombre}</p>
+        <div id="flyer-sub-box"><p class="cm-nota">Cargando flyer...</p></div>
+      </div>` : c.flyerUrl ? `
       <div class="comercio-flyer-box">
         <p class="section-label" style="margin-top:0;">Productos de ${c.nombre}</p>
         <div id="${flyerBoxId}">
@@ -192,6 +196,7 @@ function renderComercios(){
       </div>
       ${flyerHTML}
       <div class="g-pie"><span onclick="comerciosVolverALista()">‹ Volver a la lista</span></div>`);
+    if(c.flyerSubido && typeof flyerMostrarSubido === 'function') flyerMostrarSubido(comerciosVerCodigoDe, c.nombre);
     const qrCont = document.getElementById('comercio-qr-canvas');
     if(qrCont && window.QRCode){
       qrCont.innerHTML = '';
@@ -415,8 +420,9 @@ function renderAdminComercios(){
       <label class="comercio-admin-checkbox"><input type="checkbox" id="ca-oficial-${c.id}" ${c.oficial ? 'checked' : ''}> Es la parada oficial de este destino</label>
       <input type="number" id="ca-montofijo-${c.id}" class="bingo-input-numero" style="width:100%;" placeholder="Monto fijo por ser la parada oficial ($)" value="${c.montoFijoOficial || ''}">
       <label class="comercio-admin-checkbox"><input type="checkbox" id="ca-activo-${c.id}" ${c.activo !== false ? 'checked' : ''}> Activo (visible para los pasajeros)</label>
-      <input type="text" id="ca-flyer-${c.id}" class="bingo-input-numero" style="width:100%;" placeholder="Link al flyer (imagen, o PDF con /preview si es de Drive)" value="${(c.flyerUrl || '').replace(/"/g, '&quot;')}">
+      <input type="text" id="ca-flyer-${c.id}" class="bingo-input-numero" style="width:100%;" placeholder="O pegá un link al flyer (opcional)" value="${(c.flyerUrl || '').replace(/"/g, '&quot;')}">
       <p style="font-size:11.5px;color:var(--gray);margin:2px 0 8px;">Si es un link de Google Drive, usá el que termina en <b>/preview</b> (no /view) para que se vea dentro de la app.${c.flyerUrl ? ` Flyer actual: <a href="${c.flyerUrl}" target="_blank" rel="noopener">ver</a>` : ''}</p>
+      ${typeof flyerSubirHTML === 'function' ? flyerSubirHTML(c.id, c) : ''}
       <div style="display:flex; gap:8px; margin-top:6px;">
         <button class="btn-ghost" style="margin-top:0;" onclick="comerciosAdminGuardar('${c.id}')">Guardar</button>
         <button class="btn-eliminar-pasajero" onclick="comerciosAdminEliminar('${c.id}')" title="Eliminar">✕</button>
@@ -436,8 +442,9 @@ function renderAdminComercios(){
       <input type="number" id="ca-nuevo-precio" class="bingo-input-numero" style="width:100%;" placeholder="Precio por canje ($)">
       <label class="comercio-admin-checkbox"><input type="checkbox" id="ca-nuevo-oficial"> Es la parada oficial de este destino</label>
       <input type="number" id="ca-nuevo-montofijo" class="bingo-input-numero" style="width:100%;" placeholder="Monto fijo por ser la parada oficial ($)">
-      <input type="text" id="ca-nuevo-flyer" class="bingo-input-numero" style="width:100%;" placeholder="Link al flyer (imagen, o PDF con /preview si es de Drive)">
+      <input type="text" id="ca-nuevo-flyer" class="bingo-input-numero" style="width:100%;" placeholder="O pegá un link al flyer (opcional)">
       <p style="font-size:11.5px;color:var(--gray);margin:2px 0 8px;">Si es un link de Google Drive, usá el que termina en <b>/preview</b> (no /view) para que se vea dentro de la app.</p>
+      ${typeof flyerSubirHTML === 'function' ? flyerSubirHTML('nuevo', null) : ''}
       <button class="btn-primary" onclick="comerciosAdminAgregar()">Agregar comercio</button>
     </div>`;
 }
@@ -484,7 +491,8 @@ function comerciosAdminGuardar(id){
     activo: marcado('activo'),
     flyerUrl: leer('flyer'),
   };
-  const guardar = () => comerciosRefCatalogo(agenciaActualId, comerciosAdminDestino).child(id).update(datos).then(() => {
+  if(typeof flyerCamposParaGuardar === 'function') Object.assign(datos, flyerCamposParaGuardar(id));
+  const guardar = () => comerciosRefCatalogo(agenciaActualId, comerciosAdminDestino).child(id).update(datos).then(() => (typeof flyerAplicar === 'function' ? flyerAplicar(id, id) : null)).then(() => {
     mostrarToast('Comercio guardado');
     comerciosAdminCargarDestino();
   });
@@ -519,8 +527,9 @@ function comerciosAdminAgregar(){
     activo: true,
     flyerUrl: leer('flyer'),
   };
+  if(typeof flyerCamposParaGuardar === 'function') Object.assign(datos, flyerCamposParaGuardar('nuevo'));
   const ref = comerciosRefCatalogo(agenciaActualId, comerciosAdminDestino).push();
-  const guardar = () => ref.set(datos).then(() => {
+  const guardar = () => ref.set(datos).then(() => (typeof flyerAplicar === 'function' ? flyerAplicar('nuevo', ref.key) : null)).then(() => {
     mostrarToast('Comercio agregado');
     comerciosAdminCargarDestino();
   });
