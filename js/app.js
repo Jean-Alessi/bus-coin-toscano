@@ -631,6 +631,29 @@ function juegosAgregarBotonesVolver(){
   });
 }
 
+// Flecha ← arriba (como en los juegos) para las pantallas que antes tenían "‹ Volver a Inicio" abajo del todo.
+// En Comercios, si se está viendo un comercio, la flecha vuelve primero a la lista; si se llegó desde un
+// edificio del mundo, vuelve al mundo.
+function volverAInicioDesdeVista(){
+  const activa = document.querySelector('.view.active');
+  if(activa && activa.id === 'view-comercios' && typeof comerciosVerCodigoDe !== 'undefined' && comerciosVerCodigoDe && typeof comerciosVolverALista === 'function'){ comerciosVolverALista(); return; }
+  if(typeof plazaOrigen !== 'undefined' && plazaOrigen && activa && activa.id === 'view-' + plazaOrigen){ volverALaPlaza(); return; }
+  showView('home');
+}
+function agregarFlechasInicio(){
+  ['comercios', 'avatar'].forEach(nombre => {
+    const vista = document.getElementById('view-' + nombre);
+    const cabecera = vista && vista.querySelector('.app-header');
+    if(!cabecera || cabecera.querySelector('.btn-back')) return;
+    const titulo = cabecera.firstElementChild;
+    const envoltorio = document.createElement('div');
+    envoltorio.style.cssText = 'display:flex; align-items:center; gap:10px;';
+    envoltorio.innerHTML = '<button class="btn-back" aria-label="Volver a Inicio" onclick="volverAInicioDesdeVista()">←</button>';
+    cabecera.insertBefore(envoltorio, titulo);
+    envoltorio.appendChild(titulo);
+  });
+}
+
 // El botón "atrás" del celular (o el gesto) sale del juego y vuelve a la
 // lista de juegos, en vez de cerrar la app. Al entrar a un juego se agrega un
 // paso al historial; al salir por la flecha se descarta ese paso.
@@ -827,6 +850,7 @@ function conexionVigilar(){
 
 document.addEventListener('DOMContentLoaded', ()=>{
   juegosAgregarBotonesVolver();
+  agregarFlechasInicio();
   conexionVigilar();
   // Si se abrió desde el QR de un comercio (?canjear=1&...), es el celular
   // DEL COMERCIO, no el de un pasajero: se muestra solo la confirmación del
