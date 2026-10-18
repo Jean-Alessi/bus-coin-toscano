@@ -142,6 +142,7 @@ function iniciarPlaza(){
   if(typeof tunelIniciar === 'function') tunelIniciar();
   if(PLZ_SECTOR.id === 'mesas' && typeof mesasIniciar === 'function') mesasIniciar();
   if(PLZ_SECTOR.id === 'boliche' && typeof bolicheIniciar === 'function') bolicheIniciar();
+  if(PLZ_SECTOR.id === 'seleccion' && typeof seleccionIniciar === 'function') seleccionIniciar();
   plazaSonidoSector(PLZ_SECTOR.id);
   const online = typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre;
   if(online){ const pref = plz.salaPreferida; plz.salaPreferida = null; plazaConectar(pref || undefined); }
@@ -275,6 +276,7 @@ function plazaAlSalir(silencioso){
   if(typeof tunelAlSalir === 'function') tunelAlSalir();
   if(typeof mesasAlSalir === 'function') mesasAlSalir();
   if(typeof bolicheAlSalir === 'function') bolicheAlSalir();
+  if(typeof seleccionAlSalir === 'function') seleccionAlSalir();
   if(plz.ref){
     try {
       if(plz.listener) plz.ref.off('value', plz.listener);
@@ -296,7 +298,7 @@ function plazaCompacto(){
 
 function plazaEnviar(completo){
   if(!plz.ref || !plz.conectado) return;
-  const datos = { x: Math.round(plz.yo.x), y: Math.round(plz.yo.y), t: firebase.database.ServerValue.TIMESTAMP, cu: (typeof feria !== 'undefined' && feria.cumple) ? 1 : null, p: plz.pose ? plz.pose.p : null, bb: typeof bolicheBebidasEmoji === 'function' ? bolicheBebidasEmoji() : null };
+  const datos = { x: Math.round(plz.yo.x), y: Math.round(plz.yo.y), t: firebase.database.ServerValue.TIMESTAMP, cu: (typeof feria !== 'undefined' && feria.cumple) ? 1 : null, p: plz.pose ? plz.pose.p : null, bb: typeof bolicheBebidasEmoji === 'function' ? bolicheBebidasEmoji() : null, fv: typeof seleccionAliasFav === 'function' ? seleccionAliasFav() : null };
   if(plz.brindisT){ datos.br = firebase.database.ServerValue.TIMESTAMP; plz.brindisT = false; }
   if(completo){ datos.n = String(miNombre).slice(0, 14); datos.a = plazaCompacto(); }
   plz.ref.child(String(miAsiento)).update(datos);
@@ -319,7 +321,7 @@ function plazaRecibir(datos){
       nombre: String(d.n || 'Pasajero'), avatar: d.a || {},
       tx: Math.max(0, Math.min(PLZ.W, d.x)), ty: Math.max(0, Math.min(PLZ.H, d.y)),
       x: previo ? previo.x : d.x, y: previo ? previo.y : d.y, dir: previo ? previo.dir : 1,
-      m: typeof d.m === 'number' ? d.m : null, mt: d.mt || 0, cu: !!d.cu, p: typeof d.p === 'number' ? d.p : 0, bb: typeof d.bb === 'string' ? d.bb : null, br: d.br || 0, fase: (parseInt(a, 10) || 0) % 7,
+      m: typeof d.m === 'number' ? d.m : null, mt: d.mt || 0, cu: !!d.cu, p: typeof d.p === 'number' ? d.p : 0, bb: typeof d.bb === 'string' ? d.bb : null, fv: typeof d.fv === 'string' ? d.fv : null, br: d.br || 0, fase: (parseInt(a, 10) || 0) % 7,
     };
   });
   plz.otros = nuevos;
@@ -354,6 +356,7 @@ function plazaRender(){
     <div id="plaza-cartas"></div>
     <div id="plaza-tunel"></div>
     <div id="plaza-boliche"></div>
+    <div id="plaza-seleccion"></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
     <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrirParadas()">🚌 Micro</button></div>`, 'plz-escena');
@@ -426,6 +429,7 @@ function plazaAtraccion(a){
   }
   plz.yo.x = pos.x; plz.yo.y = pos.y; plz.yo.dir = plz.yo.dir || 1; plz.obj = null;
   plz.pose = { p: a.pose, id: a.id };
+  if(a.alIniciar && typeof window[a.alIniciar] === 'function') window[a.alIniciar]();
   plz.ultimaActividad = performance.now();
   plazaEnviar(false);
   plazaRenderAccion();
@@ -675,6 +679,7 @@ function plazaDibujarInsignia(ctx, e){
 }
 
 function plazaDibujarEdificio(ctx, e){
+  if(e.sel && typeof plazaDibujarSeleccion === 'function'){ plazaDibujarSeleccion(ctx, e); return; }
   if(e.neon && typeof plazaDibujarNeon === 'function'){ plazaDibujarNeon(ctx, e); return; }
   if(e.mesa && typeof plazaDibujarMesa === 'function'){ plazaDibujarMesa(ctx, e); plazaDibujarInsignia(ctx, e); return; }
   const abajo = e.lado === 'abajo'; // la puerta mira hacia abajo y el cartel va arriba (o al revés)
@@ -715,7 +720,7 @@ function plazaDibujarPatas(ctx, X, Y, dir, caminando, saltando){
   });
 }
 
-function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuja, cumple, pose, fase, bebida, brindis){
+function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuja, cumple, pose, fase, bebida, brindis, fav){
   fase = fase || 0;
   let dx = 0, alto = 0;
   const PATA = pose === 3 ? 4 : PLZ_PATA; // sentado: sin patas visibles, apoyado en el banco
@@ -745,6 +750,7 @@ function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuj
     ctx.fillStyle = '#F5C29B'; ctx.beginPath(); ctx.arc(X, Y - 30 - PATA, 14, 0, 7); ctx.fill();
   }
   if(pose === 3){ ctx.fillStyle = '#B8793B'; arcRR(ctx, X - 16, Y - 6, 32, 6, 3); ctx.fill(); }
+  if(pose === 5 && typeof seleccionDibujarAlzada === 'function') seleccionDibujarAlzada(ctx, X, Y, PATA + h);
   if(cumple) arcEmoji(ctx, '🎂', X + 17, Y - PATA - h + 8, 18);
   if(bebida) Array.from(bebida).slice(0, 3).forEach((em, i) => arcEmoji(ctx, em, X + 19, Y - PATA - 16 - i * 13, 14));
   if(brindis){ arcEmoji(ctx, '🥂', X, Y - PATA - h - 6, 24); [[-16, -4], [16, -8], [0, -20]].forEach(([ox, oy], i) => { ctx.fillStyle = 'rgba(255,240,150,' + (0.5 + 0.5 * Math.sin(plz.t * 12 + i * 2)).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(X + ox, Y - PATA - h + oy, 2.6, 0, 7); ctx.fill(); }); }
@@ -755,6 +761,7 @@ function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuj
   const ny = pose === 2 ? y : Y;
   ctx.fillStyle = 'rgba(15,42,77,.72)'; arcRR(ctx, X - tw / 2, ny + 7, tw, 15, 7.5); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.fillText(nombre, X, ny + 14.5);
+  if(fav){ ctx.font = '800 9px Poppins, sans-serif'; const fw = ctx.measureText('⭐ ' + fav).width + 8; ctx.fillStyle = 'rgba(15,42,77,.72)'; arcRR(ctx, X - fw / 2, ny + 24, fw, 13, 6.5); ctx.fill(); ctx.fillStyle = '#FFD84D'; ctx.fillText('⭐ ' + fav, X, ny + 30.5); }
   if(burbuja){
     ctx.font = '700 11px Poppins, sans-serif';
     const bw = ctx.measureText(burbuja).width + 16;
@@ -786,7 +793,7 @@ function plazaDibujar(ctx){
   personajes.sort((a, b) => a.y - b.y).forEach(p => {
     if(p.yo){
       const burbuja = plz.burbuja && ahoraMs < plz.burbuja.hasta ? plz.burbuja.texto : null;
-      plazaDibujarPersonaje(ctx, plz.yo.x, plz.yo.y, plazaCompacto(), 'Vos', plz.yo.dir, plz.caminando, burbuja, typeof feria !== 'undefined' && feria.cumple, plz.pose ? plz.pose.p : 0, plz.pose ? (parseInt(miAsiento, 10) || 0) % 7 : 0, typeof bolicheBebidasEmoji === 'function' ? bolicheBebidasEmoji() : null, typeof bol !== 'undefined' && performance.now() < bol.brindis);
+      plazaDibujarPersonaje(ctx, plz.yo.x, plz.yo.y, plazaCompacto(), 'Vos', plz.yo.dir, plz.caminando, burbuja, typeof feria !== 'undefined' && feria.cumple, plz.pose ? plz.pose.p : 0, plz.pose ? (parseInt(miAsiento, 10) || 0) % 7 : 0, typeof bolicheBebidasEmoji === 'function' ? bolicheBebidasEmoji() : null, typeof bol !== 'undefined' && performance.now() < bol.brindis, typeof seleccionAliasFav === 'function' ? seleccionAliasFav() : null);
     } else if(p.bot){
       const b = p.bot;
       plazaDibujarPersonaje(ctx, b.x, b.y, b.a, b.n, b.dir, b.caminando, b.m != null && ahoraMs < b.hasta ? PLZ_FRASES[b.m] : null, false, b.pose || 0, b.fase || 0);
@@ -794,7 +801,7 @@ function plazaDibujar(ctx){
       const o = p.o;
       const dice = o.m != null && ahoraServidor - o.mt < 4500 ? PLZ_FRASES[o.m] : null;
       const caminando = Math.hypot(o.tx - o.x, o.ty - o.y) > 3;
-      plazaDibujarPersonaje(ctx, o.x, o.y, o.avatar, o.nombre.slice(0, 10), o.dir, caminando, dice, o.cu, o.p, o.fase, o.bb, o.br && ahoraServidor - o.br < 2200);
+      plazaDibujarPersonaje(ctx, o.x, o.y, o.avatar, o.nombre.slice(0, 10), o.dir, caminando, dice, o.cu, o.p, o.fase, o.bb, o.br && ahoraServidor - o.br < 2200, o.fv);
     }
   });
 

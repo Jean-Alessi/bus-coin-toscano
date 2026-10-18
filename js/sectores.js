@@ -42,7 +42,9 @@ const PLZ_SECTORES = {
       tienda.x = PLZ_COL[2]; tienda.y = 300;
       const foto = plzItem('foto', 'Fotomatón', '📸', '#4361EE', 'Foto grupal con marco', () => feriaFotoGrupal());
       foto.x = PLZ_COL[3]; foto.y = 300;
-      return { edificios: arriba.concat([sorteo, tienda, foto]), atracciones: [plzParada(this)] };
+      const casa = (typeof mundo === 'undefined' || mundo.seleccionOn !== false) ? plzItem('seleccion', 'Selección', '⚽', '#74ACDF', 'Casa de la Selección: tu ídolo, la copa y la foto', () => seleccionEntrar(), { sel: true }) : null;
+      if(casa){ casa.x = PLZ_COL[0]; casa.y = 300; }
+      return { edificios: arriba.concat([sorteo, tienda, foto]).concat(casa ? [casa] : []), atracciones: [plzParada(this)] };
     },
   },
   arcade: {
@@ -130,6 +132,22 @@ const PLZ_SECTORES = {
         { id: 'salir', nombre: 'Salida', emoji: '🚪', verbo: 'Salir a la plaza', sub: 'Volvés a la plaza', fn: 'bolicheSalir', zona: { x: 260, y: 548, w: 120, h: 60 } },
       ];
       return { edificios: [], atracciones, bloques: [{ x: 226, y: 20, w: 188, h: 92 }, { x: 436, y: 20, w: 188, h: 116 }] };
+    },
+  },
+  seleccion: {
+    id: 'seleccion', nombre: 'Casa de la Selección', corto: 'Selección', emoji: '⚽', color: '#74ACDF', interior: true, sinPasillos: true, maxSala: 12,
+    desc: 'Elegí tu ídolo, levantá la copa y sacate la foto con el plantel',
+    H: 620, fuera: '#0b3d1a', suelo: '#2f7d3c', baldosa: 'rgba(255,255,255,0)', borde: '#74ACDF',
+    parada: null, spawn: { x: 320, y: 496 }, libre: { x0: 130, x1: 510, y0: 350, y1: 470 }, decor: 'seleccion',
+    armar(){
+      const atracciones = [
+        { id: 'copa', nombre: 'La copa', emoji: '🏆', verbo: 'Levantar la copa', sub: '¡Dale campeón!', pose: 5, alIniciar: 'seleccionLevantarCopa', zona: { x: 240, y: 338, w: 160, h: 62 }, slots: [{ x: 290, y: 360 }, { x: 320, y: 356 }, { x: 350, y: 360 }] },
+        { id: 'vestuario', nombre: 'Vestuario', emoji: '🎽', verbo: 'Cambiarte la camiseta', sub: 'Camisetas albicelestes para tu personaje', fn: 'seleccionAbrirVestuario', zona: { x: 112, y: 110, w: 70, h: 130 } },
+        { id: 'idolos', nombre: 'Mural de ídolos', emoji: '⭐', verbo: 'Elegir mi ídolo', sub: 'Qatar 2022 y Mundial 2026', fn: 'seleccionAbrirIdolos', zona: { x: 446, y: 110, w: 76, h: 130 } },
+        { id: 'fotoSel', nombre: 'Foto', emoji: '📸', verbo: 'Sacarte la foto con el plantel', sub: 'Con tu personaje, el plantel y la copa', fn: 'seleccionFoto', zona: { x: 30, y: 476, w: 170, h: 60 } },
+        { id: 'salir', nombre: 'Salida', emoji: '🚪', verbo: 'Salir al Shopping', sub: 'Volvés al Shopping', fn: 'seleccionSalir', zona: { x: 260, y: 548, w: 120, h: 60 } },
+      ];
+      return { edificios: [], atracciones, bloques: [{ x: 16, y: 80, w: 92, h: 210 }, { x: 526, y: 80, w: 98, h: 190 }, { x: 272, y: 262, w: 96, h: 70 }] };
     },
   },
   plaza: {

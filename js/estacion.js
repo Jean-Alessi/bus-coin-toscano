@@ -62,6 +62,6 @@ function estacionRender(){
     </div>
     <div class="est-creditos"><a onclick="musicaCreditos()">🎵 Créditos de la música</a></div>
     <div class="est-atajos"><span>Ir directo:</span>
-      <button onclick="showView('ranking')">🏆 Ranking</button><button onclick="showView('juegos')">🎮 Juegos</button><button onclick="showView('tienda')">🎁 Premios</button><button onclick="showView('avatar')">👕 Mi personaje</button><button onclick="showView('comercios')">🏪 Comercios</button><button onclick="mundoIrAlBoliche()">🕺 Bailable</button>
+      <button onclick="showView('ranking')">🏆 Ranking</button><button onclick="showView('juegos')">🎮 Juegos</button><button onclick="showView('tienda')">🎁 Premios</button><button onclick="showView('avatar')">👕 Mi personaje</button><button onclick="showView('comercios')">🏪 Comercios</button><button onclick="mundoIrAlBoliche()">🕺 Bailable</button><button onclick="mundoIrALaSeleccion()">⚽ Selección</button>
     </div>`, 'est-escena');
 }

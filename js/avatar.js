@@ -43,6 +43,10 @@ const AV_REMERAS = [
   { id: 'chofer', nombre: 'Camisa de chofer', precio: 60, color: '#BFE6FF', deco: () => `<path d="M40 76 L50 90 L60 76 Z" fill="#fff"/><path d="M48 89 L52 89 L53.5 105 L50 109 L46.5 105 Z" fill="#0F2A4D"/><rect x="56" y="96" width="9" height="8" rx="1.5" fill="#9CCBEA"/>` },
   { id: 'busmac', nombre: 'Remera ' + marcaCorta(), precio: 80, color: '#0F2A4D', deco: () => `<rect x="20" y="98" width="60" height="5" fill="#E6A817"/>${avLogo(50, 89, 14, '#fff')}`, mangas: '#E6A817' },
   { id: 'egresado', nombre: 'Buzo de egresado', precio: 100, color: '#7E57FF', deco: () => `<rect x="20" y="104" width="60" height="4" fill="#FFD84D"/>${avLogo(50, 91, 13, '#fff')}`, mangas: '#5D3FD4' },
+  { id: 'albiceleste', nombre: 'Camiseta albiceleste', precio: 0, color: '#FFFFFF', deco: () => [24, 44.8, 65.6].map(x => `<rect x="${x}" y="70" width="10.4" height="52" fill="#74ACDF"/>`).join(''), mangas: '#74ACDF' },
+  { id: 'campeon', nombre: 'Camiseta con 3 estrellas', precio: 0, color: '#FFFFFF', deco: () => [24, 44.8, 65.6].map(x => `<rect x="${x}" y="70" width="10.4" height="52" fill="#74ACDF"/>`).join('') + [38, 50, 62].map(x => `<path d="M${x} 80.6 L${x + 1} 83 L${x + 3.4} 84 L${x + 1} 85 L${x} 87.4 L${x - 1} 85 L${x - 3.4} 84 L${x - 1} 83 Z" fill="#E6A817"/>`).join(''), mangas: '#74ACDF' },
+  { id: 'suplente', nombre: 'Camiseta suplente violeta', precio: 0, color: '#5B2A86', deco: () => '<rect x="24" y="100" width="52" height="4" fill="#fff"/>', mangas: '#46206B' },
+  { id: 'arquero', nombre: 'Camiseta de arquero', precio: 0, color: '#2A9D8F', deco: () => '<rect x="24" y="98" width="52" height="5" fill="#0F2A4D"/>', mangas: '#1F7A6F' },
   { id: 'dorada', nombre: 'Campera dorada', precio: 130, color: '#E6A817', deco: () => `<path d="M50 78 V122" stroke="#8B5A12" stroke-width="1.6"/><path d="M30 90 Q36 84 42 86" stroke="#FFF3B0" stroke-width="2" fill="none" stroke-linecap="round"/>`, mangas: '#C98F0F' },
 ];
 

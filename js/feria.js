@@ -284,6 +284,9 @@ function feriaRenderPanel(){
       <p class="fer-texto">${nums} número${nums === 1 ? '' : 's'} repartido${nums === 1 ? '' : 's'}${mio && mio.num ? ' · El tuyo: <b>#' + mio.num + '</b>' : ''}</p>
       ${s.ganador ? '<p class="fer-texto">🎉 Ganó el número <b>#' + s.ganador.num + '</b> (' + feriaEsc(s.ganador.n || '') + ')</p>' : ''}`;
     botones = (s.activo && !(mio && mio.num) ? '<button class="gbtn gbtn-ancho" onclick="feriaIrAlSorteo()">🎟️ Ir al puesto del sorteo</button>' : '') + cerrar;
+  } else if(p.modo === 'fotoSel'){
+    cuerpo = `<h3 class="fer-titulo">📸 Foto con el plantel</h3><canvas id="fer-foto" width="600" height="420" class="fer-foto"></canvas><p class="fer-sub">Con tu personaje, la copa y el equipo (son personajes). Espacio de fans, no oficial.</p>`;
+    botones = `<button class="gbtn gbtn-ancho" onclick="feriaGuardarFoto()">💾 Guardar foto</button>${(typeof navigator !== 'undefined' && navigator.share) ? '<button class="gbtn gbtn-ancho" onclick="feriaCompartirFoto()">📤 Compartir</button>' : ''}${cerrar}`;
   } else if(p.modo === 'escenario'){
     cuerpo = `<h3 class="fer-titulo">🎤 Escenario</h3><p class="fer-texto">Acá se juega en vivo con todo el micro.</p>`;
     botones = `<button class="gbtn gbtn-ancho" onclick="feriaIrA('triviavivo')">🧠 Trivia en vivo</button><button class="gbtn gbtn-ancho" onclick="feriaIrA('bingo')">🎱 Bingo</button>${cerrar}`;
@@ -349,6 +352,7 @@ function feriaRenderPanel(){
   }
   cont.innerHTML = `<div class="plz-modal"><div class="plz-modal-caja">${cuerpo}<div class="fer-botones">${botones}</div></div></div>`;
   if(p.modo === 'foto') setTimeout(feriaDibujarFoto, 30);
+  if(p.modo === 'fotoSel') setTimeout(() => { if(typeof seleccionDibujarFoto === 'function') seleccionDibujarFoto(); }, 30);
 }
 
 function feriaSorteoEstadoHTML(){
@@ -610,6 +614,9 @@ function adminTunelMensaje(codigo){
   const v = (el ? el.value : '').trim().slice(0, 120);
   db.ref('salas/' + codigo + '/ajustes/tunelMensaje').set(v || null).then(() => { feriaToast('Mensaje del túnel guardado'); renderAdminViajes(); });
 }
+function adminSeleccion(codigo, valor){
+  db.ref('salas/' + codigo + '/ajustes/seleccion').set(valor === 'off' ? 'off' : null).then(() => { feriaToast(valor === 'off' ? 'Casa de la Selección cerrada' : 'Casa de la Selección abierta'); renderAdminViajes(); });
+}
 function adminBoliche(codigo, valor){
   db.ref('salas/' + codigo + '/ajustes/boliche').set(valor === 'off' ? 'off' : null).then(() => { feriaToast(valor === 'off' ? 'Boliche cerrado' : 'Boliche abierto'); renderAdminViajes(); });
 }
@@ -715,6 +722,8 @@ function adminFeriaPanelHTML(codigo, viaje){
     <input type="text" id="admin-evento-texto-${codigo}" placeholder="Ej: Karaoke en el Salón de eventos" value="${feriaEsc((viaje && viaje.ajustes && viaje.ajustes.evento && viaje.ajustes.evento.texto) || '')}">
     <select class="fer-select" id="admin-evento-sector-${codigo}">${PLZ_ORDEN_SECTORES.map(id => `<option value="${id}" ${viaje && viaje.ajustes && viaje.ajustes.evento && viaje.ajustes.evento.sector === id ? 'selected' : ''}>${feriaEsc(PLZ_SECTORES[id].emoji + ' ' + PLZ_SECTORES[id].nombre)}</option>`).join('')}</select>
     <div class="fer-botones-admin"><button class="btn-primary" onclick="adminEventoAnunciar('${codigo}')">📢 Anunciar</button><button class="fer-mini" onclick="adminEventoBorrar('${codigo}')">Borrar aviso</button></div>
+    <div class="fer-admin-t">⚽ Casa de la Selección <small>(entrada en el Shopping: ídolos, camisetas, copa y foto)</small></div>
+    <select class="fer-select" onchange="adminSeleccion('${codigo}', this.value)"><option value="on" ${viaje && viaje.ajustes && viaje.ajustes.seleccion === 'off' ? '' : 'selected'}>Abierta</option><option value="off" ${viaje && viaje.ajustes && viaje.ajustes.seleccion === 'off' ? 'selected' : ''}>Cerrada</option></select>
     <div class="fer-admin-t">🕺 Confitería bailable <small>(entrada en la Plaza; salas de 12 personas)</small></div>
     <select class="fer-select" onchange="adminBoliche('${codigo}', this.value)"><option value="on" ${viaje && viaje.ajustes && viaje.ajustes.boliche === 'off' ? '' : 'selected'}>Abierta</option><option value="off" ${viaje && viaje.ajustes && viaje.ajustes.boliche === 'off' ? 'selected' : ''}>Cerrada</option></select>
     ${adminFeriaListaHTML(codigo, 'barra', '🍹 Bebidas de la barra', '(uno por línea; sin alcohol en viajes con menores)', de('barra'))}

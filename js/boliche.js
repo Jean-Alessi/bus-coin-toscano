@@ -44,7 +44,8 @@ const MUSICA_PISTAS = {
   mesas: { archivo: 'audio/mesas.mp3', bpm: 114, titulo: 'Night in Venice' },
   eventos: { archivo: 'audio/eventos.mp3', bpm: 140, titulo: 'Apero Hour' },
 };
-const MUSICA_PISTA_DE = { estacion: 'estacion', plaza: 'estacion', shopping: 'shopping', arcade: 'arcade', mesas: 'mesas', eventos: 'eventos' };
+const MUSICA_PISTA_DE = { seleccion: 'eventos', estacion: 'estacion', plaza: 'estacion', shopping: 'shopping', arcade: 'arcade', mesas: 'mesas', eventos: 'eventos' };
+MUSICA_AMBIENTE.seleccion = MUSICA_AMBIENTE.eventos;
 const BOLICHE_BEBIDAS = ['Jugo de naranja', 'Limonada', 'Gaseosa', 'Agua con gas', 'Café', 'Licuado de frutilla'];
 const BOLICHE_ESPERA_DJ_MS = 15000;
 const BOLICHE_MAX_BEBIDAS = 3;       // cuántas bebidas se pueden tener en la mano

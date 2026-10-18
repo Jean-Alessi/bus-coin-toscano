@@ -6,7 +6,7 @@
 // Datos en salas/{viaje}/: ajustes/modo, ajustes/paradaReal (número de línea), ajustes/proximoBingo,
 // feriaConfig/cartelera (líneas "Hora | Lugar").
 
-const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, bolicheOn: true, tunelOn: true, tunelMsg: '', tunelDesc: {} };
+const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, bolicheOn: true, seleccionOn: true, tunelOn: true, tunelMsg: '', tunelDesc: {} };
 const MUNDO_EVENTO_MS = 3 * 3600 * 1000; // un aviso de evento dura 3 horas
 
 const mundoActivo = () => mundo.modo !== 'clasico';
@@ -26,6 +26,12 @@ function mundoEscuchar(){
     const eventoAntes = mundo.evento;
     mundo.evento = v.evento && v.evento.texto && PLZ_SECTORES[v.evento.sector] ? v.evento : null;
     mundo.tunelOn = v.tunel !== 'off';
+    const selAntes = mundo.seleccionOn;
+    mundo.seleccionOn = v.seleccion !== 'off';
+    if(selAntes !== mundo.seleccionOn && typeof plazaCargarSector === 'function' && typeof plz !== 'undefined' && plz.activo && PLZ_SECTOR){
+      if(!mundo.seleccionOn && PLZ_SECTOR.id === 'seleccion' && typeof seleccionSalir === 'function') seleccionSalir();
+      else if(PLZ_SECTOR.id === 'shopping') plazaCargarSector('shopping');
+    }
     const bolicheAntes = mundo.bolicheOn;
     mundo.bolicheOn = v.boliche !== 'off';
     if(bolicheAntes !== mundo.bolicheOn && typeof plazaCargarSector === 'function' && typeof plz !== 'undefined' && plz.activo && PLZ_SECTOR){
@@ -99,7 +105,11 @@ function mundoParadasHTML(conteos, actualId, accion){
       <span class="est-info"><b>${mundoEsc(id === 'plaza' || id === 'shopping' ? s.corto + ' ' + (typeof marcaCorta === 'function' ? marcaCorta() : '') : s.nombre)}</b><small>${mundoEsc(s.desc)}</small></span>
       <span class="est-cant">${aca ? 'Estás acá' : (n ? '👥 ' + n : 'Ir')}</span>
     </button>`;
-  }).join('') + (mundo.bolicheOn ? `<button class="est-parada est-boliche" style="--c:#FF4DDB" onclick="mundoIrAlBoliche()">
+  }).join('') + (mundo.seleccionOn ? `<button class="est-parada est-seleccion" style="--c:#74ACDF" onclick="mundoIrALaSeleccion()">
+      <span class="est-emoji">⚽</span>
+      <span class="est-info"><b>Casa de la Selección</b><small>Elegí tu ídolo de 2022 o 2026, levantá la copa y sacate la foto. Se entra por el Shopping.</small></span>
+      <span class="est-cant">${conteos && conteos.seleccion ? '👥 ' + conteos.seleccion : 'Ir'}</span>
+    </button>` : '') + (mundo.bolicheOn ? `<button class="est-parada est-boliche" style="--c:#FF4DDB" onclick="mundoIrAlBoliche()">
       <span class="est-emoji">🕺</span>
       <span class="est-info"><b>Confitería bailable</b><small>Música, luces, bola de espejos y barra. Se entra por la Plaza.</small></span>
       <span class="est-cant">${conteos && conteos.boliche ? '👥 ' + conteos.boliche : 'Ir'}</span>
@@ -124,6 +134,20 @@ function mundoIrA(id){
   if(activa && activa.id === 'view-plaza' && typeof plazaIrASector === 'function' && id === plz.sector){ return; }
   if(activa && activa.id === 'view-plaza' && typeof plazaIrASector === 'function'){ plazaIrASector(id); return; }
   plz.sector = id; plz.posGuardada = null;
+  showView('plaza');
+}
+
+// Atajo a la Casa de la Selección: te deja frente a su puerta en el Shopping.
+function mundoIrALaSeleccion(){
+  if(!mundo.seleccionOn){ if(typeof mostrarToast === 'function') mostrarToast('La Casa de la Selección está cerrada en este viaje'); return; }
+  if(typeof micCerrarSiempre === 'function') micCerrarSiempre();
+  const e = PLZ_SECTORES.shopping.armar().edificios.find(x => x.id === 'seleccion');
+  const z = e ? plazaZonaPuerta(e) : { x: 38, y: 420, w: 72, h: 40 };
+  const pos = { x: z.x + z.w / 2, y: z.y + z.h / 2 + 6 };
+  const activa = document.querySelector('.view.active');
+  if(activa && activa.id === 'view-plaza' && typeof plazaCambiarSector === 'function'){ plazaCambiarSector('shopping', pos); return; }
+  plz.sector = 'shopping';
+  plz.posGuardada = { x: pos.x, y: pos.y, t: Date.now(), viaje: (typeof codigoViaje !== 'undefined' ? codigoViaje : ''), sector: 'shopping' };
   showView('plaza');
 }
 
