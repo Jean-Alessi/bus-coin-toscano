@@ -32,8 +32,8 @@ function comerciosRefCatalogo(agenciaId, destino){
 const COMERCIOS_RUBROS_SUGERIDOS = ['Alfajores', 'Artesanía', 'Gastronomía', 'Heladería', 'Indumentaria', 'Receptivo', 'Peñas', 'Otros'];
 
 // Los comercios cargados con los rubros de antes se muestran con los nuevos (no se toca la base: se guarda el
-// nombre nuevo la próxima vez que se edite el comercio). "Tienda" no tiene equivalente claro y queda como estaba.
-const COMERCIOS_RUBROS_VIEJOS = { 'comida': 'Gastronomía', 'bebidas': 'Gastronomía', 'artesanías': 'Artesanía', 'artesanias': 'Artesanía', 'heladeria': 'Heladería', 'otro': 'Otros' };
+// nombre nuevo la próxima vez que se edite el comercio). Los rubros de la lista vieja que ya no existen (como "Tienda") pasan a "Otros".
+const COMERCIOS_RUBROS_VIEJOS = { 'comida': 'Gastronomía', 'bebidas': 'Gastronomía', 'artesanías': 'Artesanía', 'artesanias': 'Artesanía', 'heladeria': 'Heladería', 'otro': 'Otros', 'tienda': 'Otros' };
 function comerciosRubroNormal(rubro){
   const t = String(rubro || '').trim();
   if(!t) return 'Otros';
