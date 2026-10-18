@@ -1224,3 +1224,7 @@ button.tcarta{cursor:default;}
 
 .mus-btn{border:none; background:rgba(255,255,255,.9); border-radius:50%; width:30px; height:30px; font-size:15px; cursor:pointer; vertical-align:middle; margin-left:6px; box-shadow:0 2px 0 rgba(0,0,0,.18);}
 .g-hud .mus-btn{margin-left:auto; flex-shrink:0;}
+
+.bol-creditos{text-align:left; font-size:12.5px; max-height:200px; overflow:auto; background:rgba(255,255,255,.08); border-radius:10px; padding:6px 12px; margin:6px 0;} .bol-creditos div{padding:2px 0;}
+.bol-link,.est-creditos a{text-decoration:underline; cursor:pointer;}
+.est-creditos{text-align:center; margin-top:10px; font-size:11.5px; color:#fff; opacity:.9;}

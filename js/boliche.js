@@ -31,13 +31,27 @@ const MUSICA_AMBIENTE = {
   plaza: { nombre: 'Plaza', emoji: '🏘️', bpm: 90, kick: [0, 10], snare: [], hat: [4, 12],
     bajo: [147, 0, 0, 0, 110, 0, 0, 0, 123, 0, 0, 0, 131, 0, 0, 0], lead: [587, 0, 0, 0, 659, 0, 0, 0, 523, 0, 0, 0, 494, 0, 440, 0] },
 };
+// Temas reales (Kevin MacLeod, incompetech.com, Creative Commons Atribución 4.0), comprimidos en audio/.
+// Se usan si el archivo carga; si no hay conexión o falla, suena la música generada de arriba.
+const MUSICA_PISTAS = {
+  cumbia: { archivo: 'audio/cumbia.mp3', bpm: 96, titulo: 'No Frills Cumbia' },
+  pop: { archivo: 'audio/pop.mp3', bpm: 108, titulo: 'Sunflower Dance Party' },
+  electro: { archivo: 'audio/electro.mp3', bpm: 124, titulo: 'Brain Dance' },
+  lento: { archivo: 'audio/lento.mp3', bpm: 75, titulo: 'Smooth Lovin' },
+  estacion: { archivo: 'audio/estacion.mp3', bpm: 80, titulo: 'Almost New' },
+  shopping: { archivo: 'audio/shopping.mp3', bpm: 116, titulo: 'Casa Bossa Nova' },
+  arcade: { archivo: 'audio/arcade.mp3', bpm: 100, titulo: 'Bit Quest' },
+  mesas: { archivo: 'audio/mesas.mp3', bpm: 114, titulo: 'Night in Venice' },
+  eventos: { archivo: 'audio/eventos.mp3', bpm: 140, titulo: 'Apero Hour' },
+};
+const MUSICA_PISTA_DE = { estacion: 'estacion', plaza: 'estacion', shopping: 'shopping', arcade: 'arcade', mesas: 'mesas', eventos: 'eventos' };
 const BOLICHE_BEBIDAS = ['Jugo de naranja', 'Limonada', 'Gaseosa', 'Agua con gas', 'Café', 'Licuado de frutilla'];
 const BOLICHE_ESPERA_DJ_MS = 15000;
 const BOLICHE_MAX_BEBIDAS = 3;       // cuántas bebidas se pueden tener en la mano
 const BOLICHE_BEBIDA_MS = 180000;    // y cuánto dura cada una
 const BOLICHE_BARMAN = ['¡Salud! 🥂', 'Buena elección 😉', 'Marchando, bien fría ❄️', 'Invita la casa (es de mentirita 😄)', '¡Ahí va!'];
 
-const bol = { bebidas: [], brindis: 0, ambiente: null, vol: 0.55, ctx: null, master: null, ruido: null, timer: null, paso: 0, proximo: 0, t0: 0, estilo: 'cumbia', quien: '', on: (function(){ try { return localStorage.getItem('busmac-musica') !== 'no'; } catch(e){ return true; } })(), ref: null, oyente: null, panel: null, ultimoDj: 0 };
+const bol = { pista: null, pistaId: '', pistaFalla: false, ambienteId: '', bebidas: [], brindis: 0, ambiente: null, vol: 0.55, ctx: null, master: null, ruido: null, timer: null, paso: 0, proximo: 0, t0: 0, estilo: 'cumbia', quien: '', on: (function(){ try { return localStorage.getItem('busmac-musica') !== 'no'; } catch(e){ return true; } })(), ref: null, oyente: null, panel: null, ultimoDj: 0 };
 
 const bolEsc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const bolEnLinea = () => !!(typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre);
@@ -46,14 +60,17 @@ const bolEnLinea = () => !!(typeof codigoViaje !== 'undefined' && codigoViaje &&
 
 function bolicheIniciar(){
   bolicheAlSalir();
-  bol.panel = null; bol.ambiente = null; bol.vol = 0.55;
+  bol.panel = null; bol.ambiente = null; bol.ambienteId = ''; bol.vol = 0.55;
   if(bolEnLinea()){
     bol.ref = db.ref('salas/' + codigoViaje + '/boliche/dj');
     bol.oyente = bol.ref.on('value', s => {
       const v = s.val(), antes = bol.estilo;
       if(v && BOLICHE_ESTILOS[v.estilo]){
         bol.estilo = v.estilo; bol.quien = v.n || '';
-        if(antes !== bol.estilo && bol.timer && typeof mostrarToast === 'function') mostrarToast('🎧 ' + (v.n || 'El DJ') + ' puso ' + BOLICHE_ESTILOS[v.estilo].nombre);
+        if(antes !== bol.estilo && (bol.timer || bol.pista)){
+          if(typeof mostrarToast === 'function') mostrarToast('🎧 ' + (v.n || 'El DJ') + ' puso ' + BOLICHE_ESTILOS[v.estilo].nombre);
+          bolicheMusicaParar(); bolicheMusicaIniciar();
+        }
       }
       bolicheRender();
     });
@@ -83,7 +100,7 @@ function bolicheEstilo(){ return bol.ambiente || BOLICHE_ESTILOS[bol.estilo] || 
 // Música de fondo del lugar donde estoy (Estación o una parada). Se puede silenciar con el botón 🎵.
 function musicaSector(id){
   bolicheMusicaParar();
-  bol.ambiente = MUSICA_AMBIENTE[id] || null; bol.vol = 0.2;
+  bol.ambiente = MUSICA_AMBIENTE[id] || null; bol.ambienteId = id; bol.vol = 0.2;
   bolicheMusicaIniciar();
   musicaActualizarBotones();
 }
@@ -109,10 +126,37 @@ function bolicheContexto(){
   return bol.ctx;
 }
 
+// Qué tema real corresponde a donde estoy (null si no hay).
+function bolicheIdPista(){
+  const id = bol.ambiente || bol.ambienteId ? (MUSICA_PISTA_DE[bol.ambienteId] || null) : bol.estilo;
+  return id && MUSICA_PISTAS[id] ? id : null;
+}
+
+function bolichePistaIniciar(id){
+  const p = MUSICA_PISTAS[id];
+  if(bol.pista && bol.pistaId === id) return true;
+  bolichePistaParar();
+  try {
+    const a = new Audio(p.archivo);
+    a.loop = true; a.preload = 'auto'; a.volume = bol.ambienteId ? 0.3 : 0.6;
+    a.onerror = () => { bol.pistaFalla = true; bolichePistaParar(); bolicheMusicaIniciar(); };
+    bol.pista = a; bol.pistaId = id;
+    const r = a.play();
+    if(r && r.catch) r.catch(() => {}); // el navegador puede pedir un toque antes de dejar sonar
+    return true;
+  } catch(e){ bol.pistaFalla = true; bol.pista = null; return false; }
+}
+function bolichePistaParar(){
+  if(bol.pista){ try { bol.pista.pause(); bol.pista.removeAttribute('src'); bol.pista.load(); } catch(e){} }
+  bol.pista = null; bol.pistaId = '';
+}
+
 function bolicheMusicaIniciar(){
-  if(bol.timer) return;
+  if(bol.timer || bol.pista) return;
   if(typeof sonidoActivado !== 'undefined' && !sonidoActivado) return;
   if(!bol.on) return;
+  const idPista = bolicheIdPista();
+  if(idPista && !bol.pistaFalla && typeof Audio !== 'undefined' && bolichePistaIniciar(idPista)) return;
   const c = bolicheContexto();
   if(!c) return;
   try { if(c.state === 'suspended') c.resume(); } catch(e){}
@@ -121,6 +165,7 @@ function bolicheMusicaIniciar(){
 }
 
 function bolicheMusicaParar(){
+  bolichePistaParar();
   if(bol.timer){ clearInterval(bol.timer); bol.timer = null; }
   if(bol.ctx){ try { bol.ctx.close(); } catch(e){} bol.ctx = null; bol.master = null; bol.ruido = null; }
 }
@@ -164,12 +209,26 @@ function bolicheTono(t, freq, onda, vol, dur){
 
 // Pulso para las luces: cuántos tiempos pasaron (decimal). Funciona aunque no haya sonido.
 function bolicheTiempos(){
+  if(bol.pista && !bol.pista.paused && MUSICA_PISTAS[bol.pistaId]) return bol.pista.currentTime * MUSICA_PISTAS[bol.pistaId].bpm / 60;
   const bpm = bolicheEstilo().bpm;
   if(bol.ctx && bol.timer) return (bol.ctx.currentTime - bol.t0) * bpm / 60;
   return (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000 * bpm / 60;
 }
 
 // ---- Paneles: DJ y barra ----
+
+// Créditos de los temas (la licencia pide citar al autor).
+function musicaCreditosHTML(){
+  return '<h3 class="fer-titulo">🎵 Créditos de la música</h3><p class="fer-sub">Temas de Kevin MacLeod (incompetech.com), licencia Creative Commons Atribución 4.0 (creativecommons.org/licenses/by/4.0). Si no hay conexión suena música generada por la app.</p><div class="bol-creditos">' +
+    Object.keys(MUSICA_PISTAS).map(k => '<div>“' + bolEsc(MUSICA_PISTAS[k].titulo) + '”</div>').join('') + '</div>';
+}
+function musicaCreditos(){
+  const act = document.querySelector('.view.active');
+  const cont = document.getElementById(act && act.id === 'view-estacion' ? 'estacion-micro' : 'plaza-boliche');
+  if(!cont) return;
+  cont.innerHTML = '<div class="plz-modal bol-modal"><div class="plz-modal-caja bol-caja">' + musicaCreditosHTML() + '<div class="fer-botones"><button class="gbtn gbtn-ancho gbtn-no" onclick="musicaCerrarCreditos()">Cerrar</button></div></div></div>';
+}
+function musicaCerrarCreditos(){ ['estacion-micro', 'plaza-boliche'].forEach(id => { const c = document.getElementById(id); if(c) c.innerHTML = ''; }); }
 
 function bolicheAbrirDj(){ bol.panel = 'dj'; bolicheRender(); }
 function bolicheAbrirBarra(){ bol.panel = 'barra'; bolicheRender(); }
@@ -254,7 +313,7 @@ function bolicheRender(){
       <p class="fer-texto">Suena: <b>${est.emoji} ${bolEsc(est.nombre)}</b>${bol.quien ? ' · puesta por ' + bolEsc(bol.quien) : ''}</p>
       <div class="fer-items">${Object.keys(BOLICHE_ESTILOS).map(id => `<button class="fer-item fer-item-txt${bol.estilo === id ? ' bol-actual' : ''}" onclick="bolicheElegirEstilo('${id}')"><span>${BOLICHE_ESTILOS[id].emoji}</span>${bolEsc(BOLICHE_ESTILOS[id].nombre)}</button>`).join('')}</div>
       <button class="fer-item fer-item-cumple" onclick="bolicheAlternarMusica()"><span>${bol.on ? '🔊' : '🔇'}</span>${bol.on ? 'Música activada (tocá para silenciar en este celular)' : 'Música silenciada (tocá para activar)'}</button>
-      <p class="fer-sub">El estilo cambia para toda la sala. Si el sonido de la app está apagado, tampoco suena acá.</p>`;
+      <p class="fer-sub">El estilo cambia para toda la sala. Si el sonido de la app está apagado, tampoco suena acá. <a class="bol-link" onclick="musicaCreditos()">Créditos de la música</a></p>`;
   } else {
     const mias = bolicheMisBebidas();
     cuerpo = `<h3 class="fer-titulo">🍹 Barra</h3><p class="fer-texto">¿Qué te sirvo? <small>(todo de mentirita, sin alcohol)</small></p>

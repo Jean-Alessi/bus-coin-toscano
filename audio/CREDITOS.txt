@@ -1,0 +1,14 @@
+Música de fondo (carpeta audio/)
+
+Temas de Kevin MacLeod (incompetech.com), licenciados bajo Creative Commons: Atribución 4.0 (https://creativecommons.org/licenses/by/4.0/).
+Comprimidos a 64 kbps y recortados a ~3:20 con fundido final.
+
+audio/cumbia.mp3 — "No Frills Cumbia"
+audio/pop.mp3 — "Sunflower Dance Party"
+audio/electro.mp3 — "Brain Dance"
+audio/lento.mp3 — "Smooth Lovin"
+audio/estacion.mp3 — "Almost New"
+audio/shopping.mp3 — "Casa Bossa Nova"
+audio/arcade.mp3 — "Bit Quest"
+audio/mesas.mp3 — "Night in Venice"
+audio/eventos.mp3 — "Apero Hour"
