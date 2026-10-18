@@ -44,8 +44,10 @@ const MUSICA_PISTAS = {
   mesas: { archivo: 'audio/mesas.mp3', bpm: 114, titulo: 'Night in Venice' },
   eventos: { archivo: 'audio/eventos.mp3', bpm: 140, titulo: 'Apero Hour' },
 };
-const MUSICA_PISTA_DE = { seleccion: 'eventos', estacion: 'estacion', plaza: 'estacion', shopping: 'shopping', arcade: 'arcade', mesas: 'mesas', eventos: 'eventos' };
-MUSICA_AMBIENTE.seleccion = MUSICA_AMBIENTE.eventos;
+const MUSICA_PISTA_DE = { estacion: 'estacion', plaza: 'estacion', shopping: 'shopping', arcade: 'arcade', mesas: 'mesas', eventos: 'eventos' };
+// Tribuna: bombo y redoblante, una fanfarria de trompeta y murmullo de multitud (todo generado, original).
+MUSICA_AMBIENTE.seleccion = { nombre: 'Tribuna', emoji: '⚽', bpm: 116, multitud: true, kick: [0, 3, 6, 8, 11, 14], snare: [2, 4, 10, 12, 15], hat: [],
+  bajo: [], lead: [392, 0, 0, 392, 0, 0, 523, 0, 0, 0, 0, 0, 392, 0, 440, 0] };
 const BOLICHE_BEBIDAS = ['Jugo de naranja', 'Limonada', 'Gaseosa', 'Agua con gas', 'Café', 'Licuado de frutilla'];
 const BOLICHE_ESPERA_DJ_MS = 15000;
 const BOLICHE_MAX_BEBIDAS = 3;       // cuántas bebidas se pueden tener en la mano
@@ -122,7 +124,7 @@ function bolicheContexto(){
     bol.master = bol.ctx.createGain(); bol.master.gain.value = bol.vol; bol.master.connect(bol.ctx.destination);
     const n = bol.ctx.sampleRate * 0.5, b = bol.ctx.createBuffer(1, n, bol.ctx.sampleRate), d = b.getChannelData(0);
     for(let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    bol.ruido = b;
+    bol.ruido = b; bol.multitud = null;
   } catch(e){ bol.ctx = null; }
   return bol.ctx;
 }
@@ -151,6 +153,7 @@ function bolichePistaParar(){
   if(bol.pista){ try { bol.pista.pause(); bol.pista.removeAttribute('src'); bol.pista.load(); } catch(e){} }
   bol.pista = null; bol.pistaId = '';
 }
+function bolicheMultitudParar(){ if(bol.multitud){ try { bol.multitud.stop(); } catch(e){} bol.multitud = null; } }
 
 function bolicheMusicaIniciar(){
   if(bol.timer || bol.pista) return;
@@ -161,12 +164,25 @@ function bolicheMusicaIniciar(){
   const c = bolicheContexto();
   if(!c) return;
   try { if(c.state === 'suspended') c.resume(); } catch(e){}
+  bolicheMultitud(c);
   bol.paso = 0; bol.t0 = bol.proximo = c.currentTime + 0.08;
   bol.timer = setInterval(bolicheTick, 25);
 }
 
+// Murmullo de multitud: ruido filtrado que sube y baja suave (solo en estilos con 'multitud').
+function bolicheMultitud(c){
+  const est = bolicheEstilo();
+  if(!est.multitud || !bol.ruido || !c.createBufferSource) return;
+  try {
+    const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = bol.ruido; s.loop = true; f.type = 'bandpass'; f.frequency.value = 700; g.gain.value = 0.07;
+    s.connect(f); f.connect(g); g.connect(bol.master); s.start();
+    bol.multitud = s;
+  } catch(e){}
+}
+
 function bolicheMusicaParar(){
-  bolichePistaParar();
+  bolichePistaParar(); bolicheMultitudParar();
   if(bol.timer){ clearInterval(bol.timer); bol.timer = null; }
   if(bol.ctx){ try { bol.ctx.close(); } catch(e){} bol.ctx = null; bol.master = null; bol.ruido = null; }
 }
@@ -221,7 +237,7 @@ function bolicheTiempos(){
 // Créditos de los temas (la licencia pide citar al autor).
 function musicaCreditosHTML(){
   return '<h3 class="fer-titulo">🎵 Créditos de la música</h3><p class="fer-sub">Temas de Kevin MacLeod (incompetech.com), licencia Creative Commons Atribución 4.0 (creativecommons.org/licenses/by/4.0). Si no hay conexión suena música generada por la app.</p><div class="bol-creditos">' +
-    Object.keys(MUSICA_PISTAS).map(k => '<div>“' + bolEsc(MUSICA_PISTAS[k].titulo) + '”</div>').join('') + '</div>';
+    Object.keys(MUSICA_PISTAS).map(k => '<div>“' + bolEsc(MUSICA_PISTAS[k].titulo) + '”</div>').join('') + '<div>Himno Nacional Argentino, versión instrumental de la Banda Sinfónica de la Fuerza Aérea Argentina. Fuente: Casa Rosada, Presidencia de la Nación (Creative Commons Reconocimiento 2.5 Argentina).</div></div>';
 }
 function musicaCreditos(){
   const act = document.querySelector('.view.active');

@@ -142,6 +142,7 @@ const PLZ_SECTORES = {
     armar(){
       const atracciones = [
         { id: 'copa', nombre: 'La copa', emoji: '🏆', verbo: 'Levantar la copa', sub: '¡Dale campeón!', pose: 5, alIniciar: 'seleccionLevantarCopa', zona: { x: 240, y: 338, w: 160, h: 62 }, slots: [{ x: 290, y: 360 }, { x: 320, y: 356 }, { x: 350, y: 360 }] },
+        { id: 'himno', nombre: 'Himno Nacional', emoji: '🎶', verbo: 'Escuchar el Himno', sub: 'Versión instrumental oficial, completa', fn: 'seleccionAbrirHimno', zona: { x: 410, y: 338, w: 110, h: 62 } },
         { id: 'vestuario', nombre: 'Vestuario', emoji: '🎽', verbo: 'Cambiarte la camiseta', sub: 'Camisetas albicelestes para tu personaje', fn: 'seleccionAbrirVestuario', zona: { x: 112, y: 110, w: 70, h: 130 } },
         { id: 'idolos', nombre: 'Mural de ídolos', emoji: '⭐', verbo: 'Elegir mi ídolo', sub: 'Qatar 2022 y Mundial 2026', fn: 'seleccionAbrirIdolos', zona: { x: 446, y: 110, w: 76, h: 130 } },
         { id: 'fotoSel', nombre: 'Foto', emoji: '📸', verbo: 'Sacarte la foto con el plantel', sub: 'Con tu personaje, el plantel y la copa', fn: 'seleccionFoto', zona: { x: 30, y: 476, w: 170, h: 60 } },

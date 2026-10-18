@@ -12,3 +12,5 @@ audio/shopping.mp3 — "Casa Bossa Nova"
 audio/arcade.mp3 — "Bit Quest"
 audio/mesas.mp3 — "Night in Venice"
 audio/eventos.mp3 — "Apero Hour"
+
+audio/himno.mp3 — Himno Nacional Argentino, versión instrumental de la Banda Sinfónica de la Fuerza Aérea Argentina. Fuente: Casa Rosada, Presidencia de la Nación. Licencia Creative Commons Reconocimiento 2.5 Argentina (https://creativecommons.org/licenses/by/2.5/ar/), publicada en https://www.educ.ar/recursos/158289/himno-nacional-argentino-audios . Sin cambios salvo compresión a 64 kbps.

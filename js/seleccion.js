@@ -27,7 +27,12 @@ const SEL_PLANTELES = {
 const SEL_CAMISETAS = [['albiceleste', 'Albiceleste'], ['campeon', 'Con 3 estrellas'], ['suplente', 'Suplente violeta'], ['arquero', 'De arquero']];
 const SEL_COPA_MS = 6000;
 
-const sel = { fav: null, idolos: {}, ref: null, oyente: null, panel: null, tab: '2026', copaHasta: 0 };
+const SEL_HIMNO_LETRA = [
+  'Oíd, mortales, el grito sagrado:', '¡Libertad, Libertad, Libertad!', 'Oíd el ruido de rotas cadenas,', 'ved en trono a la noble Igualdad.',
+  'Ya su trono dignísimo abrieron', 'las Provincias Unidas del Sud,', 'y los libres del mundo responden:', '«Al gran pueblo argentino, salud».',
+  'Sean eternos los laureles', 'que supimos conseguir:', 'coronados de gloria vivamos…', '¡o juremos con gloria morir!',
+];
+const sel = { himno: null, fav: null, idolos: {}, ref: null, oyente: null, panel: null, tab: '2026', copaHasta: 0 };
 
 const selEsc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const selEnLinea = () => !!(typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre);
@@ -54,6 +59,7 @@ function seleccionIniciar(){
   sel.oyente = sel.ref.on('value', s => { sel.idolos = s.val() || {}; seleccionRender(); });
 }
 function seleccionAlSalir(){
+  seleccionHimnoParar(true);
   if(sel.ref && sel.oyente){ try { sel.ref.off('value', sel.oyente); } catch(e){} }
   sel.ref = null; sel.oyente = null; sel.panel = null;
   const c = document.getElementById('plaza-seleccion'); if(c) c.innerHTML = '';
@@ -69,8 +75,31 @@ function seleccionSalir(){
 // ---- Ídolos ----
 
 function seleccionAbrirIdolos(){ sel.panel = 'idolos'; seleccionRender(); }
+// Himno Nacional (versión instrumental oficial de Casa Rosada, CC BY 2.5 AR). Se escucha entero, sin repetirse,
+// y la música de fondo se pausa. Es voluntario: cada uno lo inicia en su celular.
+function seleccionAbrirHimno(){ sel.panel = 'himno'; seleccionRender(); }
+function seleccionHimnoIniciar(){
+  seleccionHimnoParar(true);
+  if(typeof bolicheMusicaParar === 'function') bolicheMusicaParar();
+  try {
+    const a = new Audio('audio/himno.mp3'); a.volume = 0.8;
+    a.onended = () => { sel.himno = null; seleccionHimnoFin(); };
+    a.onerror = () => { sel.himno = null; if(typeof mostrarToast === 'function') mostrarToast('No se pudo cargar el himno (¿sin conexión?)'); seleccionHimnoFin(); };
+    sel.himno = a; const r = a.play(); if(r && r.catch) r.catch(() => {});
+  } catch(e){}
+  seleccionRender();
+}
+function seleccionHimnoParar(silencioso){
+  if(sel.himno){ try { sel.himno.pause(); sel.himno.removeAttribute('src'); sel.himno.load(); } catch(e){} sel.himno = null; }
+  if(!silencioso) seleccionHimnoFin();
+}
+function seleccionHimnoFin(){
+  if(typeof musicaSector === 'function' && PLZ_SECTOR && PLZ_SECTOR.id === 'seleccion') musicaSector('seleccion'); // vuelve la música de fondo
+  seleccionRender();
+}
+
 function seleccionAbrirVestuario(){ sel.panel = 'vestuario'; seleccionRender(); }
-function seleccionCerrar(){ sel.panel = null; seleccionRender(); }
+function seleccionCerrar(){ if(sel.panel === 'himno') seleccionHimnoParar(false); sel.panel = null; seleccionRender(); }
 function seleccionTab(e){ sel.tab = e; seleccionRender(); }
 
 function seleccionElegirIdolo(e, nombre){
@@ -137,6 +166,12 @@ function seleccionRender(){
       ${rank.length ? `<div class="sel-rank"><b>Los más elegidos del viaje:</b> ${rank.map(r => selEsc(r.alias) + ' (' + r.n + ')').join(' · ')}</div>` : ''}
       ${sel.fav ? '<button class="sel-quitar" onclick="seleccionQuitarIdolo()">Quitar mi ídolo</button>' : ''}
       <p class="sel-aviso">Espacio de fans: no es oficial ni está afiliado a la AFA ni a la FIFA.</p>`;
+  } else if(sel.panel === 'himno'){
+    cuerpo = `<h3 class="fer-titulo">🎶 Himno Nacional Argentino</h3>
+      <p class="fer-sub">${sel.himno ? 'Sonando ahora. Escuchalo de pie, con respeto.' : 'Versión instrumental oficial de la Banda Sinfónica de la Fuerza Aérea Argentina. Es para escucharlo de pie y completo.'}</p>
+      <div class="sel-letra">${SEL_HIMNO_LETRA.map(l => '<div>' + selEsc(l) + '</div>').join('')}</div>
+      ${sel.himno ? '<button class="gbtn gbtn-ancho" onclick="seleccionHimnoParar(false)">⏹ Detener</button>' : '<button class="gbtn gbtn-ancho" onclick="seleccionHimnoIniciar()">▶ Escuchar el himno</button>'}
+      <p class="sel-aviso">Audio de Casa Rosada, Presidencia de la Nación (Creative Commons Reconocimiento 2.5 Argentina).</p>`;
   } else {
     let actual = '';
     try { avCargar(); actual = avEstado.puesto.remera; } catch(e){}
