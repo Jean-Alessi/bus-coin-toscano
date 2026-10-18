@@ -31,6 +31,17 @@ function comerciosRefCatalogo(agenciaId, destino){
 // Rubros que se sugieren al cargar un comercio. El campo es libre: con "Otros" se escribe el rubro que se quiera.
 const COMERCIOS_RUBROS_SUGERIDOS = ['Alfajores', 'Artesanía', 'Gastronomía', 'Heladería', 'Indumentaria', 'Receptivo', 'Peñas', 'Otros'];
 
+// Los comercios cargados con los rubros de antes se muestran con los nuevos (no se toca la base: se guarda el
+// nombre nuevo la próxima vez que se edite el comercio). "Tienda" no tiene equivalente claro y queda como estaba.
+const COMERCIOS_RUBROS_VIEJOS = { 'comida': 'Gastronomía', 'bebidas': 'Gastronomía', 'artesanías': 'Artesanía', 'artesanias': 'Artesanía', 'heladeria': 'Heladería', 'otro': 'Otros' };
+function comerciosRubroNormal(rubro){
+  const t = String(rubro || '').trim();
+  if(!t) return 'Otros';
+  const k = t.toLowerCase();
+  return COMERCIOS_RUBROS_VIEJOS[k] || COMERCIOS_RUBROS_SUGERIDOS.find(x => x.toLowerCase() === k) || t;
+}
+const comerciosOrdenRubro = r => { const i = COMERCIOS_RUBROS_SUGERIDOS.indexOf(r); return i < 0 ? 99 : i; };
+
 // Al elegir "Otros" de la lista, el campo se vacía para escribir el rubro propio (si se tipea a mano, no se toca).
 function comerciosRubroElegido(ev, el){
   if(el.value === 'Otros' && (!ev || !ev.inputType || ev.inputType === 'insertReplacementText')){
@@ -214,7 +225,7 @@ function renderComercios(){
 
   const porRubro = {};
   resto.forEach(c => {
-    const rubro = c.rubro || 'Otros';
+    const rubro = comerciosRubroNormal(c.rubro);
     if(!porRubro[rubro]) porRubro[rubro] = [];
     porRubro[rubro].push(c);
   });
@@ -223,7 +234,7 @@ function renderComercios(){
     <div class="section-label">⭐ Parada de este viaje</div>
     ${comerciosFilaHTML(oficial.id, oficial)}` : '';
 
-  const restoHTML = Object.keys(porRubro).map(rubro => `
+  const restoHTML = Object.keys(porRubro).sort((a, b) => comerciosOrdenRubro(a) - comerciosOrdenRubro(b) || a.localeCompare(b)).map(rubro => `
     <div class="section-label">${rubro}</div>
     ${porRubro[rubro].map(c => comerciosFilaHTML(c.id, c)).join('')}`).join('');
 
@@ -398,7 +409,7 @@ function renderAdminComercios(){
   const listaHTML = entradas.map(c => `
     <div class="comercio-admin-card">
       <input type="text" id="ca-nombre-${c.id}" class="bingo-input-numero" style="width:100%;" placeholder="Nombre del comercio" value="${(c.nombre || '').replace(/"/g, '&quot;')}">
-      <input type="text" id="ca-rubro-${c.id}" class="bingo-input-numero" style="width:100%;" list="comercios-rubros-sugeridos" oninput="comerciosRubroElegido(event, this)" placeholder="Rubro" value="${(c.rubro || '').replace(/"/g, '&quot;')}">
+      <input type="text" id="ca-rubro-${c.id}" class="bingo-input-numero" style="width:100%;" list="comercios-rubros-sugeridos" oninput="comerciosRubroElegido(event, this)" placeholder="Rubro" value="${(c.rubro ? comerciosRubroNormal(c.rubro) : '').replace(/"/g, '&quot;')}">
       <input type="text" id="ca-descuento-${c.id}" class="bingo-input-numero" style="width:100%;" placeholder="Ej: 20% de descuento" value="${(c.descuento || '').replace(/"/g, '&quot;')}">
       <input type="number" id="ca-precio-${c.id}" class="bingo-input-numero" style="width:100%;" placeholder="Precio por canje ($)" value="${c.precioPorCanje || ''}">
       <label class="comercio-admin-checkbox"><input type="checkbox" id="ca-oficial-${c.id}" ${c.oficial ? 'checked' : ''}> Es la parada oficial de este destino</label>
