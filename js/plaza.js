@@ -245,6 +245,7 @@ function plazaCaminarA(id){
 // Sonidito de bienvenida distinto en cada parada.
 const PLZ_MELODIAS = { shopping: [660, 784, 988], arcade: [440, 660, 880, 660], mesas: [330, 392, 330], eventos: [523, 659, 784, 1046], plaza: [523, 659, 784] };
 function plazaSonidoSector(id){
+  if(id === 'seleccion' && typeof seleccionHimnoAuto === 'function' && seleccionHimnoAuto()) return; // en la Casa suena primero el Himno
   if(id !== 'boliche' && typeof musicaSector === 'function') musicaSector(id); // música de fondo del lugar
   else if(typeof reproducirMelodia === 'function' && PLZ_MELODIAS[id]) reproducirMelodia(PLZ_MELODIAS[id], 110, 'triangle');
 }

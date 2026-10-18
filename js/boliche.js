@@ -110,7 +110,7 @@ function musicaSector(id){
 function musicaAlternar(){
   bol.on = !bol.on;
   try { localStorage.setItem('busmac-musica', bol.on ? 'si' : 'no'); } catch(e){}
-  if(bol.on) bolicheMusicaIniciar(); else bolicheMusicaParar();
+  if(bol.on) bolicheMusicaIniciar(); else { bolicheMusicaParar(); if(typeof seleccionHimnoParar === 'function') seleccionHimnoParar(true); }
   musicaActualizarBotones();
   if(typeof bolicheRender === 'function') bolicheRender();
 }

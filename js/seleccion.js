@@ -85,9 +85,20 @@ function seleccionHimnoIniciar(){
     const a = new Audio('audio/himno.mp3'); a.volume = 0.8;
     a.onended = () => { sel.himno = null; seleccionHimnoFin(); };
     a.onerror = () => { sel.himno = null; if(typeof mostrarToast === 'function') mostrarToast('No se pudo cargar el himno (¿sin conexión?)'); seleccionHimnoFin(); };
-    sel.himno = a; const r = a.play(); if(r && r.catch) r.catch(() => {});
-  } catch(e){}
+    sel.himno = a; const r = a.play();
+    if(r && r.catch) r.catch(() => { if(sel.himno === a){ sel.himno = null; seleccionHimnoFin(); } }); // el navegador no lo dejó sonar: sigue la música de fondo
+  } catch(e){ sel.himno = null; }
   seleccionRender();
+}
+
+// Al entrar a la Casa suena el Himno Nacional (una vez, completo); después sigue la tribuna.
+// Respeta el botón 🎵 y el sonido general de la app. Devuelve true si quedó sonando.
+function seleccionHimnoAuto(){
+  if(typeof bol !== 'undefined' && !bol.on) return false;
+  if(typeof sonidoActivado !== 'undefined' && !sonidoActivado) return false;
+  seleccionHimnoIniciar();
+  if(sel.himno && typeof mostrarToast === 'function') mostrarToast('🎶 Suena el Himno Nacional: escuchalo de pie');
+  return !!sel.himno;
 }
 function seleccionHimnoParar(silencioso){
   if(sel.himno){ try { sel.himno.pause(); sel.himno.removeAttribute('src'); sel.himno.load(); } catch(e){} sel.himno = null; }
