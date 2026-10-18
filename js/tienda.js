@@ -81,6 +81,19 @@ function habilitarEleccionPremios(){
   });
 }
 
+// Para cuando se habilitó la elección por error o se quiere dejar para más tarde: la apaga y borra el orden y
+// las elecciones hechas hasta ahora. La lista de premios queda cargada y el viaje sigue abierto, así que
+// se puede volver a habilitar cuando se quiera (el orden se arma de nuevo con el ranking de ese momento).
+function premiosCancelarEleccion(){
+  if(!bingoEsOrganizador()) return;
+  const hechas = premiosCantidadElegida();
+  const aviso = hechas
+    ? '¿Cancelar la elección de premios? Ya eligieron ' + hechas + ' persona' + (hechas === 1 ? '' : 's') + ': esas elecciones se borran. La lista de premios queda cargada y la podés habilitar más tarde.'
+    : '¿Cancelar la elección de premios? La lista de premios queda cargada y la podés habilitar más tarde.';
+  if(!confirm(aviso)) return;
+  premiosRef().update({ habilitado: false, orden: null, elecciones: null }).then(() => mostrarToast('Elección cancelada: podés habilitarla más tarde'));
+}
+
 function elegirPremio(indexPremio){
   const turnoIndex = premiosCantidadElegida();
   const orden = premiosState.orden || [];
@@ -218,5 +231,5 @@ function renderPremiosViaje(){
     ${miTurnoHTML}
     ${premiosGridHTML(elegidosPorIndice)}
     ${terminado ? '<p class="tienda-nota">🎊 Ya eligieron todos. ¡Felicitaciones a los ganadores!</p>' : ''}
-    ${esOrganizador && !terminado ? '<p class="link-chico" onclick="premiosFinalizarIgual()">Finalizar el viaje igual, aunque falten elegir premios</p>' : ''}`);
+    ${esOrganizador && !terminado ? '<div class="g-acciones" style="grid-template-columns:1fr;margin-top:10px;"><button class="gbtn gbtn-no gbtn-ancho" style="font-size:14px;" onclick="premiosCancelarEleccion()">↩️ Cancelar la elección (la dejo para más tarde)</button></div><p class="link-chico" onclick="premiosFinalizarIgual()">Finalizar el viaje igual, aunque falten elegir premios</p>' : ''}`);
 }
