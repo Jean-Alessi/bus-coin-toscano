@@ -134,7 +134,7 @@ const PLZ_SECTORES = {
   },
   plaza: {
     id: 'plaza', nombre: 'Plaza Busmac', corto: 'Plaza', emoji: '🏘️', color: '#2A9D8F',
-    desc: 'Parque, farmacia, coordinador, lugar de citas, buzón, radio y fotos',
+    desc: 'Parque, farmacia, coordinador, citas, buzón, radio y la confitería bailable',
     H: 740, fuera: '#7FC77A', suelo: '#E7DCC5', baldosa: 'rgba(160,130,90,.10)', borde: null, parque: true,
     fuente: { x: 320, y: 340, r: 44 },
     parada: { x: 320, y: 528 }, spawn: { x: 320, y: 448 }, libre: { x0: 50, x1: 590, y0: 190, y1: 500 }, decor: 'plaza',

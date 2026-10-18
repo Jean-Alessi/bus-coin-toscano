@@ -122,3 +122,17 @@ function mundoIrA(id){
   plz.sector = id; plz.posGuardada = null;
   showView('plaza');
 }
+
+// Atajo a la confitería bailable: te deja frente a la puerta de neón de la Plaza.
+function mundoIrAlBoliche(){
+  if(!mundo.bolicheOn){ if(typeof mostrarToast === 'function') mostrarToast('La confitería bailable está cerrada en este viaje'); return; }
+  if(typeof micCerrarSiempre === 'function') micCerrarSiempre();
+  const e = PLZ_SECTORES.plaza.armar().edificios.find(x => x.id === 'boliche');
+  const z = e ? plazaZonaPuerta(e) : { x: 530, y: 680, w: 72, h: 40 };
+  const pos = { x: z.x + z.w / 2, y: z.y + z.h / 2 + 6 };
+  const activa = document.querySelector('.view.active');
+  if(activa && activa.id === 'view-plaza' && typeof plazaCambiarSector === 'function'){ plazaCambiarSector('plaza', pos); return; }
+  plz.sector = 'plaza';
+  plz.posGuardada = { x: pos.x, y: pos.y, t: Date.now(), viaje: (typeof codigoViaje !== 'undefined' ? codigoViaje : ''), sector: 'plaza' };
+  showView('plaza');
+}
