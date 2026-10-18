@@ -1217,3 +1217,7 @@ button.tcarta{cursor:default;}
 .bol-copa{border:none; background:#3a2a66; color:#fff; border-radius:14px; padding:5px 10px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;} .bol-copa span{font-size:16px; margin-right:4px;}
 
 .est-boliche{background:linear-gradient(90deg,#1b1038,#3b1a6b); color:#fff; border-left-color:#FF4DDB;} .est-boliche .est-info small{color:#d9c7ff;}
+
+/* ---- Aviso de versión nueva ---- */
+.nueva-version{position:absolute; left:12px; right:12px; top:64px; z-index:90; display:flex; align-items:center; justify-content:space-between; gap:8px; background:#0F2A4D; color:#fff; border-radius:14px; padding:9px 12px; font-size:13px; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,.35);}
+.nueva-version button{border:none; background:#FFD84D; color:#0F2A4D; border-radius:12px; padding:6px 12px; font-weight:800; font-size:12.5px; font-family:inherit; cursor:pointer;}

@@ -78,3 +78,36 @@ function pwaInstalarHTML(){
     </div>
     <p class="link-chico" onclick="pwaOcultarAviso()">Ahora no</p>`;
 }
+
+
+// ---- Aviso de versión nueva ----
+// Si la app quedó abierta (o instalada) con una versión vieja, avisa y deja actualizar con un
+// toque. Compara los scripts y estilos con "?v=N" de esta página con los del index.html del
+// servidor (que se pide sin usar la copia guardada). Revisa al abrir, al volver a la app y cada 3 minutos.
+(function(){
+  const huella = nodos => Array.from(nodos).map(n => n.getAttribute('src') || n.getAttribute('href') || '').filter(x => /\?v=\d+/.test(x)).sort().join('|');
+  const mia = huella(document.querySelectorAll('script[src], link[rel="stylesheet"]'));
+  let avisado = false;
+  async function revisar(){
+    if(avisado || !navigator.onLine) return;
+    try {
+      const r = await fetch(location.pathname.replace(/[^/]*$/, '') + 'index.html?_=' + Date.now(), { cache: 'no-store' });
+      if(!r.ok) return;
+      const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+      const server = huella(doc.querySelectorAll('script[src], link[rel="stylesheet"]'));
+      if(server && server !== mia) mostrar();
+    } catch(e){}
+  }
+  function mostrar(){
+    avisado = true;
+    const b = document.createElement('div');
+    b.className = 'nueva-version';
+    b.innerHTML = '🔄 Hay una versión nueva <button type="button">Actualizar</button>';
+    b.querySelector('button').onclick = () => location.reload();
+    (document.querySelector('.screen') || document.body).appendChild(b);
+  }
+  window.addEventListener('load', () => setTimeout(revisar, 2500));
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') revisar(); });
+  setInterval(revisar, 180000);
+  window.pwaRevisarVersion = revisar;
+})();

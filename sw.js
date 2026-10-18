@@ -4,4 +4,6 @@
 // cartel nativo de "Instalar app".
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
-self.addEventListener('fetch', event => event.respondWith(fetch(event.request)));
+// Las páginas (navegación) se piden siempre al servidor, sin la copia que guarda el navegador:
+// así al reabrir la app llega el index.html más nuevo.
+self.addEventListener('fetch', event => event.respondWith(event.request.mode === 'navigate' ? fetch(event.request, { cache: 'no-store' }) : fetch(event.request)));
