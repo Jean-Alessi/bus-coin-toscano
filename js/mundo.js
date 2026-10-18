@@ -62,12 +62,6 @@ function mundoAlCambiar(modoAntes){
   const activa = document.querySelector('.view.active');
   const id = activa ? activa.id.replace('view-', '') : '';
   if(!mundoActivo() && (id === 'plaza' || id === 'estacion')) showView('home');
-  else if(mundoActivo() && mundo.primera && id === 'home'){
-    // Al entrar a un viaje con mundo, la app arranca en la Estación (una vez por sesión).
-    let ya = false;
-    try { ya = sessionStorage.getItem('mundo-abierto-' + codigoViaje) === '1'; sessionStorage.setItem('mundo-abierto-' + codigoViaje, '1'); } catch(e){}
-    if(!ya) showView('estacion');
-  }
   mundo.primera = false;
   if(modoAntes !== mundo.modo && typeof renderHome === 'function' && id === 'home') renderHome();
   if(typeof estacionRender === 'function') estacionRender();
