@@ -239,6 +239,8 @@ function musicaCreditosHTML(){
   return '<h3 class="fer-titulo">🎵 Créditos de la música</h3><p class="fer-sub">Temas de Kevin MacLeod (incompetech.com), licencia Creative Commons Atribución 4.0 (creativecommons.org/licenses/by/4.0). Si no hay conexión suena música generada por la app.</p><div class="bol-creditos">' +
     Object.keys(MUSICA_PISTAS).map(k => '<div>“' + bolEsc(MUSICA_PISTAS[k].titulo) + '”</div>').join('') + '<div>Himno Nacional Argentino, versión instrumental de la Banda Sinfónica de la Fuerza Aérea Argentina. Fuente: Casa Rosada, Presidencia de la Nación (Creative Commons Reconocimiento 2.5 Argentina).</div></div>';
 }
+// Versión de la app (para saber qué estás usando)
+function musicaVersionHTML(){ return typeof APP_VERSION === 'number' ? ' · versión ' + APP_VERSION : ''; }
 function musicaCreditos(){
   const act = document.querySelector('.view.active');
   const cont = document.getElementById(act && act.id === 'view-estacion' ? 'estacion-micro' : 'plaza-boliche');

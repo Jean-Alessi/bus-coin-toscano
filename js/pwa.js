@@ -81,16 +81,20 @@ function pwaInstalarHTML(){
 
 
 // ---- Versión nueva (sin carteles) ----
-// Si la app quedó abierta o guardada con una versión vieja, se actualiza sola: al abrirla (una sola vez
-// por sesión, para no entrar en bucle) y al volver a ella después de un buen rato. Compara los scripts y
-// estilos con "?v=N" de esta página con los del index.html del servidor (pedido sin usar la copia guardada).
+// Si la app quedó abierta o guardada con una versión vieja, se actualiza sola: al abrirla, cada minuto y medio
+// y al volver a ella. Para no cortar nada importante, solo recarga cuando estás en una pantalla de
+// navegación (Inicio, Estación, mapas, Ranking, etc.), no adentro de un juego, y como mucho una vez cada
+// 10 minutos (así nunca entra en bucle). Compara los scripts y estilos con "?v=N" de esta página con los del
+// index.html del servidor (pedido sin usar la copia guardada). window.APP_VERSION es un número que cambia
+// con cada versión (se ve al pie de la Estación).
 (function(){
   const huella = nodos => Array.from(nodos).map(n => n.getAttribute('src') || n.getAttribute('href') || '').filter(x => /\?v=\d+/.test(x)).sort().join('|');
   const mia = huella(document.querySelectorAll('script[src], link[rel="stylesheet"]'));
+  window.APP_VERSION = (mia.match(/\?v=\d+/g) || []).reduce((s, x) => s + parseInt(x.slice(3), 10), 0);
   const ahora = () => Date.now();
   const leer = k => { try { return Number(sessionStorage.getItem(k) || 0); } catch(e){ return 0; } };
   const guardar = k => { try { sessionStorage.setItem(k, String(ahora())); } catch(e){} };
-  let oculta = 0;
+  const SEGURAS = ['home', 'estacion', 'plaza', 'juegos', 'ranking', 'tienda', 'comercios', 'avatar'];
   async function hayNueva(){
     if(!navigator.onLine) return false;
     try {
@@ -101,13 +105,15 @@ function pwaInstalarHTML(){
       return !!server && server !== mia;
     } catch(e){ return false; }
   }
-  async function actualizarSiHaceFalta(){
+  async function revisar(alAbrir){
     if(ahora() - leer('auto-recarga') < 10 * 60 * 1000) return; // como mucho una vez cada 10 minutos
-    if(await hayNueva()){ guardar('auto-recarga'); location.reload(); }
+    if(!(await hayNueva())) return;
+    const v = document.querySelector('.view.active');
+    const id = v ? v.id.replace('view-', '') : '';
+    if(alAbrir === true || SEGURAS.includes(id)){ guardar('auto-recarga'); location.reload(); }
   }
-  window.addEventListener('load', () => setTimeout(actualizarSiHaceFalta, 2500));
-  document.addEventListener('visibilitychange', () => {
-    if(document.visibilityState === 'hidden') oculta = ahora();
-    else if(oculta && ahora() - oculta > 15 * 60 * 1000) actualizarSiHaceFalta();
-  });
+  window.addEventListener('load', () => setTimeout(() => revisar(true), 2500));
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') revisar(); });
+  setInterval(revisar, 90000);
+  window.pwaRevisarVersion = revisar;
 })();
