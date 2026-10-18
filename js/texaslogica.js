@@ -184,7 +184,8 @@ function texasAvanzar(m){
 
   texasSiguienteCalle(m);
   m.apostado = {}; m.apuestaActual = 0; m.ultimaSubida = m.ciega;
-  m.porActuar = texasDespuesDe(m.enMano, m.dealer).filter(a => !m.plegados[a] && (m.fichas[a] || 0) > 0);
+  // En cada calle habla primero el que está después del botón y el botón habla último (texasDespuesDe no incluye al botón, por eso se lo suma al final).
+  m.porActuar = texasDespuesDe(m.enMano, m.dealer).concat([m.dealer]).filter(a => !m.plegados[a] && (m.fichas[a] || 0) > 0);
   if(m.porActuar.length <= 1){
     // Con una sola persona con fichas no hay apuesta posible: se juegan todas las calles.
     while(m.ronda !== 'river') texasSiguienteCalle(m);
