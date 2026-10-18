@@ -243,7 +243,31 @@ function feriaCerrarPanel(){
 
 // ---- Pantallas ----
 
-function feriaEmojiDe(item){ return FERIA_EMOJIS[String(item).toLowerCase()] || '🍬'; }
+// El dibujo se elige por lo que dice el nombre del producto (sin importar mayúsculas, tildes ni cantidades:
+// "Un Alfajor", "5 Caramelos" o "Chupetín" funcionan igual). Si no reconoce nada, un caramelo.
+const FERIA_EMOJI_REGLAS = [
+  [/chupet|chupa ?chups|paleta/, '🍭'],
+  [/alfajor|mantecol|oblea|galleta|cookie|bizcocho|vainilla/, '🍪'],
+  [/chicle|pastilla|menta|caramelo|gomita|dulce|bon ?bon|confite/, '🍬'],
+  [/chocolate|bombon|barrita|cereal|tableta|kinder|rocklet/, '🍫'],
+  [/turron|mani|pochoclo|palomita|nuez|almendra|pasas/, '🥜'],
+  [/helado|palito|cucurucho/, '🍦'],
+  [/torta|budin|brownie|muffin|magdalena|flan|postre/, '🍰'],
+  [/medialuna|factura|croissant|churro|pan\b|tostada/, '🥐'],
+  [/sandwich|tostado|lomito|hamburguesa|pancho/, '🥪'],
+  [/papas|snack|chizito|palito salado/, '🍟'],
+  [/mate|yerba/, '🧉'],
+  [/cafe|capuchino|submarino/, '☕'],
+  [/jugo|licuado|limonada|naranjada/, '🧃'],
+  [/fruta|manzana|banana|naranja|mandarina|uva/, '🍎'],
+  [/agua|soda/, '💧'],
+  [/gaseosa|cola|refresco|bebida/, '🥤'],
+];
+function feriaEmojiDe(item){
+  const t = String(item).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const regla = FERIA_EMOJI_REGLAS.find(([re]) => re.test(t));
+  return regla ? regla[1] : (FERIA_EMOJIS[String(item).toLowerCase()] || '🍬');
+}
 function feriaOpciones(items, funcion, clase){
   return `<div class="fer-items">${items.map((it, i) => `<button class="fer-item ${clase || ''}" onclick="${funcion}(${i})"><span>${clase === 'fer-item-txt' ? '' : feriaEmojiDe(it)}</span>${feriaEsc(it)}</button>`).join('')}</div>`;
 }
