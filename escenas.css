@@ -1246,3 +1246,7 @@ button.tcarta{cursor:default;}
 .flyer-subir{margin:2px 0 8px;} .flyer-subir-btn{display:block; text-align:center; cursor:pointer; margin:4px 0;}
 .flyer-estado{font-size:11.5px; color:var(--gray); margin:2px 0 4px;} .flyer-estado a{text-decoration:underline; cursor:pointer;}
 .flyer-pagina{display:block; width:100%; height:auto; border-radius:10px; margin:0 0 8px;}
+
+/* ---- Salir de Premios/Ranking cuando el viaje terminó ---- */
+.btn-back-salir{display:none;}
+.viaje-cerrado #view-tienda .btn-back-salir, .viaje-cerrado #view-ranking .btn-back-salir{display:flex;}

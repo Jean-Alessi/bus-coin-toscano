@@ -437,6 +437,7 @@ function activarListenerCierreDeViaje(){
     if(!snap.val()) return;
     mostrarToast('Este viaje ya terminó. ¡Gracias por jugar!');
     document.getElementById('tabbar').style.display = 'none';
+    document.body.classList.add('viaje-cerrado'); // Premios y Ranking muestran una flecha ← para poder salir
     const vistaActual = document.querySelector('.view.active');
     const enVistaSegura = vistaActual && (vistaActual.id === 'view-tienda' || vistaActual.id === 'view-ranking');
     codigoViaje = '';
@@ -453,6 +454,7 @@ function goHome(){
   localStorage.setItem('mi-asiento', miAsiento);
   localStorage.setItem('mi-emoji', miEmoji);
   localStorage.setItem('mi-mayor-de-12', miMayorDe12 ? '1' : '0');
+  document.body.classList.remove('viaje-cerrado');
   rankingUnirse();
   activarListenerCierreDeViaje();
   iniciarComerciosDestino();
@@ -636,6 +638,7 @@ function juegosAgregarBotonesVolver(){
 // edificio del mundo, vuelve al mundo.
 function volverAInicioDesdeVista(){
   const activa = document.querySelector('.view.active');
+  if(document.body.classList.contains('viaje-cerrado') && activa && (activa.id === 'view-tienda' || activa.id === 'view-ranking')){ document.body.classList.remove('viaje-cerrado'); showView('codigo-viaje'); return; } // el viaje terminó: vuelve a la entrada
   if(activa && activa.id === 'view-comercios' && typeof comerciosVerCodigoDe !== 'undefined' && comerciosVerCodigoDe && typeof comerciosVolverALista === 'function'){ comerciosVolverALista(); return; }
   if(typeof plazaOrigen !== 'undefined' && plazaOrigen && activa && activa.id === 'view-' + plazaOrigen){ volverALaPlaza(); return; }
   showView('home');
@@ -649,6 +652,18 @@ function agregarFlechasInicio(){
     const envoltorio = document.createElement('div');
     envoltorio.style.cssText = 'display:flex; align-items:center; gap:10px;';
     envoltorio.innerHTML = '<button class="btn-back" aria-label="Volver a Inicio" onclick="volverAInicioDesdeVista()">←</button>';
+    cabecera.insertBefore(envoltorio, titulo);
+    envoltorio.appendChild(titulo);
+  });
+  // Premios y Ranking son pestañas: la flecha solo aparece cuando el viaje terminó (se ocultan las pestañas) para poder salir.
+  ['tienda', 'ranking'].forEach(nombre => {
+    const vista = document.getElementById('view-' + nombre);
+    const cabecera = vista && vista.querySelector('.app-header');
+    if(!cabecera || cabecera.querySelector('.btn-back')) return;
+    const titulo = cabecera.firstElementChild;
+    const envoltorio = document.createElement('div');
+    envoltorio.style.cssText = 'display:flex; align-items:center; gap:10px;';
+    envoltorio.innerHTML = '<button class="btn-back btn-back-salir" aria-label="Salir" onclick="volverAInicioDesdeVista()">←</button>';
     cabecera.insertBefore(envoltorio, titulo);
     envoltorio.appendChild(titulo);
   });
@@ -684,6 +699,7 @@ function showView(name){
   analyticsAlCambiarVista(name);
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
+  if(name === 'codigo-viaje') document.body.classList.remove('viaje-cerrado');
   plazaActualizarBotonVolver(name);
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   const tabName = (name === 'avatar' || name === 'plaza' || name === 'estacion') ? 'home' : (TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : name);
