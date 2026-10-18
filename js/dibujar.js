@@ -69,7 +69,7 @@ function dibujarEsDirector(){
 
 function dibujarAnotarme(){
   if(!miAsiento) return;
-  dibujarRefAnotados().child(String(miAsiento)).set(miNombre);
+  grupoAnotarse(dibujarRefAnotados(), String(miAsiento), miNombre);
 }
 
 function dibujarSalirDelGrupo(){
@@ -266,10 +266,10 @@ function renderDibujar(){
     }
     cont.innerHTML = gEscenaHTML('lienzo', `
       <div class="db-portada">🎨</div>
-      ${gDialogoHTML('Dibujar y Adivinar', `Se juega con el grupo con el que viajás (mínimo ${DIBUJAR_MIN_JUGADORES}). Por turnos, uno dibuja con el dedo una palabra secreta y el resto adivina escribiendo.`)}
+      ${gDialogoHTML('Dibujar y Adivinar', `Se juega con el grupo con el que viajás (de ${DIBUJAR_MIN_JUGADORES} a ${JUEGO_GRUPO_MAX} jugadores). Por turnos, uno dibuja con el dedo una palabra secreta y el resto adivina escribiendo.`)}
       <div class="g-acciones">${anotado
         ? `<button class="gbtn gbtn-no gbtn-ancho" onclick="dibujarSalirDelGrupo()">Salir del grupo</button>`
-        : `<button class="gbtn gbtn-ancho" onclick="dibujarAnotarme()">Anotarme a este grupo</button>`}</div>
+        : grupoBotonAnotarmeHTML('dibujarAnotarme', asientos.length)}</div>
       ${dibujarListaAnotadosHTML()}
       ${controlHTML}
       ${soyDirector ? '' : bingoPinHTML()}`);

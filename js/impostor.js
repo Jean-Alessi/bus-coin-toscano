@@ -12,6 +12,7 @@
 // que juegue él mismo (puede repartir roles sin anotarse a recibir palabra).
 
 const IMPOSTOR_MIN_JUGADORES = 3;
+const IMPOSTOR_MAX_JUGADORES = 12; // = JUEGO_GRUPO_MAX (ver grupos.js)
 // Al menos el doble de inocentes que de impostores, para que el juego
 // siga teniendo sentido (ej. con 6 anotados, como mucho 2 impostores).
 function impostorMaxImpostores(cantidadJugadores){
@@ -84,7 +85,7 @@ function iniciarImpostor(){
 
 function impostorAnotarme(){
   if(!miAsiento) return;
-  impostorRefAnotados().child(String(miAsiento)).set(miNombre);
+  grupoAnotarse(impostorRefAnotados(), String(miAsiento), miNombre, IMPOSTOR_MAX_JUGADORES);
 }
 
 function impostorSalirDelGrupo(){
@@ -207,10 +208,12 @@ function renderImpostor(){
     }
     cont.innerHTML = gEscenaHTML('espia', `
       <div class="im-portada">🕵️</div>
-      ${gDialogoHTML('El Impostor', `Se juega con el grupo con el que viajás (mínimo ${IMPOSTOR_MIN_JUGADORES}), no con todo el micro. Todos reciben la misma palabra menos el o los impostores. Las pistas, la charla y la votación son en voz alta: la app solo reparte el rol en secreto.`)}
+      ${gDialogoHTML('El Impostor', `Se juega con el grupo con el que viajás (de ${IMPOSTOR_MIN_JUGADORES} a ${IMPOSTOR_MAX_JUGADORES} jugadores), no con todo el micro. Todos reciben la misma palabra menos el o los impostores. Las pistas, la charla y la votación son en voz alta: la app solo reparte el rol en secreto.`)}
       <div class="g-acciones">${anotado
         ? `<button class="gbtn gbtn-no gbtn-ancho" onclick="impostorSalirDelGrupo()">Salir del grupo</button>`
-        : `<button class="gbtn gbtn-ancho" onclick="impostorAnotarme()">Anotarme a este grupo</button>`}</div>
+        : (asientos.length >= IMPOSTOR_MAX_JUGADORES
+          ? `<button class="gbtn gbtn-no gbtn-ancho" disabled>Grupo completo (${IMPOSTOR_MAX_JUGADORES}/${IMPOSTOR_MAX_JUGADORES})</button>`
+          : `<button class="gbtn gbtn-ancho" onclick="impostorAnotarme()">Anotarme a este grupo (${asientos.length}/${IMPOSTOR_MAX_JUGADORES})</button>`)}</div>
       ${impostorListaAnotadosHTML()}
       ${selectorCantidadHTML}
       ${controlHTML}

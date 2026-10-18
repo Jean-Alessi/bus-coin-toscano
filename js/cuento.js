@@ -58,7 +58,7 @@ function cuentoEsDirector(){
 
 function cuentoAnotarme(){
   if(!miAsiento) return;
-  cuentoRefAnotados().child(String(miAsiento)).set(miNombre);
+  grupoAnotarse(cuentoRefAnotados(), String(miAsiento), miNombre);
 }
 
 function cuentoSalirDelGrupo(){
@@ -153,10 +153,10 @@ function renderCuento(){
     }
     cont.innerHTML = gEscenaHTML('libro', `
       <div class="cu-portada">📖</div>
-      ${gDialogoHTML('Cadáver Exquisito', `Se juega con el grupo con el que viajás (mínimo ${CUENTO_MIN_JUGADORES}). Cada uno responde una sola pregunta sin ver las demás. Al final se arma toda la historia junta, y suele salir así de rara.`)}
+      ${gDialogoHTML('Cadáver Exquisito', `Se juega con el grupo con el que viajás (de ${CUENTO_MIN_JUGADORES} a ${JUEGO_GRUPO_MAX} jugadores). Cada uno responde una sola pregunta sin ver las demás. Al final se arma toda la historia junta, y suele salir así de rara.`)}
       <div class="g-acciones">${anotado
         ? `<button class="gbtn gbtn-no gbtn-ancho" onclick="cuentoSalirDelGrupo()">Salir del grupo</button>`
-        : `<button class="gbtn gbtn-ancho" onclick="cuentoAnotarme()">Anotarme a este grupo</button>`}</div>
+        : grupoBotonAnotarmeHTML('cuentoAnotarme', asientos.length)}</div>
       ${cuentoListaAnotadosHTML()}
       ${controlHTML}
       ${soyDirector ? '' : bingoPinHTML()}`);
