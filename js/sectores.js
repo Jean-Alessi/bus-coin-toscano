@@ -40,7 +40,9 @@ const PLZ_SECTORES = {
       sorteo.x = PLZ_COL[1]; sorteo.y = 300;
       const tienda = plzItem('tienda', 'Tienda Busmac', '👕', '#FF7A1A', 'Remeras Busmac: se sortean entre los pasajeros', () => feriaTienda());
       tienda.x = PLZ_COL[2]; tienda.y = 300;
-      return { edificios: arriba.concat([sorteo, tienda]), atracciones: [plzParada(this)] };
+      const foto = plzItem('foto', 'Fotomatón', '📸', '#4361EE', 'Foto grupal con marco', () => feriaFotoGrupal());
+      foto.x = PLZ_COL[3]; foto.y = 300;
+      return { edificios: arriba.concat([sorteo, tienda, foto]), atracciones: [plzParada(this)] };
     },
   },
   arcade: {
@@ -113,6 +115,23 @@ const PLZ_SECTORES = {
       return { edificios: fila1.concat(fila2), atracciones: [plzParada(this)] };
     },
   },
+  boliche: {
+    id: 'boliche', nombre: 'Confitería bailable', corto: 'Boliche', emoji: '🕺', color: '#7E57FF', interior: true, sinPasillos: true, maxSala: 12,
+    desc: 'Música, luces, bola de espejos y barra',
+    H: 620, fuera: '#07060f', suelo: '#15102b', baldosa: 'rgba(255,255,255,.025)', borde: '#FF4DDB',
+    parada: null, spawn: { x: 320, y: 506 }, libre: { x0: 60, x1: 580, y0: 240, y1: 470 }, decor: 'boliche',
+    armar(){
+      const atracciones = [
+        { id: 'dj', nombre: 'Cabina del DJ', emoji: '🎧', verbo: 'Cambiar la música', sub: 'Elegí el estilo para toda la sala', fn: 'bolicheAbrirDj', subDin: () => 'Suena: ' + bolicheEstilo().emoji + ' ' + bolicheEstilo().nombre + ' · elegí el estilo', zona: { x: 250, y: 118, w: 140, h: 46 } },
+        { id: 'barra', nombre: 'Barra', emoji: '🍹', verbo: 'Pedir algo en la barra', sub: 'Jugos, limonada y más (sin alcohol)', fn: 'bolicheAbrirBarra', zona: { x: 450, y: 138, w: 160, h: 46 } },
+        { id: 'pista', nombre: 'Pista de baile', emoji: '🕺', verbo: 'Bailar', sub: '¡A mover el cuerpo!', pose: 4, subDin: () => '♪ ' + bolicheEstilo().nombre + ' · tocá un lugar para dejar de bailar', zona: { x: 150, y: 224, w: 336, h: 252 } },
+        { id: 'sillon1', nombre: 'Sillón', emoji: '🛋️', verbo: 'Sentarte', sub: 'Descansá un rato', pose: 3, zona: { x: 12, y: 262, w: 100, h: 54 }, slots: [{ x: 38, y: 250 }, { x: 62, y: 250 }] },
+        { id: 'sillon2', nombre: 'Sillón', emoji: '🛋️', verbo: 'Sentarte', sub: 'Descansá un rato', pose: 3, zona: { x: 526, y: 352, w: 100, h: 54 }, slots: [{ x: 582, y: 340 }, { x: 606, y: 340 }] },
+        { id: 'salir', nombre: 'Salida', emoji: '🚪', verbo: 'Salir a la plaza', sub: 'Volvés a la plaza', fn: 'bolicheSalir', zona: { x: 260, y: 548, w: 120, h: 60 } },
+      ];
+      return { edificios: [], atracciones, bloques: [{ x: 226, y: 20, w: 188, h: 92 }, { x: 436, y: 20, w: 188, h: 116 }] };
+    },
+  },
   plaza: {
     id: 'plaza', nombre: 'Plaza Busmac', corto: 'Plaza', emoji: '🏘️', color: '#2A9D8F',
     desc: 'Parque, farmacia, coordinador, lugar de citas, buzón, radio y fotos',
@@ -130,8 +149,8 @@ const PLZ_SECTORES = {
         plzPuesto('buzon', 'Buzón', '📮', '#E76F51', 'Contanos cómo viajás'),
         plzPuesto('cartelera', 'Cartelera', '📋', '#577590', 'Horarios y actividades'),
         plzItem('citas', 'Lugar de citas', '❤️', '#FF4D6D', 'Invitaciones para mate, juegos o conocerse', () => cartitasAbrir()),
-        plzItem('foto', 'Fotos', '📸', '#4361EE', 'Foto grupal con marco', () => feriaFotoGrupal()),
-      ], 560, 0);
+        (typeof mundo === 'undefined' || mundo.bolicheOn !== false) ? plzItem('boliche', 'Bailable', '🕺', '#7E57FF', 'Confitería bailable: música, luces y barra', () => bolicheEntrar(), { neon: true, insignia: () => null }) : null,
+      ].filter(Boolean), 560, 0);
       const parque = [
         { id: 'hamacas', nombre: 'Hamacas', emoji: '🛝', verbo: 'Hamacarte', sub: 'Se hamacan hasta 3 a la vez', pose: 1, zona: { x: 36, y: 290, w: 178, h: 80 }, slots: [{ x: 78, y: 322 }, { x: 124, y: 322 }, { x: 170, y: 322 }] },
         { id: 'trampolin', nombre: 'Cama elástica', emoji: '🤸', verbo: 'Saltar', sub: '¡Saltá todo lo que quieras!', pose: 2, zona: { x: 438, y: 296, w: 124, h: 70 } },

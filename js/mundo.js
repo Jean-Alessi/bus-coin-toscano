@@ -6,7 +6,7 @@
 // Datos en salas/{viaje}/: ajustes/modo, ajustes/paradaReal (número de línea), ajustes/proximoBingo,
 // feriaConfig/cartelera (líneas "Hora | Lugar").
 
-const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, tunelOn: true, tunelMsg: '', tunelDesc: {} };
+const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, bolicheOn: true, tunelOn: true, tunelMsg: '', tunelDesc: {} };
 const MUNDO_EVENTO_MS = 3 * 3600 * 1000; // un aviso de evento dura 3 horas
 
 const mundoActivo = () => mundo.modo !== 'clasico';
@@ -26,6 +26,12 @@ function mundoEscuchar(){
     const eventoAntes = mundo.evento;
     mundo.evento = v.evento && v.evento.texto && PLZ_SECTORES[v.evento.sector] ? v.evento : null;
     mundo.tunelOn = v.tunel !== 'off';
+    const bolicheAntes = mundo.bolicheOn;
+    mundo.bolicheOn = v.boliche !== 'off';
+    if(bolicheAntes !== mundo.bolicheOn && typeof plazaCargarSector === 'function' && typeof plz !== 'undefined' && plz.activo && PLZ_SECTOR){
+      if(!mundo.bolicheOn && PLZ_SECTOR.id === 'boliche' && typeof bolicheSalir === 'function') bolicheSalir();
+      else if(PLZ_SECTOR.id === 'plaza') plazaCargarSector('plaza');
+    }
     mundo.tunelMsg = typeof v.tunelMensaje === 'string' ? v.tunelMensaje : '';
     mundoAlCambiar(antes);
     if(!mundo.primera && mundo.evento && mundoEventoActivo() && (!eventoAntes || eventoAntes.t !== mundo.evento.t) && typeof mostrarToast === 'function'){

@@ -29,6 +29,7 @@ const FERIA_DEFECTO = {
   radio: ['Cumbia', 'Rock nacional', 'Pop', 'Reggaetón', 'Folklore', 'Cuarteto', 'Clásicos en español', 'Electrónica'],
   servicios: ['Una manta', 'Agua', 'Cargar el celular', 'Parada para el baño', 'Consulta al coordinador'],
   farmacia: ['Dolor de cabeza', 'Dolor de panza', 'Mareo o náuseas', 'Alergia', 'Curita o venda', 'Dolor de garganta'],
+  barra: ['Jugo de naranja', 'Limonada', 'Gaseosa', 'Agua con gas', 'Café', 'Licuado de frutilla'],
   cartelera: ['08:00 | Salida', '12:30 | Parada para almorzar', '21:00 | Bingo en vivo', '22:00 | Trivia en vivo'],
 };
 const FERIA_VIVO_MS = 60000; // si alguien deja de dar señales adentro de un puesto, se libera
@@ -609,6 +610,9 @@ function adminTunelMensaje(codigo){
   const v = (el ? el.value : '').trim().slice(0, 120);
   db.ref('salas/' + codigo + '/ajustes/tunelMensaje').set(v || null).then(() => { feriaToast('Mensaje del túnel guardado'); renderAdminViajes(); });
 }
+function adminBoliche(codigo, valor){
+  db.ref('salas/' + codigo + '/ajustes/boliche').set(valor === 'off' ? 'off' : null).then(() => { feriaToast(valor === 'off' ? 'Boliche cerrado' : 'Boliche abierto'); renderAdminViajes(); });
+}
 function adminModoApp(codigo, valor){
   db.ref('salas/' + codigo + '/ajustes/modo').set(valor === 'clasico' ? 'clasico' : null).then(() => { feriaToast(valor === 'clasico' ? 'Modo clásico: sin mundo' : 'Modo mundo: micro y paradas'); renderAdminViajes(); });
 }
@@ -711,6 +715,9 @@ function adminFeriaPanelHTML(codigo, viaje){
     <input type="text" id="admin-evento-texto-${codigo}" placeholder="Ej: Karaoke en el Salón de eventos" value="${feriaEsc((viaje && viaje.ajustes && viaje.ajustes.evento && viaje.ajustes.evento.texto) || '')}">
     <select class="fer-select" id="admin-evento-sector-${codigo}">${PLZ_ORDEN_SECTORES.map(id => `<option value="${id}" ${viaje && viaje.ajustes && viaje.ajustes.evento && viaje.ajustes.evento.sector === id ? 'selected' : ''}>${feriaEsc(PLZ_SECTORES[id].emoji + ' ' + PLZ_SECTORES[id].nombre)}</option>`).join('')}</select>
     <div class="fer-botones-admin"><button class="btn-primary" onclick="adminEventoAnunciar('${codigo}')">📢 Anunciar</button><button class="fer-mini" onclick="adminEventoBorrar('${codigo}')">Borrar aviso</button></div>
+    <div class="fer-admin-t">🕺 Confitería bailable <small>(entrada en la Plaza; salas de 12 personas)</small></div>
+    <select class="fer-select" onchange="adminBoliche('${codigo}', this.value)"><option value="on" ${viaje && viaje.ajustes && viaje.ajustes.boliche === 'off' ? '' : 'selected'}>Abierta</option><option value="off" ${viaje && viaje.ajustes && viaje.ajustes.boliche === 'off' ? 'selected' : ''}>Cerrada</option></select>
+    ${adminFeriaListaHTML(codigo, 'barra', '🍹 Bebidas de la barra', '(uno por línea; sin alcohol en viajes con menores)', de('barra'))}
     <div class="fer-admin-t">🕳️ Túnel secreto <small>(una tapa escondida en un mapa; cofre de 10 monedas por persona)</small></div>
     <select class="fer-select" onchange="adminTunel('${codigo}', this.value)"><option value="on" ${viaje && viaje.ajustes && viaje.ajustes.tunel === 'off' ? '' : 'selected'}>Activo</option><option value="off" ${viaje && viaje.ajustes && viaje.ajustes.tunel === 'off' ? 'selected' : ''}>Apagado</option></select>
     <input type="text" id="admin-tunel-msg-${codigo}" placeholder="Premio extra (ej: mostrale el código al coordinador y te lleva un alfajor)" value="${feriaEsc((viaje && viaje.ajustes && viaje.ajustes.tunelMensaje) || '')}">

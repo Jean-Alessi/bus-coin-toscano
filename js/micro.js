@@ -201,8 +201,9 @@ async function microBuscar(a){
     if(String(pr.sala) !== String(plz.sala)) await plazaIrASala(pr.sala);
     plz.buscado = marca;
   } else {
-    plz.sector = pr.sector; plz.salaPreferida = pr.sala; plz.posGuardada = null; plz.buscadoPendiente = marca;
-    if(enMapa) iniciarPlaza(); else showView('plaza');
+    plz.salaPreferida = pr.sala; plz.buscadoPendiente = marca;
+    if(enMapa) plazaCambiarSector(pr.sector, null);
+    else { plz.sector = pr.sector; plz.posGuardada = null; showView('plaza'); }
   }
   micToast('📍 Yendo a buscar a ' + nombre);
 }

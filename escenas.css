@@ -1206,3 +1206,12 @@ button.tcarta{cursor:default;}
 .tun-caja .fer-titulo,.tun-caja .fer-texto{color:#fff;} .tun-caja .fer-sub{color:#c9ced9;}
 .tun-cofre{display:block; width:100%; border:none; border-radius:16px; background:#FFD84D; color:#0F2A4D; font-weight:800; font-size:16px; padding:12px; margin:8px 0; font-family:inherit; cursor:pointer; box-shadow:0 4px 0 #B8830A;} .tun-cofre span{font-size:28px; display:block;}
 .tun-lista{text-align:left; font-size:12.5px; max-height:110px; overflow:auto; background:rgba(255,255,255,.08); border-radius:10px; padding:6px 10px;} .tun-lista b{color:#FFD84D;}
+
+/* ---- Confitería bailable ---- */
+.bol-caja{background:linear-gradient(#241447,#120a26); color:#fff;}
+.bol-caja .fer-titulo,.bol-caja .fer-texto{color:#fff;} .bol-caja .fer-sub{color:#c9bfe6;} .bol-caja small{color:#c9bfe6;}
+.bol-caja .fer-item{background:#3a2a66; color:#fff;}
+.bol-caja .fer-item.bol-actual{outline:3px solid #FF4DDB;}
+
+.bol-mano{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:4px 0 8px;}
+.bol-copa{border:none; background:#3a2a66; color:#fff; border-radius:14px; padding:5px 10px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;} .bol-copa span{font-size:16px; margin-right:4px;}

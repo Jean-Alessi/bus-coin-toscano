@@ -14,14 +14,15 @@ const PLZ_FRASES = ['¡Hola! 👋', '¿Jugamos?', '¡Buen viaje! 🚌', '¡Vamos
 // Edificios: puertas a otras pantallas. 'lado' dice hacia dónde mira la puerta.
 const PLZ_COL = [16, 180, 344, 508]; // 4 columnas de 116 de ancho con pasillos de 48
 // Lo que hay en el sector donde estoy (se carga con plazaCargarSector, ver sectores.js).
-let PLZ_EDIFICIOS = [], PLZ_ATRACCIONES = [], PLZ_FUENTE = null, PLZ_SECTOR = null;
+let PLZ_EDIFICIOS = [], PLZ_ATRACCIONES = [], PLZ_BLOQUES = [], PLZ_FUENTE = null, PLZ_SECTOR = null;
+const plazaMaxSala = () => (PLZ_SECTOR && PLZ_SECTOR.maxSala) || PLZ.SALA_MAX; // personas por sala
 const PLZ_DESEOS = ['Vas a conocer un lugar mágico ✨', 'Hoy te toca la mejor vista 🌄', 'Alguien te invita un mate 🧉', 'Se viene una gran aventura 🚌', 'Vas a hacer un amigo nuevo 🤝', 'Mañana sale un día de sol ☀️', 'Ganás la próxima partida 🎮', 'Te espera una sorpresa 🎁'];
 
 function plazaCargarSector(id){
   const s = PLZ_SECTORES[id] || PLZ_SECTORES.plaza;
   const a = s.armar();
   PLZ_SECTOR = s; PLZ.H = s.H;
-  PLZ_EDIFICIOS = a.edificios; PLZ_ATRACCIONES = a.atracciones; PLZ_FUENTE = s.fuente || null;
+  PLZ_EDIFICIOS = a.edificios; PLZ_ATRACCIONES = a.atracciones; PLZ_BLOQUES = a.bloques || []; PLZ_FUENTE = s.fuente || null;
   plz.sector = s.id;
   return s;
 }
@@ -106,8 +107,14 @@ function plazaZonaPuerta(e){
 // ---- Entrada y salida ----
 
 // Cambia de parada: se despide de la sala actual y entra al otro sector.
-function plazaIrASector(id){
-  plz.sector = id; plz.posGuardada = null;
+function plazaIrASector(id){ plazaCambiarSector(id, null); }
+
+// Se despide de donde está (guarda esa posición con SU sector) y recién después fija el nuevo
+// sector y dónde aparecer ('pos' = {x, y} o null para la parada/entrada del sector).
+function plazaCambiarSector(id, pos){
+  plazaAlSalir(true);
+  plz.sector = id;
+  plz.posGuardada = pos ? { x: pos.x, y: pos.y, t: Date.now(), viaje: (typeof codigoViaje !== 'undefined' ? codigoViaje : ''), sector: id } : null;
   iniciarPlaza();
 }
 
@@ -134,6 +141,7 @@ function iniciarPlaza(){
   if(typeof cartitasIniciar === 'function') cartitasIniciar();
   if(typeof tunelIniciar === 'function') tunelIniciar();
   if(PLZ_SECTOR.id === 'mesas' && typeof mesasIniciar === 'function') mesasIniciar();
+  if(PLZ_SECTOR.id === 'boliche' && typeof bolicheIniciar === 'function') bolicheIniciar();
   plazaSonidoSector(PLZ_SECTOR.id);
   const online = typeof codigoViaje !== 'undefined' && codigoViaje && typeof miAsiento !== 'undefined' && miAsiento && miNombre;
   if(online){ const pref = plz.salaPreferida; plz.salaPreferida = null; plazaConectar(pref || undefined); }
@@ -158,8 +166,8 @@ async function plazaConectar(forzada){
     if(!elegida){
       const miCurso = typeof cursosMio === 'function' ? cursosMio() : '';
       const idx = miCurso ? plz.cursos.indexOf(miCurso) : -1;
-      for(let k = 1; idx >= 0 && k <= 20 && !elegida; k++){ const key = 'c' + (idx + 1) + '-' + k; if(vivos(key) < PLZ.SALA_MAX) elegida = key; }
-      for(let i = 1; i <= 30 && !elegida; i++){ const key = String(i); if(vivos(key) < PLZ.SALA_MAX) elegida = key; }
+      for(let k = 1; idx >= 0 && k <= 20 && !elegida; k++){ const key = 'c' + (idx + 1) + '-' + k; if(vivos(key) < plazaMaxSala()) elegida = key; }
+      for(let i = 1; i <= 30 && !elegida; i++){ const key = String(i); if(vivos(key) < plazaMaxSala()) elegida = key; }
     }
     if(!plz.activo) return;
     if(plz.ref){ // viene de otra sala: se despide de ahí
@@ -205,12 +213,12 @@ async function plazaAbrirSalas(){
   const miCurso = typeof cursosMio === 'function' ? cursosMio() : '';
   const idx = miCurso ? (plz.cursos || []).indexOf(miCurso) : -1;
   if(idx >= 0) claves.add('c' + (idx + 1) + '-1');
-  for(let i = 1; i <= 30; i++){ if(!claves.has(String(i)) || cuenta(String(i)) < PLZ.SALA_MAX){ claves.add(String(i)); break; } }
+  for(let i = 1; i <= 30; i++){ if(!claves.has(String(i)) || cuenta(String(i)) < plazaMaxSala()){ claves.add(String(i)); break; } }
   const orden = k => { const m = /^c(\d+)-(\d+)$/.exec(k); return m ? [0, Number(m[1]), Number(m[2])] : [1, Number(k), 0]; };
   const lista = Array.from(claves).sort((a, b) => { const x = orden(a), y = orden(b); return x[0] - y[0] || x[1] - y[1] || x[2] - y[2]; });
-  cont.innerHTML = `<div class="plz-modal"><div class="plz-modal-caja"><h3 class="fer-titulo">🚪 Salas: ${PLZ_SECTOR ? PLZ_SECTOR.corto : 'Plaza'}</h3><p class="fer-sub">Elegí dónde querés estar. Cada sala admite ${PLZ.SALA_MAX} personas.</p>${lista.map(k => {
-    const n = cuenta(k) + (String(k) === String(plz.sala) && !salas[k] ? 1 : 0), actual = String(k) === String(plz.sala), llena = !actual && n >= PLZ.SALA_MAX;
-    return `<div class="plz-sala-fila${actual ? ' actual' : ''}"><span>${plazaEtiquetaSala(k)}<small>${n}/${PLZ.SALA_MAX}</small></span>${actual ? '<b>Estás acá</b>' : `<button class="gbtn gbtn-chico-texto" ${llena ? 'disabled' : ''} onclick="plazaIrASala('${k}')">${llena ? 'Llena' : 'Entrar'}</button>`}</div>`;
+  cont.innerHTML = `<div class="plz-modal"><div class="plz-modal-caja"><h3 class="fer-titulo">🚪 Salas: ${PLZ_SECTOR ? PLZ_SECTOR.corto : 'Plaza'}</h3><p class="fer-sub">Elegí dónde querés estar. Cada sala admite ${plazaMaxSala()} personas.</p>${lista.map(k => {
+    const n = cuenta(k) + (String(k) === String(plz.sala) && !salas[k] ? 1 : 0), actual = String(k) === String(plz.sala), llena = !actual && n >= plazaMaxSala();
+    return `<div class="plz-sala-fila${actual ? ' actual' : ''}"><span>${plazaEtiquetaSala(k)}<small>${n}/${plazaMaxSala()}</small></span>${actual ? '<b>Estás acá</b>' : `<button class="gbtn gbtn-chico-texto" ${llena ? 'disabled' : ''} onclick="plazaIrASala('${k}')">${llena ? 'Llena' : 'Entrar'}</button>`}</div>`;
   }).join('')}<div class="fer-botones"><button class="gbtn gbtn-ancho gbtn-no" onclick="plazaCerrarSalas()">Cerrar</button></div></div></div>`;
 }
 
@@ -265,6 +273,7 @@ function plazaAlSalir(silencioso){
   if(typeof cartitasAlSalir === 'function') cartitasAlSalir();
   if(typeof tunelAlSalir === 'function') tunelAlSalir();
   if(typeof mesasAlSalir === 'function') mesasAlSalir();
+  if(typeof bolicheAlSalir === 'function') bolicheAlSalir();
   if(plz.ref){
     try {
       if(plz.listener) plz.ref.off('value', plz.listener);
@@ -286,7 +295,8 @@ function plazaCompacto(){
 
 function plazaEnviar(completo){
   if(!plz.ref || !plz.conectado) return;
-  const datos = { x: Math.round(plz.yo.x), y: Math.round(plz.yo.y), t: firebase.database.ServerValue.TIMESTAMP, cu: (typeof feria !== 'undefined' && feria.cumple) ? 1 : null, p: plz.pose ? plz.pose.p : null };
+  const datos = { x: Math.round(plz.yo.x), y: Math.round(plz.yo.y), t: firebase.database.ServerValue.TIMESTAMP, cu: (typeof feria !== 'undefined' && feria.cumple) ? 1 : null, p: plz.pose ? plz.pose.p : null, bb: typeof bolicheBebidasEmoji === 'function' ? bolicheBebidasEmoji() : null };
+  if(plz.brindisT){ datos.br = firebase.database.ServerValue.TIMESTAMP; plz.brindisT = false; }
   if(completo){ datos.n = String(miNombre).slice(0, 14); datos.a = plazaCompacto(); }
   plz.ref.child(String(miAsiento)).update(datos);
   plz.ultimoEnvio = performance.now();
@@ -300,11 +310,15 @@ function plazaRecibir(datos){
     const d = datos[a];
     if(!d || typeof d.x !== 'number' || ahora - (d.t || 0) > PLZ.VIVO_MS) return;
     const previo = plz.otros[a];
+    if(d.br && (!previo || previo.br !== d.br) && ahora - d.br < 3000 && Math.hypot(d.x - plz.yo.x, d.y - plz.yo.y) < 90 && typeof mostrarToast === 'function'){
+      mostrarToast('🥂 ' + String(d.n || (previo && previo.nombre) || 'Alguien') + ' brinda con vos');
+      if(typeof reproducirMelodia === 'function') reproducirMelodia([1319, 1568], 80, 'triangle');
+    }
     nuevos[a] = {
       nombre: String(d.n || 'Pasajero'), avatar: d.a || {},
       tx: Math.max(0, Math.min(PLZ.W, d.x)), ty: Math.max(0, Math.min(PLZ.H, d.y)),
       x: previo ? previo.x : d.x, y: previo ? previo.y : d.y, dir: previo ? previo.dir : 1,
-      m: typeof d.m === 'number' ? d.m : null, mt: d.mt || 0, cu: !!d.cu, p: typeof d.p === 'number' ? d.p : 0, fase: (parseInt(a, 10) || 0) % 7,
+      m: typeof d.m === 'number' ? d.m : null, mt: d.mt || 0, cu: !!d.cu, p: typeof d.p === 'number' ? d.p : 0, bb: typeof d.bb === 'string' ? d.bb : null, br: d.br || 0, fase: (parseInt(a, 10) || 0) % 7,
     };
   });
   plz.otros = nuevos;
@@ -338,6 +352,7 @@ function plazaRender(){
     <div id="plaza-micro"></div>
     <div id="plaza-cartas"></div>
     <div id="plaza-tunel"></div>
+    <div id="plaza-boliche"></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
     <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrirParadas()">🚌 Micro</button></div>`, 'plz-escena');
@@ -408,7 +423,7 @@ function plazaAtraccion(a){
     if(!libres.length){ if(typeof mostrarToast === 'function') mostrarToast('Está todo ocupado, esperá un ratito'); return; }
     pos = libres[0];
   }
-  plz.yo.x = pos.x; plz.yo.y = pos.y; plz.yo.dir = 1; plz.obj = null;
+  plz.yo.x = pos.x; plz.yo.y = pos.y; plz.yo.dir = plz.yo.dir || 1; plz.obj = null;
   plz.pose = { p: a.pose, id: a.id };
   plz.ultimaActividad = performance.now();
   plazaEnviar(false);
@@ -461,6 +476,7 @@ function plazaChoca(x, y){
   for(const e of PLZ_EDIFICIOS){
     if(x > e.x - 6 && x < e.x + e.w + 6 && y > e.y + 24 && y < e.y + e.h) return true;
   }
+  for(const b of PLZ_BLOQUES){ if(x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h) return true; }
   return false;
 }
 
@@ -554,12 +570,14 @@ function plazaDibujarFondo(ctx){
   }
   if(s.decor && PLZ_DECOR[s.decor] && s.decor === 'plaza') PLZ_DECOR.plaza(ctx); // césped del parque, debajo de los pasillos
   // Pasillo del medio y pasillos entre columnas
-  ctx.fillStyle = 'rgba(255,255,255,.28)';
-  ctx.fillRect(PLZ.W / 2 - 34, 150, 68, PLZ.H - 190);
-  for(let i = 0; i < 3; i++){
-    const gx = PLZ_COL[i] + 116;
-    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(gx, 100, 48, PLZ.H - 140);
-    ctx.fillStyle = 'rgba(160,130,90,.22)'; for(let y = 110; y < PLZ.H - 50; y += 26) ctx.fillRect(gx + 23, y, 2, 12);
+  if(!s.sinPasillos){
+    ctx.fillStyle = 'rgba(255,255,255,.28)';
+    ctx.fillRect(PLZ.W / 2 - 34, 150, 68, PLZ.H - 190);
+    for(let i = 0; i < 3; i++){
+      const gx = PLZ_COL[i] + 116;
+      ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(gx, 100, 48, PLZ.H - 140);
+      ctx.fillStyle = 'rgba(160,130,90,.22)'; for(let y = 110; y < PLZ.H - 50; y += 26) ctx.fillRect(gx + 23, y, 2, 12);
+    }
   }
   if(s.decor && s.decor !== 'plaza' && PLZ_DECOR[s.decor]) PLZ_DECOR[s.decor](ctx);
   if(s.parada) plazaDibujarParada(ctx, s.parada);
@@ -656,6 +674,7 @@ function plazaDibujarInsignia(ctx, e){
 }
 
 function plazaDibujarEdificio(ctx, e){
+  if(e.neon && typeof plazaDibujarNeon === 'function'){ plazaDibujarNeon(ctx, e); return; }
   if(e.mesa && typeof plazaDibujarMesa === 'function'){ plazaDibujarMesa(ctx, e); plazaDibujarInsignia(ctx, e); return; }
   const abajo = e.lado === 'abajo'; // la puerta mira hacia abajo y el cartel va arriba (o al revés)
   const bandaY = abajo ? e.y : e.y + e.h - 26;
@@ -695,7 +714,7 @@ function plazaDibujarPatas(ctx, X, Y, dir, caminando, saltando){
   });
 }
 
-function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuja, cumple, pose, fase){
+function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuja, cumple, pose, fase, bebida, brindis){
   fase = fase || 0;
   let dx = 0, alto = 0;
   const PATA = pose === 3 ? 4 : PLZ_PATA; // sentado: sin patas visibles, apoyado en el banco
@@ -706,12 +725,13 @@ function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuj
     const py = y - alto - PATA + 3;
     ctx.beginPath(); ctx.moveTo(x - 9, y - 78); ctx.lineTo(x + dx - 9, py); ctx.moveTo(x + 9, y - 78); ctx.lineTo(x + dx + 9, py); ctx.stroke();
     ctx.fillStyle = '#E5586E'; arcRR(ctx, x + dx - 13, py, 26, 7, 3); ctx.fill();
-  } else if(pose === 2){ alto = Math.abs(Math.sin(plz.t * 5 + fase)) * 50; }
+  } else if(pose === 2){ alto = Math.abs(Math.sin(plz.t * 5 + fase)) * 50;
+  } else if(pose === 4){ dx = Math.sin(plz.t * 7 + fase) * 5; alto = Math.abs(Math.sin(plz.t * 7 + fase)) * 6; } // bailando
   const bob = pose ? 0 : (caminando ? Math.abs(Math.sin(plz.t * 11)) * 2 : 0);
   const X = x + dx, Y = y - alto - bob + (pose === 3 ? 6 : 0);
   const sombra = 1 - Math.min(0.5, alto / 100);
   ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(pose === 1 ? x : X, y, 13 * sombra, 5 * sombra, 0, 0, 7); ctx.fill();
-  if(pose !== 3) plazaDibujarPatas(ctx, X, Y, dir, caminando && !pose, pose === 2);
+  if(pose !== 3) plazaDibujarPatas(ctx, X, Y, dir, (caminando && !pose) || pose === 4, pose === 2);
   const img = (typeof avatarSprite === 'function') ? avatarSprite(puesto) : null;
   const w = 46, h = 55;
   if(img && img.complete && img.naturalWidth){
@@ -725,6 +745,9 @@ function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuj
   }
   if(pose === 3){ ctx.fillStyle = '#B8793B'; arcRR(ctx, X - 16, Y - 6, 32, 6, 3); ctx.fill(); }
   if(cumple) arcEmoji(ctx, '🎂', X + 17, Y - PATA - h + 8, 18);
+  if(bebida) Array.from(bebida).slice(0, 3).forEach((em, i) => arcEmoji(ctx, em, X + 19, Y - PATA - 16 - i * 13, 14));
+  if(brindis){ arcEmoji(ctx, '🥂', X, Y - PATA - h - 6, 24); [[-16, -4], [16, -8], [0, -20]].forEach(([ox, oy], i) => { ctx.fillStyle = 'rgba(255,240,150,' + (0.5 + 0.5 * Math.sin(plz.t * 12 + i * 2)).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(X + ox, Y - PATA - h + oy, 2.6, 0, 7); ctx.fill(); }); }
+  if(pose === 4){ ctx.fillStyle = 'rgba(255,255,255,' + (0.9 - ((plz.t * 1.6 + fase) % 1) * 0.8).toFixed(2) + ')'; ctx.font = '800 14px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('♪', X + 20 - ((plz.t * 1.6 + fase) % 1) * 6, Y - PATA - h + 6 - ((plz.t * 1.6 + fase) % 1) * 14); }
   // Nombre
   ctx.font = '700 10px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const tw = ctx.measureText(nombre).width + 10;
@@ -762,7 +785,7 @@ function plazaDibujar(ctx){
   personajes.sort((a, b) => a.y - b.y).forEach(p => {
     if(p.yo){
       const burbuja = plz.burbuja && ahoraMs < plz.burbuja.hasta ? plz.burbuja.texto : null;
-      plazaDibujarPersonaje(ctx, plz.yo.x, plz.yo.y, plazaCompacto(), 'Vos', plz.yo.dir, plz.caminando, burbuja, typeof feria !== 'undefined' && feria.cumple, plz.pose ? plz.pose.p : 0, plz.pose ? (parseInt(miAsiento, 10) || 0) % 7 : 0);
+      plazaDibujarPersonaje(ctx, plz.yo.x, plz.yo.y, plazaCompacto(), 'Vos', plz.yo.dir, plz.caminando, burbuja, typeof feria !== 'undefined' && feria.cumple, plz.pose ? plz.pose.p : 0, plz.pose ? (parseInt(miAsiento, 10) || 0) % 7 : 0, typeof bolicheBebidasEmoji === 'function' ? bolicheBebidasEmoji() : null, typeof bol !== 'undefined' && performance.now() < bol.brindis);
     } else if(p.bot){
       const b = p.bot;
       plazaDibujarPersonaje(ctx, b.x, b.y, b.a, b.n, b.dir, b.caminando, b.m != null && ahoraMs < b.hasta ? PLZ_FRASES[b.m] : null, false, b.pose || 0, b.fase || 0);
@@ -770,7 +793,7 @@ function plazaDibujar(ctx){
       const o = p.o;
       const dice = o.m != null && ahoraServidor - o.mt < 4500 ? PLZ_FRASES[o.m] : null;
       const caminando = Math.hypot(o.tx - o.x, o.ty - o.y) > 3;
-      plazaDibujarPersonaje(ctx, o.x, o.y, o.avatar, o.nombre.slice(0, 10), o.dir, caminando, dice, o.cu, o.p, o.fase);
+      plazaDibujarPersonaje(ctx, o.x, o.y, o.avatar, o.nombre.slice(0, 10), o.dir, caminando, dice, o.cu, o.p, o.fase, o.bb, o.br && ahoraServidor - o.br < 2200);
     }
   });
 
