@@ -28,7 +28,15 @@ function comerciosRefCatalogo(agenciaId, destino){
   return db.ref('agencias/' + agenciaId + '/comercios/' + comerciosSlugDestino(destino));
 }
 
-const COMERCIOS_RUBROS_SUGERIDOS = ['Comida', 'Heladería', 'Tienda', 'Artesanías', 'Bebidas', 'Otro'];
+// Rubros que se sugieren al cargar un comercio. El campo es libre: con "Otros" se escribe el rubro que se quiera.
+const COMERCIOS_RUBROS_SUGERIDOS = ['Alfajores', 'Artesanía', 'Gastronomía', 'Heladería', 'Indumentaria', 'Receptivo', 'Peñas', 'Otros'];
+
+// Al elegir "Otros" de la lista, el campo se vacía para escribir el rubro propio (si se tipea a mano, no se toca).
+function comerciosRubroElegido(ev, el){
+  if(el.value === 'Otros' && (!ev || !ev.inputType || ev.inputType === 'insertReplacementText')){
+    el.value = ''; el.placeholder = 'Escribí el rubro (ej: Panadería)'; el.focus();
+  }
+}
 
 // Puntos de ranking que gana el pasajero cuando el comercio confirma su
 // canje. Es el incentivo para que el pasajero se preocupe de que el
@@ -206,7 +214,7 @@ function renderComercios(){
 
   const porRubro = {};
   resto.forEach(c => {
-    const rubro = c.rubro || 'Otro';
+    const rubro = c.rubro || 'Otros';
     if(!porRubro[rubro]) porRubro[rubro] = [];
     porRubro[rubro].push(c);
   });
@@ -390,7 +398,7 @@ function renderAdminComercios(){
   const listaHTML = entradas.map(c => `
     <div class="comercio-admin-card">
       <input type="text" id="ca-nombre-${c.id}" class="bingo-input-numero" style="width:100%;" placeholder="Nombre del comercio" value="${(c.nombre || '').replace(/"/g, '&quot;')}">
-      <input type="text" id="ca-rubro-${c.id}" class="bingo-input-numero" style="width:100%;" list="comercios-rubros-sugeridos" placeholder="Rubro" value="${(c.rubro || '').replace(/"/g, '&quot;')}">
+      <input type="text" id="ca-rubro-${c.id}" class="bingo-input-numero" style="width:100%;" list="comercios-rubros-sugeridos" oninput="comerciosRubroElegido(event, this)" placeholder="Rubro" value="${(c.rubro || '').replace(/"/g, '&quot;')}">
       <input type="text" id="ca-descuento-${c.id}" class="bingo-input-numero" style="width:100%;" placeholder="Ej: 20% de descuento" value="${(c.descuento || '').replace(/"/g, '&quot;')}">
       <input type="number" id="ca-precio-${c.id}" class="bingo-input-numero" style="width:100%;" placeholder="Precio por canje ($)" value="${c.precioPorCanje || ''}">
       <label class="comercio-admin-checkbox"><input type="checkbox" id="ca-oficial-${c.id}" ${c.oficial ? 'checked' : ''}> Es la parada oficial de este destino</label>
@@ -412,7 +420,7 @@ function renderAdminComercios(){
     <div class="section-label">Agregar comercio nuevo</div>
     <div class="comercio-admin-card">
       <input type="text" id="ca-nuevo-nombre" class="bingo-input-numero" style="width:100%;" placeholder="Nombre del comercio">
-      <input type="text" id="ca-nuevo-rubro" class="bingo-input-numero" style="width:100%;" list="comercios-rubros-sugeridos" placeholder="Rubro">
+      <input type="text" id="ca-nuevo-rubro" class="bingo-input-numero" style="width:100%;" list="comercios-rubros-sugeridos" oninput="comerciosRubroElegido(event, this)" placeholder="Rubro">
       <input type="text" id="ca-nuevo-descuento" class="bingo-input-numero" style="width:100%;" placeholder="Ej: 20% de descuento">
       <input type="number" id="ca-nuevo-precio" class="bingo-input-numero" style="width:100%;" placeholder="Precio por canje ($)">
       <label class="comercio-admin-checkbox"><input type="checkbox" id="ca-nuevo-oficial"> Es la parada oficial de este destino</label>
@@ -457,7 +465,7 @@ function comerciosAdminGuardar(id){
   const oficial = marcado('oficial');
   const datos = {
     nombre: leer('nombre'),
-    rubro: leer('rubro') || 'Otro',
+    rubro: leer('rubro') || 'Otros',
     descuento: leer('descuento'),
     precioPorCanje: Number(leer('precio')) || 0,
     oficial,
@@ -492,7 +500,7 @@ function comerciosAdminAgregar(){
   const oficial = marcado('oficial');
   const datos = {
     nombre,
-    rubro: leer('rubro') || 'Otro',
+    rubro: leer('rubro') || 'Otros',
     descuento: leer('descuento'),
     precioPorCanje: Number(leer('precio')) || 0,
     oficial,
