@@ -242,7 +242,7 @@ function elegirTema(id){
   triviaSesionId++;
   temaActual = id;
   triviaAciertos = 0;
-  preguntasSesion = barajar(TEMAS[id].preguntas).slice(0, PREGUNTAS_POR_SESION).map(barajarOpciones);
+  preguntasSesion = azarVarios('trivia-' + id, TEMAS[id].preguntas.length, PREGUNTAS_POR_SESION).map(i => TEMAS[id].preguntas[i]).map(barajarOpciones); // sin repetir preguntas hasta haber pasado todas
   qIndex = 0;
   renderPregunta();
 }

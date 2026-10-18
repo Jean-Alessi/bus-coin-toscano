@@ -83,7 +83,17 @@ function dibujarAsientoDelTurno(){
 }
 
 function dibujarPalabraAlAzar(){
-  return IMPOSTOR_BANCO[Math.floor(Math.random() * IMPOSTOR_BANCO.length)];
+  return palabraSinRepetir();
+}
+
+// Orden de turnos al azar, pero que el primero de la partida nueva no sea el último que dibujó en la anterior.
+function dibujarOrdenSinRepetir(jugadores, ultimo){
+  const orden = azarBarajar(jugadores.map(String));
+  if(ultimo != null && orden.length > 1 && orden[0] === String(ultimo)){
+    const j = 1 + Math.floor(Math.random() * (orden.length - 1));
+    const t = orden[0]; orden[0] = orden[j]; orden[j] = t;
+  }
+  return orden;
 }
 
 function dibujarEmpezarRonda(){
@@ -91,11 +101,12 @@ function dibujarEmpezarRonda(){
   const jugadores = dibujarOrdenAsientos(dibujarAnotados);
   if(jugadores.length < DIBUJAR_MIN_JUGADORES) return;
   const elegido = dibujarPalabraAlAzar();
+  const ultimoDibujante = dibujarEstado && dibujarEstado.jugadores && dibujarEstado.jugadores.length ? dibujarAsientoDelTurno() : null;
   const nuevaRonda = (dibujarEstado ? dibujarEstado.ronda : 0) + 1;
   dibujarRefIntentos().set(null);
   dibujarRefEstado().set({
     fase: 'jugando',
-    jugadores: barajar(jugadores.slice()),
+    jugadores: dibujarOrdenSinRepetir(jugadores, ultimoDibujante),
     turno: 0,
     palabra: elegido.palabra,
     categoria: elegido.categoria,

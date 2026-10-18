@@ -51,7 +51,7 @@ function sudokuElegirNivel(nivel){
 
 function sudokuComenzar(){
   const banco = SUDOKU_BANCO[sudokuNivelElegido];
-  const elegido = banco[Math.floor(Math.random() * banco.length)];
+  const elegido = banco[azarSiguiente('sudoku-' + sudokuNivelElegido, banco.length, 1)];
   sudokuPuzzle = elegido.puzzle;
   sudokuSolucion = elegido.solucion;
   sudokuTablero = elegido.puzzle.map(fila => fila.slice());

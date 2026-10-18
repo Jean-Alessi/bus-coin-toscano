@@ -80,7 +80,7 @@ function comprobarCuatrouno(){
 }
 
 function pedirRevelarCuatrouno(){
-  cuatrounoDesafioActual = ACERTIJO_DESAFIOS[Math.floor(Math.random() * ACERTIJO_DESAFIOS.length)];
+  cuatrounoDesafioActual = ACERTIJO_DESAFIOS[azarSiguiente('desafios', ACERTIJO_DESAFIOS.length, 3)];
   cuatrounoFase = 'confirmando';
   renderCuatrouno();
 }

@@ -19,36 +19,7 @@ function impostorMaxImpostores(cantidadJugadores){
   return Math.max(1, Math.floor(cantidadJugadores / 3));
 }
 
-const IMPOSTOR_BANCO = [
-  { categoria: 'Animales', palabra: 'León' }, { categoria: 'Animales', palabra: 'Elefante' },
-  { categoria: 'Animales', palabra: 'Jirafa' }, { categoria: 'Animales', palabra: 'Cocodrilo' },
-  { categoria: 'Animales', palabra: 'Pingüino' }, { categoria: 'Animales', palabra: 'Canguro' },
-  { categoria: 'Animales', palabra: 'Delfín' }, { categoria: 'Animales', palabra: 'Tiburón' },
-  { categoria: 'Películas', palabra: 'Titanic' }, { categoria: 'Películas', palabra: 'Frozen' },
-  { categoria: 'Películas', palabra: 'Avatar' }, { categoria: 'Películas', palabra: 'Shrek' },
-  { categoria: 'Películas', palabra: 'Rocky' }, { categoria: 'Películas', palabra: 'Gladiador' },
-  { categoria: 'Películas', palabra: 'Coco' }, { categoria: 'Películas', palabra: 'Toy Story' },
-  { categoria: 'Comidas', palabra: 'Empanada' }, { categoria: 'Comidas', palabra: 'Asado' },
-  { categoria: 'Comidas', palabra: 'Milanesa' }, { categoria: 'Comidas', palabra: 'Pizza' },
-  { categoria: 'Comidas', palabra: 'Choripán' }, { categoria: 'Comidas', palabra: 'Locro' },
-  { categoria: 'Comidas', palabra: 'Alfajor' }, { categoria: 'Comidas', palabra: 'Helado' },
-  { categoria: 'Lugares', palabra: 'Playa' }, { categoria: 'Lugares', palabra: 'Montaña' },
-  { categoria: 'Lugares', palabra: 'Aeropuerto' }, { categoria: 'Lugares', palabra: 'Hospital' },
-  { categoria: 'Lugares', palabra: 'Escuela' }, { categoria: 'Lugares', palabra: 'Cancha' },
-  { categoria: 'Lugares', palabra: 'Boliche' }, { categoria: 'Lugares', palabra: 'Terminal de ómnibus' },
-  { categoria: 'Profesiones', palabra: 'Bombero' }, { categoria: 'Profesiones', palabra: 'Médico' },
-  { categoria: 'Profesiones', palabra: 'Profesor' }, { categoria: 'Profesiones', palabra: 'Chofer' },
-  { categoria: 'Profesiones', palabra: 'Cocinero' }, { categoria: 'Profesiones', palabra: 'Policía' },
-  { categoria: 'Profesiones', palabra: 'Peluquero' }, { categoria: 'Profesiones', palabra: 'Piloto' },
-  { categoria: 'Objetos', palabra: 'Paraguas' }, { categoria: 'Objetos', palabra: 'Mochila' },
-  { categoria: 'Objetos', palabra: 'Bicicleta' }, { categoria: 'Objetos', palabra: 'Guitarra' },
-  { categoria: 'Objetos', palabra: 'Anteojos' }, { categoria: 'Objetos', palabra: 'Billetera' },
-  { categoria: 'Objetos', palabra: 'Termo' }, { categoria: 'Objetos', palabra: 'Almohada' },
-  { categoria: 'Deportes', palabra: 'Fútbol' }, { categoria: 'Deportes', palabra: 'Tenis' },
-  { categoria: 'Deportes', palabra: 'Básquet' }, { categoria: 'Deportes', palabra: 'Rugby' },
-  { categoria: 'Deportes', palabra: 'Vóley' }, { categoria: 'Deportes', palabra: 'Boxeo' },
-  { categoria: 'Deportes', palabra: 'Truco' }, { categoria: 'Deportes', palabra: 'Ajedrez' },
-];
+// El banco de palabras vive en palabras.js (IMPOSTOR_BANCO y palabraSinRepetir).
 
 let impostorEstado = null;
 let impostorAnotados = {};
@@ -109,13 +80,28 @@ function impostorElegirCantidad(cantidad){
   renderImpostor();
 }
 
+// Quién hace de impostor: se reparte parejo (los que menos veces fueron impostores, al azar entre ellos) y,
+// si se puede, nunca la misma persona dos rondas seguidas. 'previos' son los impostores de la ronda anterior.
+function impostorElegirImpostores(jugadores, cantidad, previos, cuentas){
+  const prev = new Set((previos || []).map(String));
+  const ordenados = azarBarajar(jugadores.map(String)).sort((a, b) => (cuentas[a] || 0) - (cuentas[b] || 0)); // el sort es estable: los empates quedan al azar
+  return ordenados.filter(a => !prev.has(a)).concat(ordenados.filter(a => prev.has(a))).slice(0, cantidad);
+}
+function impostorLeerCuentas(){
+  try { return JSON.parse(localStorage.getItem('impostor-cuentas-' + codigoViaje) || '{}') || {}; } catch(e){ return {}; }
+}
+function impostorGuardarCuentas(c){ try { localStorage.setItem('impostor-cuentas-' + codigoViaje, JSON.stringify(c)); } catch(e){} }
+
 function impostorEmpezarRonda(){
   if(!impostorEsDirector()) return;
   const jugadores = impostorOrdenAsientos(impostorAnotados);
   if(jugadores.length < IMPOSTOR_MIN_JUGADORES) return;
-  const elegido = IMPOSTOR_BANCO[Math.floor(Math.random() * IMPOSTOR_BANCO.length)];
+  const elegido = palabraSinRepetir();
   const cantidadImpostores = Math.min(impostorCantidadElegida, impostorMaxImpostores(jugadores.length));
-  const impostores = barajar(jugadores.slice()).slice(0, cantidadImpostores);
+  const cuentas = impostorLeerCuentas();
+  const impostores = impostorElegirImpostores(jugadores, cantidadImpostores, impostorEstado && impostorEstado.impostores, cuentas);
+  impostores.forEach(a => { cuentas[a] = (cuentas[a] || 0) + 1; });
+  impostorGuardarCuentas(cuentas);
   const nuevaRonda = (impostorEstado ? impostorEstado.ronda : 0) + 1;
   impostorRefEstado().set({
     fase: 'jugando',

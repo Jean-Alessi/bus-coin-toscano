@@ -30,7 +30,7 @@ function iniciarSopa(){
 
 function sopaElegirNivel(nivel){
   sopaNivel = nivel;
-  sopaIndice = Math.floor(Math.random() * SOPA_BANCO[nivel].length);
+  sopaIndice = azarSiguiente('sopa-' + nivel, SOPA_BANCO[nivel].length, 1);
   sopaComenzar();
 }
 

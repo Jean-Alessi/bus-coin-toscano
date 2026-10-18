@@ -95,7 +95,7 @@ function prepararRondaValija(){
   clearInterval(valijaTimerId);
   const item = valijaOrden[valijaIndex];
   const esSorpresa = item === 'sorpresa';
-  const base = esSorpresa ? VALIJA_DESTINOS[Math.floor(Math.random() * VALIJA_DESTINOS.length)] : VALIJA_DESTINOS[item];
+  const base = esSorpresa ? VALIJA_DESTINOS[azarSiguiente('valija', VALIJA_DESTINOS.length, 2)] : VALIJA_DESTINOS[item];
   const incorrectos = barajar(VALIJA_POOL.filter(x => !base.correctos.includes(x))).slice(0, 10);
   const opciones = barajar(base.correctos.concat(incorrectos));
 

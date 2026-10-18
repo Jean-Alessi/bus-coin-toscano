@@ -376,7 +376,7 @@ function comprobarPensamiento(){
 }
 
 function pedirRevelarPensamiento(){
-  pensDesafioActual = ACERTIJO_DESAFIOS[Math.floor(Math.random() * ACERTIJO_DESAFIOS.length)];
+  pensDesafioActual = ACERTIJO_DESAFIOS[azarSiguiente('desafios', ACERTIJO_DESAFIOS.length, 3)];
   pensFase = 'confirmando';
   renderPensamiento();
 }

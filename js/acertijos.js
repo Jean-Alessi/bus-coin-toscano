@@ -205,7 +205,7 @@ function comprobarAcertijo(){
 }
 
 function pedirRevelarAcertijo(){
-  acertijoDesafioActual = ACERTIJO_DESAFIOS[Math.floor(Math.random() * ACERTIJO_DESAFIOS.length)];
+  acertijoDesafioActual = ACERTIJO_DESAFIOS[azarSiguiente('desafios', ACERTIJO_DESAFIOS.length, 3)];
   acertijoFase = 'confirmando';
   renderAcertijo();
 }
