@@ -141,6 +141,7 @@ function iniciarPlaza(){
   if(typeof cartitasIniciar === 'function') cartitasIniciar();
   if(typeof tunelIniciar === 'function') tunelIniciar();
   if(PLZ_SECTOR.id === 'mesas' && typeof mesasIniciar === 'function') mesasIniciar();
+  if(PLZ_SECTOR.id === 'plaza' && typeof padelPlazaIniciar === 'function') padelPlazaIniciar();
   if(PLZ_SECTOR.id === 'boliche' && typeof bolicheIniciar === 'function') bolicheIniciar();
   if(PLZ_SECTOR.id === 'seleccion' && typeof seleccionIniciar === 'function') seleccionIniciar();
   plazaSonidoSector(PLZ_SECTOR.id);
@@ -276,6 +277,7 @@ function plazaAlSalir(silencioso){
   if(typeof cartitasAlSalir === 'function') cartitasAlSalir();
   if(typeof tunelAlSalir === 'function') tunelAlSalir();
   if(typeof mesasAlSalir === 'function') mesasAlSalir();
+  if(typeof padelPlazaAlSalir === 'function') padelPlazaAlSalir();
   if(typeof bolicheAlSalir === 'function') bolicheAlSalir();
   if(typeof seleccionAlSalir === 'function') seleccionAlSalir();
   if(plz.ref){
@@ -682,6 +684,7 @@ function plazaDibujarInsignia(ctx, e){
 function plazaDibujarEdificio(ctx, e){
   if(e.sel && typeof plazaDibujarSeleccion === 'function'){ plazaDibujarSeleccion(ctx, e); return; }
   if(e.neon && typeof plazaDibujarNeon === 'function'){ plazaDibujarNeon(ctx, e); return; }
+  if(e.padel && typeof plazaDibujarPadel === 'function'){ plazaDibujarPadel(ctx, e); plazaDibujarInsignia(ctx, e); return; }
   if(e.mesa && typeof plazaDibujarMesa === 'function'){ plazaDibujarMesa(ctx, e); plazaDibujarInsignia(ctx, e); return; }
   const abajo = e.lado === 'abajo'; // la puerta mira hacia abajo y el cartel va arriba (o al revés)
   const bandaY = abajo ? e.y : e.y + e.h - 26;

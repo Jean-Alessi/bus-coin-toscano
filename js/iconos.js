@@ -32,6 +32,7 @@ const ICONOS = {
   regalo: '<rect x="3" y="8.5" width="18" height="12" rx="1.2"/><path d="M3 8.5h18v3.8H3z"/><path d="M12 8.5v12"/><path d="M12 8.5c-1.8-4-6.8-3.4-6.8-.7 0 1.6 2.6 1.4 6.8.7Z"/><path d="M12 8.5c1.8-4 6.8-3.4 6.8-.7 0 1.6-2.6 1.4-6.8.7Z"/>',
   sudoku: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>',
   patrones: '<rect x="2" y="9" width="6" height="6" rx="1.2"/><rect x="10" y="9" width="6" height="6" rx="1.2"/><rect x="18" y="9" width="4" height="6" rx="1.2" stroke-dasharray="2 2"/>',
+  padel: '<ellipse cx="9.5" cy="9" rx="5.5" ry="6.5" transform="rotate(-35 9.5 9)"/><path d="m13.5 14 5.5 5.5"/><circle cx="7.5" cy="8" r=".7" fill="currentColor" stroke="none"/><circle cx="10.5" cy="6.5" r=".7" fill="currentColor" stroke="none"/><circle cx="9.5" cy="10.5" r=".7" fill="currentColor" stroke="none"/><circle cx="18" cy="6" r="2.2"/>',
   buscolor: '<rect x="4" y="3" width="16" height="18" rx="3"/><circle cx="12" cy="12" r="4.2"/><path d="M12 7.8v8.4M7.8 12h8.4"/>',
   sopaletras: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h6M7 16h8"/><circle cx="17.5" cy="16.5" r="3"/><path d="m19.8 18.8 2.2 2.2"/>',
   micro: '<rect x="5" y="3" width="14" height="17" rx="3"/><path d="M7 6.5h10v4H7z"/><circle cx="8.5" cy="16" r="1"/><circle cx="15.5" cy="16" r="1"/><path d="M7 20v1.5M17 20v1.5"/>',

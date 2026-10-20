@@ -153,7 +153,7 @@ const PLZ_SECTORES = {
   },
   plaza: {
     id: 'plaza', nombre: 'Plaza Busmac', corto: 'Plaza', emoji: '🏘️', color: '#2A9D8F',
-    desc: 'Parque, farmacia, coordinador, citas, buzón, radio y la confitería bailable',
+    desc: 'Parque, farmacia, coordinador, citas, buzón, radio, la confitería bailable y Padelbus',
     H: 740, fuera: '#7FC77A', suelo: '#E7DCC5', baldosa: 'rgba(160,130,90,.10)', borde: null, parque: true,
     fuente: { x: 320, y: 340, r: 44 },
     parada: { x: 320, y: 528 }, spawn: { x: 320, y: 448 }, libre: { x0: 50, x1: 590, y0: 190, y1: 500 }, decor: 'plaza',
@@ -177,7 +177,11 @@ const PLZ_SECTORES = {
         { id: 'banco2', nombre: 'Banco', emoji: '🪑', verbo: 'Sentarte', sub: 'Descansá y mirá la plaza', pose: 3, zona: { x: 470, y: 420, w: 110, h: 60 }, slots: [{ x: 506, y: 452 }, { x: 544, y: 452 }] },
         { id: 'fuente', nombre: 'Fuente de los deseos', emoji: '🪙', verbo: 'Pedir un deseo', sub: 'Tirá una moneda (gratis) y mirá qué sale', deseo: true, dentro: (x, y) => { const d = Math.hypot(x - 320, y - 344); return d > 36 && d < 78; } },
       ];
-      return { edificios: arriba.concat(abajo), atracciones: parque.concat([plzParada(this)]) };
+      // Padelbus: club de pádel en una tercera fila, debajo de la parada (la puerta mira hacia arriba).
+      const padel = (typeof mundo === 'undefined' || mundo.padelOn !== false) ? plzItem('padelbus', 'Padelbus', '🎾', '#0E7C86', 'Pádel de a 2 o de a 4: armá o sumate a una mesa', () => showView('padel'), { padel: true, w: 280, h: 110, lado: 'arriba', insignia: () => padelInsignia(), subDin: () => padelSubtitulo('Pádel de a 2 o de a 4') }) : null;
+      if(padel){ padel.x = PLZ_COL[1]; padel.y = 770; }
+      this.H = padel ? 900 : 740;
+      return { edificios: arriba.concat(abajo).concat(padel ? [padel] : []), atracciones: parque.concat([plzParada(this)]) };
     },
   },
 };

@@ -51,6 +51,7 @@ const TARJETAS_GRUPO = [
   { icon: "cartas", title: "Chinchón", sub: "De 2 a 4, armá grupos y escaleras", view: "chinchon" },
   { icon: "trebol", title: "Truco", sub: "De a 2, 4 o 6, con envido y sin flor", view: "truco" },
   { icon: "buscolor", title: "BusColor", sub: "De 2 a 6, quedate sin cartas primero", view: "buscolor" },
+  { icon: "padel", title: "Padelbus", sub: "Pádel de a 2 o de a 4, con rebote en las paredes", view: "padel" },
 ];
 
 
@@ -583,7 +584,7 @@ function renderJuegos(){
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas', 'plaza', 'estacion', 'categorias'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'padel', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas', 'plaza', 'estacion', 'categorias'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -599,6 +600,7 @@ function plazaActualizarBotonVolver(vista){
 
 function volverDeJuego(){
   const activa = document.querySelector('.view.active');
+  if(activa && activa.id === 'view-padel' && typeof padelVolver === 'function' && padelVolver()) return; // en un partido o esperando: primero vuelve a la lista de mesas
   if(plazaOrigen && activa && activa.id === 'view-' + plazaOrigen){ volverALaPlaza(); return; }
   if(activa && activa.id === 'view-trivia'){ triviaVolver(); return; }
   if(activa && activa.id === 'view-plaza'){ showView('estacion'); return; }
@@ -735,6 +737,7 @@ function showView(name){
   if(name==='chinchon'){ iniciarChinchon(); }
   if(name==='truco'){ iniciarTruco(); }
   if(name==='buscolor'){ iniciarBuscolor(); }
+  if(name==='padel'){ iniciarPadel(); }
   if(name==='comercios'){ iniciarComercios(); }
   if(name==='tienda'){ iniciarPremios(); }
   if(name==='onboard'){ listaPasajerosCargarParaOnboarding(); }

@@ -6,7 +6,7 @@
 // Datos en salas/{viaje}/: ajustes/modo, ajustes/paradaReal (número de línea), ajustes/proximoBingo,
 // feriaConfig/cartelera (líneas "Hora | Lugar").
 
-const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, bolicheOn: true, seleccionOn: true, tunelOn: true, tunelMsg: '', tunelDesc: {} };
+const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, bolicheOn: true, padelOn: true, seleccionOn: true, tunelOn: true, tunelMsg: '', tunelDesc: {} };
 const MUNDO_EVENTO_MS = 3 * 3600 * 1000; // un aviso de evento dura 3 horas
 
 const mundoActivo = () => mundo.modo !== 'clasico';
@@ -38,6 +38,9 @@ function mundoEscuchar(){
       if(!mundo.bolicheOn && PLZ_SECTOR.id === 'boliche' && typeof bolicheSalir === 'function') bolicheSalir();
       else if(PLZ_SECTOR.id === 'plaza') plazaCargarSector('plaza');
     }
+    const padelAntes = mundo.padelOn;
+    mundo.padelOn = v.padel !== 'off';
+    if(padelAntes !== mundo.padelOn && typeof plazaCargarSector === 'function' && typeof plz !== 'undefined' && plz.activo && PLZ_SECTOR && PLZ_SECTOR.id === 'plaza') plazaCargarSector('plaza');
     mundo.tunelMsg = typeof v.tunelMensaje === 'string' ? v.tunelMensaje : '';
     mundoAlCambiar(antes);
     if(!mundo.primera && mundo.evento && mundoEventoActivo() && (!eventoAntes || eventoAntes.t !== mundo.evento.t) && typeof mostrarToast === 'function'){
@@ -113,6 +116,10 @@ function mundoParadasHTML(conteos, actualId, accion){
       <span class="est-emoji">🕺</span>
       <span class="est-info"><b>Confitería bailable</b><small>Música, luces, bola de espejos y barra. Se entra por la Plaza.</small></span>
       <span class="est-cant">${conteos && conteos.boliche ? '👥 ' + conteos.boliche : 'Ir'}</span>
+    </button>` : '') + (mundo.padelOn ? `<button class="est-parada est-padel" style="--c:#0E7C86" onclick="mundoIrAPadelbus()">
+      <span class="est-emoji">🎾</span>
+      <span class="est-info"><b>Padelbus</b><small>Pádel de a 2 o de a 4 con paredes que rebotan. Se entra por la Plaza.</small></span>
+      <span class="est-cant">Jugar</span>
     </button>` : '');
 }
 
@@ -149,6 +156,13 @@ function mundoIrALaSeleccion(){
   plz.sector = 'shopping';
   plz.posGuardada = { x: pos.x, y: pos.y, t: Date.now(), viaje: (typeof codigoViaje !== 'undefined' ? codigoViaje : ''), sector: 'shopping' };
   showView('plaza');
+}
+
+// Atajo a Padelbus: abre directo la pantalla del juego (la puerta está al fondo de la Plaza).
+function mundoIrAPadelbus(){
+  if(!mundo.padelOn){ if(typeof mostrarToast === 'function') mostrarToast('Padelbus está cerrado en este viaje'); return; }
+  if(typeof micCerrarSiempre === 'function') micCerrarSiempre();
+  showView('padel');
 }
 
 // Atajo a la confitería bailable: te deja frente a la puerta de neón de la Plaza.
