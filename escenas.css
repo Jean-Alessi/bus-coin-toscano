@@ -1277,3 +1277,13 @@ button.tcarta{cursor:default;}
 .pad-lugar small{font-size:11px; opacity:.8;}
 .estacion .est-padel, .est-padel{--c:#0E7C86;}
 .screen:has(#view-padel.juego-inmersivo) .btn-volver-plaza{display:none !important;}
+
+/* ---- Controles debajo del juego (el dedo no tapa lo que pasa) ---- */
+.arc-pad{margin:10px auto 0; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent;}
+.arc-cruz{display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(2, 1fr); gap:8px; max-width:230px; margin:0 auto; height:128px;}
+.arc-cruz button{border:none; border-radius:16px; font-size:28px; font-weight:800; color:#fff; font-family:inherit; background:linear-gradient(180deg,#5B8DEF,#3A62C8); box-shadow:0 4px 0 #223E8C, 0 7px 10px rgba(0,0,0,.3); touch-action:none; padding:0;}
+.arc-cruz button.activa{transform:translateY(3px); box-shadow:0 1px 0 #223E8C; background:linear-gradient(180deg,#FFD84D,#E6A817); color:#3A2400;}
+.arc-cruz [data-d="arr"]{grid-column:2; grid-row:1;} .arc-cruz [data-d="izq"]{grid-column:1; grid-row:2;} .arc-cruz [data-d="abj"]{grid-column:2; grid-row:2;} .arc-cruz [data-d="der"]{grid-column:3; grid-row:2;}
+.arc-franja{height:84px; border-radius:18px; background:rgba(255,255,255,.14); border:2px dashed rgba(255,255,255,.55); color:#fff; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:800; font-size:14px; text-align:center; line-height:1.2; padding:0 12px;}
+.arc-franja.activa{background:rgba(255,216,77,.28); border-color:#FFD84D;}
+.arc-franja span{font-size:26px;}

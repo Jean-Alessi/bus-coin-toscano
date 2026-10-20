@@ -592,10 +592,11 @@ function arcIniciarVista(id){
       <span class="g-pill">⭐ <span class="arc-mejor">${arcMejor(id)}</span></span>
       <span class="g-pill">🪙 <span class="js-monedas">${monedasCoin}</span></span>
     </div>
-    <div class="arc-caja"><canvas class="arc-canvas"></canvas><div class="arc-overlay"></div></div>`, 'arc-escena');
+    <div class="arc-caja"><canvas class="arc-canvas"></canvas><div class="arc-overlay"></div></div>${arcPadHTML(def)}`, 'arc-escena');
   arc.canvas = cont.querySelector('canvas');
   arcPrepararCanvas();
   arcEntrada(arc.canvas);
+  arcPadEntrada(def);
   arcOverlay('menu');
   arcAjustar();
   arc.juego.dibujar(arc.ctx);
@@ -618,11 +619,13 @@ function arcAjustar(){
   const ratio = arc.juego.ancho / arc.juego.alto;
   caja.style.width = '100%';
   const top = caja.getBoundingClientRect().top - vista.getBoundingClientRect().top + vista.scrollTop;
-  const libre = vista.clientHeight - top - 30;
+  const libre = vista.clientHeight - top - 30 - (arc.def && arc.def.pad ? arc.def.padAlto + 10 : 0);
   const escena = caja.parentElement, est = getComputedStyle(escena);
   const util = escena.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
   const w = Math.max(170, Math.min(util, libre * ratio));
   caja.style.width = w + 'px';
+  const pad = caja.parentElement.querySelector('.arc-pad');
+  if(pad) pad.style.width = w + 'px';
 }
 window.addEventListener('resize', arcAjustar);
 
@@ -700,6 +703,48 @@ function arcTerminar(){
   arcOverlay('fin', { puntaje: p, mejor, record, monedas: dadas, topeDia: queria > 0 && dadas === 0 });
   arcAjustar();
   if(typeof analyticsRegistrar === 'function') analyticsRegistrar('partida_arcade', { juego: id, puntaje: p });
+}
+
+// Controles debajo del mapa, para que el dedo no tape lo que pasa en el juego. Un juego los pide con
+//   pad: 'cruz'    cuatro flechas (llaman a deslizar(dir); se puede arrastrar el dedo de una a otra)
+//   pad: 'franja'  una franja para deslizar el dedo (llaman a arrastrar(x), toque(x, y) y soltar())
+// y padAlto (alto en px que se le reserva en pantalla).
+function arcPadHTML(def){
+  if(def.pad === 'cruz') return '<div class="arc-pad arc-cruz"><button data-d="arr" aria-label="Arriba">▲</button><button data-d="izq" aria-label="Izquierda">◀</button><button data-d="abj" aria-label="Abajo">▼</button><button data-d="der" aria-label="Derecha">▶</button></div>';
+  if(def.pad === 'franja') return '<div class="arc-pad arc-franja"><span>◀</span> ' + (def.padTexto || 'Deslizá el dedo acá') + ' <span>▶</span></div>';
+  return '';
+}
+function arcPadEntrada(def){
+  const zona = document.querySelector('#view-' + arc.id + ' .arc-pad');
+  if(!zona) return;
+  const activo = () => arc.fase === 'jugando' && arc.juego;
+  if(def.pad === 'cruz'){
+    let actual = null, puntero = null;
+    const marcar = btn => {
+      zona.querySelectorAll('button').forEach(b => b.classList.toggle('activa', b === btn));
+      if(btn && btn !== actual && activo() && arc.juego.deslizar) arc.juego.deslizar(btn.dataset.d);
+      actual = btn;
+    };
+    const buscar = e => { const el = document.elementFromPoint(e.clientX, e.clientY); return el && el.closest ? el.closest('.arc-cruz button') : null; };
+    zona.addEventListener('pointerdown', e => { e.preventDefault(); puntero = e.pointerId; try { zona.setPointerCapture(e.pointerId); } catch(err){} marcar(buscar(e)); });
+    zona.addEventListener('pointermove', e => { if(e.pointerId === puntero) marcar(buscar(e)); });
+    const soltar = e => { if(e.pointerId === puntero){ puntero = null; actual = null; marcar(null); } };
+    zona.addEventListener('pointerup', soltar); zona.addEventListener('pointercancel', soltar);
+  } else if(def.pad === 'franja'){
+    let puntero = null;
+    const logico = e => { const r = zona.getBoundingClientRect(); return [(e.clientX - r.left) * arc.juego.ancho / r.width, arc.juego.alto - 20]; };
+    zona.addEventListener('pointerdown', e => {
+      if(!activo()) return;
+      e.preventDefault(); puntero = e.pointerId; try { zona.setPointerCapture(e.pointerId); } catch(err){}
+      zona.classList.add('activa');
+      const [x, y] = logico(e), j = arc.juego;
+      if(j.arrastrar) j.arrastrar(x, y);
+      if(j.toque && !j.toqueAlSoltar) j.toque(x, y);
+    });
+    zona.addEventListener('pointermove', e => { if(e.pointerId === puntero && activo() && arc.juego.arrastrar){ const [x, y] = logico(e); arc.juego.arrastrar(x, y); } });
+    const soltar = e => { if(e.pointerId !== puntero) return; puntero = null; zona.classList.remove('activa'); if(arc.juego && arc.juego.soltar) arc.juego.soltar(); };
+    zona.addEventListener('pointerup', soltar); zona.addEventListener('pointercancel', soltar);
+  }
 }
 
 // Entrada. Cada juego define solo lo que usa:

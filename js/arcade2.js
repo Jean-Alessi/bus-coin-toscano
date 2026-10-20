@@ -251,7 +251,15 @@ function arcCrearLadrillos(){
     j.cartel = 0;
   }
   j.toque = () => lanzar();
-  j.arrastrar = (x) => { j.objetivo = x; };
+  // El micro se mueve como en un touchpad: lo que importa es cuánto se desliza el dedo, no dónde está apoyado,
+  // así se puede jugar con el dedo debajo (o al costado) del micro sin taparlo.
+  const GANANCIA = 1.5;
+  j.dedoX = null; j.dedoPala = 0;
+  j.arrastrar = (x) => {
+    if(j.dedoX === null){ j.dedoX = x; j.dedoPala = j.objetivo; return; }
+    j.objetivo = Math.max(PALA_W / 2, Math.min(ANCHO - PALA_W / 2, j.dedoPala + (x - j.dedoX) * GANANCIA));
+  };
+  j.soltar = () => { j.dedoX = null; };
   j.tecla = (k) => {
     if(k === ' ' || k === 'ArrowUp') lanzar();
     else if(k === 'ArrowLeft') j.teclas = -1;
@@ -555,8 +563,8 @@ ARC_JUEGOS.tetris = {
   monedas: p => Math.min(12, Math.floor(p / 120)),
 };
 ARC_JUEGOS.ladrillos = {
-  titulo: 'Ladrillos', tema: 'noche', crear: arcCrearLadrillos, emojiFin: '💥', textoFin: '¡Se acabaron las vidas!',
-  instrucciones: 'Mové el micro con el dedo para que la pelota no se caiga y rompé todos los ladrillos. Tocá para lanzar.',
+  titulo: 'Ladrillos', tema: 'noche', crear: arcCrearLadrillos, pad: 'franja', padAlto: 84, padTexto: 'Deslizá el dedo acá para mover el micro', emojiFin: '💥', textoFin: '¡Se acabaron las vidas!',
+  instrucciones: 'Deslizá el dedo en la franja de abajo para mover el micro (sin taparlo) y que la pelota no se caiga. Rompé todos los ladrillos. Tocá para lanzar.',
   monedas: p => Math.min(12, Math.floor(p / 60)),
 };
 ARC_JUEGOS.parking = {

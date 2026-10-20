@@ -800,8 +800,8 @@ function arcCrearPinball(){
 }
 
 ARC_JUEGOS.laberinto = {
-  titulo: 'Laberinto del Micro', tema: 'noche', crear: arcCrearLaberinto, emojiFin: '🚚', textoFin: '¡Te atraparon los camiones!',
-  instrucciones: `Deslizá el dedo para girar y juntá todos los puntos. El logo de ${marcaCorta()} te da poder para sacar de la ruta a los camiones.`,
+  titulo: 'Laberinto del Micro', tema: 'noche', crear: arcCrearLaberinto, pad: 'cruz', padAlto: 128, emojiFin: '🚚', textoFin: '¡Te atraparon los camiones!',
+  instrucciones: `Tocá las flechas de abajo para girar (o deslizá el dedo) y juntá todos los puntos. El logo de ${marcaCorta()} te da poder para sacar de la ruta a los camiones.`,
   monedas: p => Math.min(15, Math.floor(p / 150)),
 };
 ARC_JUEGOS.tanque = {
