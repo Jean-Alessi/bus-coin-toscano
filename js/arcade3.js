@@ -205,7 +205,7 @@ function arcCrearLaberinto(){
       j.miedo -= dt;
       if(j.miedo <= 0){ j.camiones.forEach(c => { if(c.estado === 'asusta') c.estado = 'caza'; }); }
     }
-    const velBus = 6.6 + j.nivel * 0.25;
+    const velBus = 4.6 + j.nivel * 0.15; // casillas por segundo (antes 6.6: muy rápido)
     mover(j.bus, velBus, dt, decidirBus, alLlegarBus);
 
     j.camiones.forEach(c => {
@@ -214,7 +214,7 @@ function arcCrearLaberinto(){
         if(c.espera <= 0){ c.estado = 'sale'; c.dir = [0, -1]; }
         return;
       }
-      const vel = c.estado === 'ojos' ? 11 : c.estado === 'asusta' ? 3.6 : 5.4 + j.nivel * 0.25;
+      const vel = c.estado === 'ojos' ? 9 : c.estado === 'asusta' ? 2.6 : 3.8 + j.nivel * 0.15;
       mover(c, vel, dt, decidirCamion, alLlegarCamion);
     });
 
