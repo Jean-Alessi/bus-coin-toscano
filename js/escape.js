@@ -640,6 +640,7 @@ function escAmbiente(s){
   else if(e === 'parpadeo') esc.parpadear(escRnd(0.5, 1.1));
   else if(e === 'sombra') esc.asustar('sombra', { x: esc.camX - 40 });
   else if(e === 'campana' && typeof essCampana === 'function') essCampana();
+  else if(typeof e === 'string' && e.indexOf('sfx:') === 0) esc.sfx(e.slice(4));
   esc.miedo = Math.min(1, esc.miedo + 0.06);
 }
 
@@ -703,7 +704,7 @@ function escDibujar(ctx){
 
 function escDibujarOscuridad(ctx){
   const e = esc, lc = e.luzCtx, c = escCentroLuz();
-  const base = c ? 0.91 : 0.87;
+  const base = c ? 0.91 : (e.salaDef().penumbra || 0.87);
   lc.save(); lc.setTransform(e.dpr, 0, 0, e.dpr, 0, 0); lc.globalCompositeOperation = 'source-over'; lc.clearRect(0, 0, ESC.VW, ESC.VH);
   lc.fillStyle = 'rgba(2,3,10,' + (e.parpadeo > 0 && Math.random() < 0.5 ? 1 : base) + ')'; lc.fillRect(0, 0, ESC.VW, ESC.VH);
   lc.globalCompositeOperation = 'destination-out';
