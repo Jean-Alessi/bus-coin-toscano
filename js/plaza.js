@@ -131,7 +131,7 @@ function iniciarPlaza(){
   plz.yo = g && g.sector === plz.sector && g.viaje === (typeof codigoViaje !== 'undefined' ? codigoViaje : '') && Date.now() - g.t < 600000
     ? { x: g.x, y: g.y, dir: 1 }
     : { x: PLZ_SECTOR.spawn.x + Math.floor((Math.random() - 0.5) * 24), y: PLZ_SECTOR.spawn.y, dir: 1 };
-  plz.pose = null;
+  plz.pose = null; plz.sbS = 0; plz.sbEstado = undefined; plz.sbSigno = 0;
   plz.enMicro = false; plz.buscado = plz.buscadoPendiente || null; plz.buscadoPendiente = null; plz.ultimaActividad = performance.now();
   plz.t = 0; plz.conectado = false;
   plz.bots = plazaEsDemo() ? plazaCrearBots() : [];
@@ -402,7 +402,7 @@ function plazaRenderAccion(){
   const el = document.getElementById('plaza-accion');
   if(!el) return;
   const e = plz.puerta;
-  if(plz.pose){ el.innerHTML = '<button class="gbtn gbtn-ancho" onclick="plazaSoltarPose()">⬇️ Bajarme</button><div class="plz-accion-sub">O tocá un lugar para irte caminando.</div>'; return; }
+  if(plz.pose){ el.innerHTML = '<button class="gbtn gbtn-ancho" onclick="plazaSoltarPose()">⬇️ Bajarme</button><div class="plz-accion-sub">' + (plz.pose.id === 'subibaja' ? (plz.sbEstado === 3 ? '¡Subiendo y bajando! Se mueve mientras estén los dos.' : '⏳ El subibaja funciona de a dos: esperá a que alguien se suba del otro lado (podés decirle ¿Jugamos? con 💬).') : 'O tocá un lugar para irte caminando.') + '</div>'; return; }
   el.innerHTML = e
     ? `<button class="gbtn gbtn-ancho" onclick="plazaEntrar('${e.id}')">${e.emoji} ${e.verbo ? e.verbo : 'Entrar: ' + e.nombre}</button><div class="plz-accion-sub">${e.subDin ? e.subDin() : (e.puesto && typeof feriaSubtitulo === 'function' ? feriaSubtitulo(e.id) : e.sub)}</div>`
     : '<div class="plz-accion-sub">Tocá un lugar para caminar. Acercate a una puerta o a una atracción del parque.</div>';
@@ -541,6 +541,7 @@ function plazaBucle(ts){
 function plazaPaso(dt){
   plz.t += dt;
   plazaMover(dt);
+  plazaSubibajaPaso(dt);
   const ahora = performance.now();
   if(plz.conectado){
     if(plz.caminando && ahora - plz.ultimoEnvio > 330) plazaEnviar(false);
@@ -628,8 +629,72 @@ function plazaDibujarParque(ctx){
     ctx.fillStyle = '#B8793B'; arcRR(ctx, x - 22, y - 12, 82, 12, 4); ctx.fill();
     ctx.fillStyle = '#5A3A22'; ctx.fillRect(x - 18, y, 5, 10); ctx.fillRect(x + 49, y, 5, 10);
   });
+  plazaDibujarSubibaja(ctx);
   // Flores
   [[240, 410], [400, 410], [215, 250], [430, 240], [270, 485], [372, 485]].forEach(([x, y], i) => arcEmoji(ctx, i % 2 ? '🌼' : '🌷', x, y, 20));
+}
+
+// ---- Subibaja: de a dos. Sin nadie del otro lado se queda quieto (con la punta del que se subió abajo);
+// cuando se sube el segundo, empieza a subir y bajar al mismo ritmo para todos (usa la hora del servidor). ----
+
+const PLZ_SB = { cx: 320, cy: 250, L: 58, amp: 15 };
+
+function plazaSubibajaOcupantes(){
+  if(!PLZ_SECTOR || PLZ_SECTOR.id !== 'plaza') return { izq: false, der: false };
+  const l = plazaPosOcupadas(6);
+  return { izq: l.some(o => o.x < PLZ_SB.cx), der: l.some(o => o.x >= PLZ_SB.cx) };
+}
+// Cuánto sube (+) o baja (-) quien está sentado en ese lado.
+function plazaSubibajaAlto(x){ const s = plz.sbS || 0; return x < PLZ_SB.cx ? -s : s; }
+function plazaSubibajaSub(){
+  const o = plazaSubibajaOcupantes();
+  return o.izq !== o.der ? '¡Hay alguien esperando! Subite del otro lado y empieza a funcionar' : 'De a dos: se mueve cuando alguien se sube del otro lado';
+}
+
+function plazaSubibajaPaso(dt){
+  if(!PLZ_SECTOR || PLZ_SECTOR.id !== 'plaza') return;
+  const o = plazaSubibajaOcupantes(), ambos = o.izq && o.der, A = PLZ_SB.amp;
+  const objetivo = ambos ? A * Math.sin(plazaAhora() / 1000 * 2.6) : (o.izq ? A : (o.der ? -A : 0));
+  const antes = plz.sbS || 0;
+  plz.sbS = antes + (objetivo - antes) * (1 - Math.exp(-(ambos ? 12 : 6) * dt));
+  const estado = (o.izq ? 1 : 0) + (o.der ? 2 : 0);
+  if(estado !== plz.sbEstado){
+    const previo = plz.sbEstado;
+    plz.sbEstado = estado;
+    if(plz.pose && plz.pose.id === 'subibaja'){
+      plazaRenderAccion();
+      if(estado === 3 && previo !== undefined && previo !== 3){
+        if(typeof mostrarToast === 'function') mostrarToast('⚖️ ¡Ya se subió alguien! A subir y bajar');
+        if(typeof reproducirMelodia === 'function') reproducirMelodia([523, 659, 784], 90, 'triangle');
+      }
+    } else if(plz.puerta && plz.puerta.id === 'subibaja') plazaRenderAccion();
+  }
+  if(ambos && plz.pose && plz.pose.id === 'subibaja'){ // un golpecito cada vez que una punta toca el piso
+    const sg = Math.abs(plz.sbS) > A * 0.85 ? Math.sign(plz.sbS) : 0;
+    if(sg && sg !== plz.sbSigno){ plz.sbSigno = sg; if(typeof reproducirTono === 'function') reproducirTono('tick'); }
+  }
+}
+
+function plazaDibujarSubibaja(ctx){
+  const { cx, cy, L } = PLZ_SB, s = plz.sbS || 0;
+  const o = plazaSubibajaOcupantes();
+  ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.beginPath(); ctx.ellipse(cx, cy + 20, L + 18, 10, 0, 0, 7); ctx.fill();
+  // soporte
+  ctx.fillStyle = '#8A5A2B'; ctx.beginPath(); ctx.moveTo(cx - 15, cy + 18); ctx.lineTo(cx + 15, cy + 18); ctx.lineTo(cx, cy - 1); ctx.closePath(); ctx.fill();
+  // tabla (la punta izquierda baja cuando s > 0)
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(cx - L, cy + s + 2); ctx.lineTo(cx + L, cy - s + 2); ctx.stroke();
+  ctx.strokeStyle = '#E5586E'; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(cx - L, cy + s); ctx.lineTo(cx + L, cy - s); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - L + 4, cy + s * 0.93 - 2); ctx.lineTo(cx + L - 4, cy - s * 0.93 - 2); ctx.stroke();
+  [[-1, 1], [1, -1]].forEach(([lado, sg]) => { ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(cx + lado * (L - 22), cy + sg * s * 0.62 - 2, 3.4, 0, 7); ctx.fill(); });
+  arcLogo(ctx, cx, cy - 2, 13, '#fff');
+  if(o.izq !== o.der){ // uno solo esperando: cartelito para que se sumen
+    ctx.font = '800 11px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const t = '¿Te subís? ⚖️', w = ctx.measureText(t).width + 16, by = cy - 92 + Math.sin(plz.t * 3) * 2;
+    ctx.fillStyle = '#0F2A4D'; arcRR(ctx, cx - w / 2, by, w, 20, 10); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(cx - 5, by + 19); ctx.lineTo(cx, by + 25); ctx.lineTo(cx + 5, by + 19); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillText(t, cx, by + 10.5);
+  }
 }
 
 function plazaDibujarFuente(ctx){
@@ -727,7 +792,9 @@ function plazaDibujarPatas(ctx, X, Y, dir, caminando, saltando){
 function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuja, cumple, pose, fase, bebida, brindis, fav){
   fase = fase || 0;
   let dx = 0, alto = 0;
-  const PATA = pose === 3 ? 4 : PLZ_PATA; // sentado: sin patas visibles, apoyado en el banco
+  const sentado = pose === 3 || pose === 6; // en el banco o en el subibaja
+  if(pose === 6) dir = x < PLZ_SB.cx ? 1 : -1; // cada uno mira al que tiene enfrente
+  const PATA = sentado ? 4 : PLZ_PATA; // sentado: sin patas visibles, apoyado en el banco
   if(pose === 1){ // en la hamaca: péndulo, con las patitas colgando
     const th = Math.sin(plz.t * 2.4 + fase) * 0.5, L = 62;
     dx = L * Math.sin(th); alto = 76 - L * Math.cos(th);
@@ -736,12 +803,13 @@ function plazaDibujarPersonaje(ctx, x, y, puesto, nombre, dir, caminando, burbuj
     ctx.beginPath(); ctx.moveTo(x - 9, y - 78); ctx.lineTo(x + dx - 9, py); ctx.moveTo(x + 9, y - 78); ctx.lineTo(x + dx + 9, py); ctx.stroke();
     ctx.fillStyle = '#E5586E'; arcRR(ctx, x + dx - 13, py, 26, 7, 3); ctx.fill();
   } else if(pose === 2){ alto = Math.abs(Math.sin(plz.t * 5 + fase)) * 50;
-  } else if(pose === 4){ dx = Math.sin(plz.t * 7 + fase) * 5; alto = Math.abs(Math.sin(plz.t * 7 + fase)) * 6; } // bailando
+  } else if(pose === 4){ dx = Math.sin(plz.t * 7 + fase) * 5; alto = Math.abs(Math.sin(plz.t * 7 + fase)) * 6; // bailando
+  } else if(pose === 6){ alto = plazaSubibajaAlto(x); }
   const bob = pose ? 0 : (caminando ? Math.abs(Math.sin(plz.t * 11)) * 2 : 0);
-  const X = x + dx, Y = y - alto - bob + (pose === 3 ? 6 : 0);
+  const X = x + dx, Y = y - alto - bob + (sentado ? 6 : 0);
   const sombra = 1 - Math.min(0.5, alto / 100);
   ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(pose === 1 ? x : X, y, 13 * sombra, 5 * sombra, 0, 0, 7); ctx.fill();
-  if(pose !== 3) plazaDibujarPatas(ctx, X, Y, dir, (caminando && !pose) || pose === 4, pose === 2);
+  if(!sentado) plazaDibujarPatas(ctx, X, Y, dir, (caminando && !pose) || pose === 4, pose === 2);
   const img = (typeof avatarSprite === 'function') ? avatarSprite(puesto) : null;
   const w = 46, h = 55;
   if(img && img.complete && img.naturalWidth){

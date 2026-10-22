@@ -173,6 +173,7 @@ const PLZ_SECTORES = {
       const parque = [
         { id: 'hamacas', nombre: 'Hamacas', emoji: '🛝', verbo: 'Hamacarte', sub: 'Se hamacan hasta 3 a la vez', pose: 1, zona: { x: 36, y: 290, w: 178, h: 80 }, slots: [{ x: 78, y: 322 }, { x: 124, y: 322 }, { x: 170, y: 322 }] },
         { id: 'trampolin', nombre: 'Cama elástica', emoji: '🤸', verbo: 'Saltar', sub: '¡Saltá todo lo que quieras!', pose: 2, zona: { x: 438, y: 296, w: 124, h: 70 } },
+        { id: 'subibaja', nombre: 'Subibaja', emoji: '⚖️', verbo: 'Subirte al subibaja', sub: 'De a dos: se mueve cuando alguien se sube del otro lado', subDin: () => plazaSubibajaSub(), pose: 6, zona: { x: 232, y: 194, w: 176, h: 76 }, slots: [{ x: 264, y: 246 }, { x: 376, y: 246 }] },
         { id: 'banco1', nombre: 'Banco', emoji: '🪑', verbo: 'Sentarte', sub: 'Descansá y mirá la plaza', pose: 3, zona: { x: 60, y: 420, w: 110, h: 60 }, slots: [{ x: 96, y: 452 }, { x: 134, y: 452 }] },
         { id: 'banco2', nombre: 'Banco', emoji: '🪑', verbo: 'Sentarte', sub: 'Descansá y mirá la plaza', pose: 3, zona: { x: 470, y: 420, w: 110, h: 60 }, slots: [{ x: 506, y: 452 }, { x: 544, y: 452 }] },
         { id: 'fuente', nombre: 'Fuente de los deseos', emoji: '🪙', verbo: 'Pedir un deseo', sub: 'Tirá una moneda (gratis) y mirá qué sale', deseo: true, dentro: (x, y) => { const d = Math.hypot(x - 320, y - 344); return d > 36 && d < 78; } },
