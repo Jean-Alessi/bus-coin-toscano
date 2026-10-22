@@ -97,12 +97,7 @@ function iniciarBusqueda(){
   const cont = document.getElementById('busqueda-content');
   if(!cont) return;
   const lista = Object.keys(ESC_JUEGOS).map(id => ESC_JUEGOS[id]);
-  const prox = [
-    ['🚌', 'El micro fantasma', 'Un garage donde nada anda y alguien no quiere que te vayas.'],
-    ['🏨', 'Hotel de la ruta', 'Se rompió el micro y la única cama libre es la de la habitación 12.'],
-    ['🧳', 'La valija perdida', 'Una aduana, un depósito y cientos de valijas. Una sola es la tuya.'],
-    ['🗺️', 'El mapa del tesoro', 'Pistas por pueblos y plazas. No todos los que te ayudan están vivos.'],
-  ];
+  const prox = []; // ya están las cinco aventuras
   cont.innerHTML = gEscenaHTML('noche', `
     ${gDialogoHTML('🔎 Bus-queda', 'Juegos de escape con sustos. Tu personaje tiene que salir de lugares que no quieren dejarte ir. Mejor con auriculares y la luz baja.')}
     ${lista.map(d => escTarjetaHTML(d)).join('')}
