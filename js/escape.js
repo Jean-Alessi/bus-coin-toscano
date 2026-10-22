@@ -27,7 +27,7 @@ function escNueva(def, guardado, opciones){
   const g = guardado || {};
   esc = Object.assign({
     def, activo: false, test: !!o.test, rapido: !!o.test || !!o.rapido, respuestas: o.respuestas || [],
-    sala: g.sala || def.inicio.sala, flags: g.flags || {}, inv: g.inv || [], notas: g.notas || [], pistas: g.pistas || 0, nivelPista: g.nivelPista || {}, fallas: g.fallas || 0, seg: g.seg || 0,
+    sala: g.sala || def.inicio.sala, flags: g.flags || {}, inv: g.inv || (def.inicio.inv || []).slice(), notas: g.notas || [], pistas: g.pistas || 0, nivelPista: g.nivelPista || {}, fallas: g.fallas || 0, seg: g.seg || 0,
     x: g.x != null ? g.x : def.inicio.x, dir: 1, anim: 'quieto', camX: 0, objetivoX: null, pendiente: null, caminando: false, tPaso: 0,
     sel: null, mira: null, miraHasta: 0, miraSuave: null, t: 0, bloq: 0, ov: null, cap: null, capCola: [],
     sacudida: 0, flashA: 0, flashColor: '#fff', parpadeo: 0, fantasma: null, miedo: 0, sigAmb: 14, expr: 'normal', exprHasta: 0, susto: 0, resaltar: 0, fundido: 0,
@@ -84,6 +84,8 @@ const ESC_METODOS = {
   grupos(o){ return escAbrirGrupos(o); },
   ruedas(o){ return escAbrirRuedas(o); },
   luces(o){ return escAbrirLuces(o); },
+  secuencia(o){ return escAbrirSecuencia(o); },
+  sfx(n, ...a){ const f = (typeof window !== 'undefined' ? window : globalThis)['ess' + n[0].toUpperCase() + n.slice(1)]; if(typeof f === 'function') f(...a); },
   leer(titulo, html, o){ return escAbrirLeer(titulo, html, o); },
   elegir(titulo, opciones, sub){ return escAbrirElegir(titulo, opciones, sub); },
   fin(){ return escTerminar(); },
@@ -452,14 +454,16 @@ function escAbrirRuedas(o){
   return new Promise(res => { esc.ov = { tipo: 'ruedas', o, valor: Array.from({ length: o.n }).map(() => 0), res }; escDibujarRuedas(); });
 }
 function escDibujarRuedas(){
-  const ov = esc.ov, o = ov.o, abc = o.letras || 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
-  const r = ov.valor.map((v, i) => `<div class="esc-rueda"><button onclick="escRue(${i},1)">▲</button><span class="${ov.error ? 'esc-dig-err' : ''}">${abc[v]}</span><button onclick="escRue(${i},-1)">▼</button></div>`).join('');
+  const ov = esc.ov, o = ov.o;
+  const r = ov.valor.map((v, i) => `<div class="esc-rueda"><button onclick="escRue(${i},1)">▲</button><span class="${ov.error ? 'esc-dig-err' : ''}">${escLista(o, i)[v]}</span><button onclick="escRue(${i},-1)">▼</button></div>`).join('');
   escOvAbrir(`<div class="esc-panel"><div class="esc-panel-t">${escEsc(o.titulo)}</div>${o.sub ? `<div class="esc-panel-s">${o.sub}</div>` : ''}<div class="esc-ruedas">${r}</div><div class="esc-acc"><button class="esc-cerrar" onclick="escOvCerrar(false)">Cerrar</button><button class="esc-ok2" onclick="escRueOk()">Probar</button></div></div>`);
 }
-function escRue(i, d){ const ov = esc.ov; if(!ov) return; const n = (ov.o.letras || 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ').length; ov.valor[i] = (ov.valor[i] + d + n) % n; ov.error = false; if(typeof essTecla === 'function') essTecla(); escDibujarRuedas(); }
+const ESC_ABC = Array.from('ABCDEFGHIJKLMNÑOPQRSTUVWXYZ');
+function escLista(o, i){ return o.listas ? o.listas[i] : (Array.isArray(o.letras) ? o.letras : (o.letras ? Array.from(o.letras) : ESC_ABC)); }
+function escRue(i, d){ const ov = esc.ov; if(!ov) return; const n = escLista(ov.o, i).length; ov.valor[i] = (ov.valor[i] + d + n) % n; ov.error = false; if(typeof essTecla === 'function') essTecla(); escDibujarRuedas(); }
 function escRueOk(){
-  const ov = esc.ov; if(!ov) return; const abc = ov.o.letras || 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
-  if(ov.valor.map(v => abc[v]).join('') === String(ov.o.clave).toUpperCase()){ if(typeof essExito === 'function') essExito(); escOvCerrar(true); }
+  const ov = esc.ov; if(!ov) return;
+  if(ov.valor.map((v, i) => escLista(ov.o, i)[v]).join('').toUpperCase() === String(ov.o.clave).toUpperCase()){ if(typeof essExito === 'function') essExito(); escOvCerrar(true); }
   else { if(typeof essError === 'function') essError(); ov.error = true; escDibujarRuedas(); }
 }
 
@@ -486,6 +490,24 @@ function escFoco(i){
   escDibujarLuces();
 }
 function escFocoReiniciar(){ const ov = esc.ov; if(!ov) return; ov.estado = ov.o.inicial.slice(); escDibujarLuces(); }
+
+// Secuencia: se tocan elementos (símbolos, colores, notas...) en el orden que se cree correcto. 'clave' = ids separados por coma.
+function escAbrirSecuencia(o){
+  if(esc.test){ const r = escRespuesta(); return Promise.resolve(r !== undefined && String(r) === String(o.clave)); }
+  return new Promise(res => { esc.ov = { tipo: 'secuencia', o, valor: [], res }; escDibujarSecuencia(); });
+}
+function escDibujarSecuencia(){
+  const ov = esc.ov, o = ov.o;
+  const txt = id => (o.items.find(x => x.id === id) || {}).txt || id;
+  escOvAbrir(`<div class="esc-panel"><div class="esc-panel-t">${escEsc(o.titulo)}</div>${o.sub ? `<div class="esc-panel-s">${o.sub}</div>` : ''}<div class="esc-visor esc-visor-sec${ov.error ? ' esc-dig-err' : ''}">${ov.valor.length ? ov.valor.map(txt).join(' ') : '–'}</div><div class="esc-secitems">${o.items.map(x => `<button onclick="escSecTocar('${x.id}')">${x.txt}</button>`).join('')}</div><div class="esc-acc"><button class="esc-cerrar" onclick="escSecBorrar()">Borrar</button><button class="esc-ok2" onclick="escSecOk()">Probar</button></div><button class="esc-cerrar" onclick="escOvCerrar(false)">Cerrar</button></div>`);
+}
+function escSecTocar(id){ const ov = esc.ov; if(!ov || ov.tipo !== 'secuencia') return; if(ov.valor.length < (ov.o.largo || 12)){ ov.valor.push(id); ov.error = false; if(typeof ov.o.alTocar === 'function') ov.o.alTocar(id); else if(typeof essTecla === 'function') essTecla(); escDibujarSecuencia(); } }
+function escSecBorrar(){ const ov = esc.ov; if(!ov) return; ov.valor = []; ov.error = false; escDibujarSecuencia(); }
+function escSecOk(){
+  const ov = esc.ov; if(!ov) return;
+  if(ov.valor.join(',') === String(ov.o.clave)){ if(typeof essExito === 'function') essExito(); escOvCerrar(true); }
+  else { if(typeof essError === 'function') essError(); ov.error = true; ov.valor = []; escDibujarSecuencia(); }
+}
 
 function escAbrirLeer(titulo, html, o){
   if(esc.test) return Promise.resolve();
@@ -776,6 +798,12 @@ function escDibujarFantasma(ctx, f, t){
   const x = f.x, y = f.y, k = f.escala || 1, a = Math.min(1, f.alfa);
   const flick = f.modo === 'quieto' ? 1 : 0.8 + 0.2 * Math.sin(t * 31);
   ctx.save(); ctx.translate(x, y); ctx.scale(k * (f.dir || 1), k); ctx.globalAlpha = a * flick;
+  (esc && esc.def && esc.def.espectro ? esc.def.espectro : escEspectroAurelio)(ctx, t, f);
+  ctx.restore();
+}
+
+// Cada aventura puede dibujar su propio espectro (def.espectro): se dibuja con los pies en (0, 0) y 200 unidades de alto.
+function escEspectroAurelio(ctx, t, f){
   const bamb = Math.sin(t * 2.2) * 3;
   // resplandor
   const g = ctx.createRadialGradient(0, -110, 10, 0, -110, 120); g.addColorStop(0, 'rgba(170,220,255,.28)'); g.addColorStop(1, 'rgba(170,220,255,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -110, 120, 0, 7); ctx.fill();
@@ -799,7 +827,6 @@ function escDibujarFantasma(ctx, f, t){
   ctx.fillStyle = '#05060b'; [-7, 7].forEach(ox => { ctx.beginPath(); ctx.ellipse(ox, -168, 4.6, 7, 0, 0, 7); ctx.fill(); });
   ctx.fillStyle = 'rgba(190,240,255,.95)'; [-7, 7].forEach(ox => { ctx.beginPath(); ctx.arc(ox + Math.sin(t * 3) * 0.8, -167, 1.5, 0, 7); ctx.fill(); });
   ctx.fillStyle = '#05060b'; ctx.beginPath(); ctx.ellipse(0, -152, 6.5, 8 + Math.abs(Math.sin(t * 2.5)) * 5, 0, 0, 7); ctx.fill();
-  ctx.restore();
 }
 
 function escDibujarSustoGrande(ctx){

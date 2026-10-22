@@ -1369,3 +1369,8 @@ button.tcarta{cursor:default;}
 .av-vista-btn{border-radius:12px; padding:7px 12px; font-family:inherit; font-weight:800; font-size:12.5px; background:rgba(15,42,77,.85); color:#fff; border:2px solid rgba(255,255,255,.4); cursor:pointer;}
 .av-pose-nombre{background:rgba(255,255,255,.85); color:#0F2A4D; border-radius:10px; padding:5px 10px; font-size:12px; font-weight:800;}
 .av-vista-ayuda{width:100%; text-align:center; font-size:11px; color:#0F2A4D; opacity:.75; font-weight:700;}
+
+.esc-visor-sec{font-size:22px; letter-spacing:2px; min-height:42px; line-height:1.2;}
+.esc-secitems{display:grid; grid-template-columns:repeat(auto-fit, minmax(54px, 1fr)); gap:6px; margin:6px 0;}
+.esc-secitems button{border:none; border-radius:10px; background:linear-gradient(180deg,#5B8DEF,#3A62C8); color:#fff; font-size:20px; font-weight:800; padding:8px 0; font-family:inherit; box-shadow:0 3px 0 #223E8C; cursor:pointer;}
+.esc-espejo{display:inline-block; transform:scaleX(-1);}

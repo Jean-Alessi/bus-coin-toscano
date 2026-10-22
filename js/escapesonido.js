@@ -2,7 +2,7 @@
 // que zumba y se pone más tenso según la situación, un latido que se acelera con el miedo, y efectos sueltos:
 // crujidos, susurros, golpes, teléfono, pasos y el susto fuerte (el "stinger").
 
-const ESS = { ctx: null, master: null, comp: null, ruido: null, on: true, drone: null, modo: '', latidoTimer: 0, latidoBpm: 0, vol: 0.85 };
+const ESS = { ctx: null, master: null, comp: null, ruido: null, on: true, drone: null, modo: '', latidoTimer: 0, latidoBpm: 0, vol: 0.55 };
 try { ESS.on = localStorage.getItem('busmac-escape-sonido') !== 'no'; } catch(e){}
 
 const essActivo = () => ESS.on && !(typeof sonidoActivado !== 'undefined' && !sonidoActivado);
@@ -11,9 +11,11 @@ function essContexto(){
   if(ESS.ctx) { if(ESS.ctx.state === 'suspended') ESS.ctx.resume(); return ESS.ctx; }
   try {
     const c = ESS.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    ESS.comp = c.createDynamicsCompressor(); ESS.comp.threshold.value = -14; ESS.comp.ratio.value = 6;
+    ESS.comp = c.createDynamicsCompressor(); ESS.comp.threshold.value = -20; ESS.comp.ratio.value = 8;
     ESS.master = c.createGain(); ESS.master.gain.value = ESS.vol;
-    ESS.master.connect(ESS.comp); ESS.comp.connect(c.destination);
+    // Todo pasa por un filtro suave que corta los agudos: así nada suena chillón ni cansa.
+    ESS.lp = c.createBiquadFilter(); ESS.lp.type = 'lowpass'; ESS.lp.frequency.value = 3200; ESS.lp.Q.value = 0.4;
+    ESS.master.connect(ESS.lp); ESS.lp.connect(ESS.comp); ESS.comp.connect(c.destination);
     const n = c.sampleRate * 2, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
     for(let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
     ESS.ruido = b;
@@ -54,11 +56,11 @@ function essAmbiente(modo){
   if(modo === 'final' || modo === 'silencio') return;
   const c = ESS.ctx, t = c.currentTime, g = c.createGain(), f = c.createBiquadFilter(), lfo = c.createOscillator(), lg = c.createGain();
   const tens = modo === 'tension' ? 1 : modo === 'oscuro' ? 1.6 : 0.5;
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05 + 0.03 * tens, t + 2.5);
-  f.type = 'lowpass'; f.frequency.value = 150 + 90 * tens; f.Q.value = 3;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.03 + 0.015 * tens, t + 3.5);
+  f.type = 'lowpass'; f.frequency.value = 120 + 50 * tens; f.Q.value = 1;
   lfo.frequency.value = 0.06 + 0.04 * tens; lg.gain.value = 60 + 50 * tens; lfo.connect(lg); lg.connect(f.frequency); lfo.start();
-  const os = [[55, 'sawtooth'], [55.7, 'sawtooth'], [110.4, 'sine'], [82.4, 'triangle']];
-  if(tens >= 1) os.push([116.5 + (tens > 1 ? 3 : 0), 'sine'], [233.1, 'triangle']);
+  const os = [[55, 'sine'], [55.6, 'sine'], [110.3, 'sine'], [82.4, 'triangle']];
+  if(tens >= 1) os.push([116.5 + (tens > 1 ? 2 : 0), 'sine']);
   const lista = os.map(([fr, tipo]) => { const o = c.createOscillator(); o.type = tipo; o.frequency.value = fr; o.connect(f); o.start(); return o; });
   f.connect(g); g.connect(ESS.master);
   ESS.drone = { g, lista: lista.concat([lfo]) };
@@ -79,49 +81,49 @@ function essLatido(bpm){
   const una = () => {
     if(!essListo()) return;
     const c = ESS.ctx, t = c.currentTime;
-    essOsc('sine', 70, t, 0.16, 0.5, 38); essOsc('sine', 62, t + 0.17, 0.2, 0.36, 34);
+    essOsc('sine', 62, t, 0.2, 0.3, 40); essOsc('sine', 56, t + 0.19, 0.24, 0.2, 36);
   };
   una(); ESS.latidoTimer = setInterval(una, 60000 / bpm);
 }
 
 // ---- Efectos ----
-function essCrujido(){ if(!essListo()) return; const t = ESS.ctx.currentTime, p = Math.random() * 1.4 - 0.7; essOsc('sawtooth', 95 + Math.random() * 30, t, 0.7, 0.06, 55, p); essRuido(t, 0.7, 0.16, 'bandpass', 700, 220, 6, p); }
-function essChirrido(){ if(!essListo()) return; const t = ESS.ctx.currentTime, p = Math.random() * 1.4 - 0.7; essOsc('sine', 420, t, 0.9, 0.05, 780, p); essOsc('sine', 780, t + 0.5, 0.6, 0.04, 520, p); }
+function essCrujido(){ if(!essListo()) return; const t = ESS.ctx.currentTime, p = Math.random() * 1.4 - 0.7; essOsc('triangle', 110 + Math.random() * 30, t, 0.8, 0.05, 62, p); essRuido(t, 0.7, 0.05, 'bandpass', 420, 180, 3, p); }
+function essChirrido(){ if(!essListo()) return; const t = ESS.ctx.currentTime, p = Math.random() * 1.4 - 0.7; essOsc('sine', 330, t, 1.1, 0.03, 520, p); essOsc('sine', 520, t + 0.6, 0.8, 0.025, 380, p); }
 function essSusurro(){
   if(!essListo()) return;
   const t = ESS.ctx.currentTime, p = Math.random() * 1.6 - 0.8; let k = 0;
-  for(let i = 0; i < 4 + Math.floor(Math.random() * 3); i++){ const d = 0.1 + Math.random() * 0.2; essRuido(t + k, d, 0.2, 'bandpass', 1500 + Math.random() * 1800, null, 2.5, p); k += d + 0.06 + Math.random() * 0.1; }
+  for(let i = 0; i < 4 + Math.floor(Math.random() * 3); i++){ const d = 0.1 + Math.random() * 0.2; essRuido(t + k, d * 1.6, 0.05, 'bandpass', 700 + Math.random() * 700, null, 1.6, p); k += d + 0.1 + Math.random() * 0.15; }
 }
-function essGolpe(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essRuido(t, 0.5, 0.5, 'lowpass', 500, 90, 1); essOsc('sine', 90, t, 0.45, 0.55, 40); }
-function essPuerta(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essRuido(t, 0.35, 0.22, 'lowpass', 900, 200, 1); essOsc('square', 130, t, 0.18, 0.06, 70); }
-function essPasos(n){ if(!essListo()) return; const t = ESS.ctx.currentTime; for(let i = 0; i < (n || 3); i++) essRuido(t + i * 0.52, 0.12, 0.24, 'lowpass', 260, 120, 1, i % 2 ? 0.4 : -0.4); }
-function essZumbido(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('square', 100, t, 0.3, 0.05); essOsc('square', 200, t + 0.05, 0.2, 0.03); essRuido(t, 0.25, 0.1, 'highpass', 3000, null, 1); }
-function essApagon(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('sawtooth', 220, t, 1.2, 0.18, 30); essRuido(t, 0.5, 0.25, 'lowpass', 2500, 80, 1); essGolpe(); }
-function essEncender(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essZumbido(); essOsc('sine', 60, t, 1.4, 0.2, 120); }
+function essGolpe(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essRuido(t, 0.4, 0.14, 'lowpass', 320, 80, 1); essOsc('sine', 80, t, 0.5, 0.4, 38); }
+function essPuerta(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essRuido(t, 0.35, 0.08, 'lowpass', 500, 150, 1); essOsc('triangle', 110, t, 0.2, 0.06, 65); }
+function essPasos(n){ if(!essListo()) return; const t = ESS.ctx.currentTime; for(let i = 0; i < (n || 3); i++) essRuido(t + i * 0.52, 0.14, 0.1, 'lowpass', 200, 100, 1, i % 2 ? 0.4 : -0.4); }
+function essZumbido(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('triangle', 100, t, 0.3, 0.04); essOsc('sine', 200, t + 0.05, 0.2, 0.025); }
+function essApagon(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('sine', 200, t, 1.4, 0.12, 30); essRuido(t, 0.6, 0.08, 'lowpass', 900, 70, 1); essGolpe(); }
+function essEncender(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essZumbido(); essOsc('sine', 60, t, 1.4, 0.14, 120); }
 function essTelefono(veces){
   if(!essListo()) return; const t = ESS.ctx.currentTime;
-  for(let i = 0; i < (veces || 2); i++){ const s = t + i * 1.1; essOsc('sine', 480, s, 0.38, 0.12); essOsc('sine', 620, s, 0.38, 0.12); essOsc('sine', 480, s + 0.42, 0.38, 0.1); essOsc('sine', 620, s + 0.42, 0.38, 0.1); }
+  for(let i = 0; i < (veces || 2); i++){ const s = t + i * 1.1; essOsc('sine', 420, s, 0.38, 0.07); essOsc('sine', 530, s, 0.38, 0.07); essOsc('sine', 420, s + 0.42, 0.38, 0.06); essOsc('sine', 530, s + 0.42, 0.38, 0.06); }
 }
-function essCampana(){ if(!essListo()) return; const t = ESS.ctx.currentTime; [[330, 0.2], [495, 0.1], [660, 0.07], [850, 0.04]].forEach(([f, v]) => essOsc('sine', f, t, 3.2, v)); }
+function essCampana(){ if(!essListo()) return; const t = ESS.ctx.currentTime; [[330, 0.12], [495, 0.06], [660, 0.035]].forEach(([f, v]) => essOsc('sine', f, t, 3.2, v)); }
 // El susto fuerte: un golpe de ruido, un racimo de notas que chocan y un chillido que cae.
 function essSusto(fuerte){
   if(!essListo()) return; const t = ESS.ctx.currentTime, v = fuerte ? 1 : 0.65;
-  essRuido(t, 0.9, 0.45 * v, 'highpass', 1500, 300, 0.7);
-  [233.1, 246.9, 311.1, 349.2, 466.2].forEach((f, i) => essOsc(i % 2 ? 'square' : 'sawtooth', f, t, 1.3, 0.08 * v));
-  essOsc('sawtooth', 1900, t, 0.8, 0.12 * v, 260); essOsc('sine', 50, t, 0.7, 0.6 * v, 28);
+  essRuido(t, 0.5, 0.1 * v, 'lowpass', 900, 150, 0.7);
+  [196, 207.7, 233.1, 277.2].forEach((f, i) => essOsc(i % 2 ? 'triangle' : 'sine', f, t, 1.5, 0.07 * v));
+  essOsc('sine', 740, t, 0.9, 0.04 * v, 230); essOsc('sine', 52, t, 0.9, 0.35 * v, 30);
 }
-function essTick(){ if(!essListo()) return; essOsc('triangle', 780, ESS.ctx.currentTime, 0.05, 0.07); }
-function essItem(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('triangle', 660, t, 0.12, 0.09); essOsc('triangle', 990, t + 0.09, 0.2, 0.09); }
-function essError(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('sawtooth', 160, t, 0.25, 0.07, 110); }
-function essExito(){ if(!essListo()) return; const t = ESS.ctx.currentTime; [523, 659, 784, 1046].forEach((f, i) => essOsc('triangle', f, t + i * 0.1, 0.5, 0.09)); }
-function essTecla(){ if(!essListo()) return; essOsc('square', 520 + Math.random() * 60, ESS.ctx.currentTime, 0.04, 0.035); }
-function essMotor(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('sawtooth', 40, t, 2.2, 0.16, 85); essRuido(t, 2.2, 0.14, 'lowpass', 160, 380, 1); }
+function essTick(){ if(!essListo()) return; essOsc('sine', 620, ESS.ctx.currentTime, 0.06, 0.05); }
+function essItem(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('sine', 523, t, 0.14, 0.06); essOsc('sine', 784, t + 0.09, 0.26, 0.06); }
+function essError(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('sine', 170, t, 0.3, 0.07, 110); }
+function essExito(){ if(!essListo()) return; const t = ESS.ctx.currentTime; [523, 659, 784, 988].forEach((f, i) => essOsc('sine', f, t + i * 0.1, 0.55, 0.06)); }
+function essTecla(){ if(!essListo()) return; essOsc('sine', 480 + Math.random() * 60, ESS.ctx.currentTime, 0.06, 0.04); }
+function essMotor(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('triangle', 42, t, 2.4, 0.14, 85); essRuido(t, 2.4, 0.06, 'lowpass', 140, 300, 1); }
 // Final: acorde cálido y una cajita de música (contrasta con todo el miedo anterior).
 function essFinal(){
   if(!essListo()) return; essAmbiente('final');
   const t = ESS.ctx.currentTime;
-  [[130.8, 0], [164.8, 0.4], [196, 0.8], [261.6, 1.2]].forEach(([f, d]) => essOsc('sine', f, t + d, 6, 0.1));
-  [523, 659, 784, 659, 523, 392, 523, 659, 784, 1046].forEach((f, i) => essOsc('triangle', f, t + 1 + i * 0.42, 0.9, 0.07));
+  [[130.8, 0], [164.8, 0.4], [196, 0.8], [261.6, 1.2]].forEach(([f, d]) => essOsc('sine', f, t + d, 6, 0.07));
+  [523, 659, 784, 659, 523, 392, 523, 659, 784, 988].forEach((f, i) => essOsc('sine', f, t + 1 + i * 0.42, 1, 0.05));
 }
 function essAlternar(){
   ESS.on = !ESS.on;
@@ -129,3 +131,16 @@ function essAlternar(){
   if(!ESS.on){ essTodoParar(); } else if(ESS.modo) { const m = ESS.modo; ESS.modo = ''; essAmbiente(m); }
   return ESS.on;
 }
+
+// ---- Más efectos para las otras aventuras ----
+function essGota(){ if(!essListo()) return; const t = ESS.ctx.currentTime, p = Math.random() * 1.2 - 0.6; essOsc('sine', 900, t, 0.2, 0.05, 420, p); essOsc('sine', 760, t + 0.24, 0.3, 0.02, 360, p); }
+function essTic(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('sine', 900, t, 0.05, 0.04); essOsc('sine', 700, t + 0.5, 0.05, 0.03); }
+function essRadio(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essRuido(t, 1.6, 0.05, 'bandpass', 700, 1500, 1.5); essOsc('sine', 392, t + 1.2, 0.3, 0.04); }
+function essNota(f){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('sine', f, t, 1.6, 0.1); essOsc('sine', f * 2, t, 1, 0.03); }
+function essArrastre(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essRuido(t, 1.1, 0.09, 'lowpass', 380, 100, 1, -0.5); essOsc('triangle', 70, t, 1.1, 0.03, 45, -0.5); }
+function essCajaMusica(){ if(!essListo()) return; const t = ESS.ctx.currentTime; [659, 784, 698, 659, 587, 659, 523, 587].forEach((f, i) => { essOsc('sine', f * (i % 3 === 2 ? 1.01 : 1), t + i * 0.45, 0.9, 0.05); essOsc('sine', f * 2, t + i * 0.45, 0.4, 0.015); }); }
+function essViento(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essRuido(t, 3, 0.05, 'bandpass', 260, 600, 1.6); essRuido(t + 0.4, 2.5, 0.035, 'bandpass', 500, 260, 1.6); }
+function essAlarma(){ if(!essListo()) return; const t = ESS.ctx.currentTime; for(let i = 0; i < 6; i++) essOsc('sine', i % 2 ? 440 : 587, t + i * 0.35, 0.32, 0.06); }
+function essMotorFalla(){ if(!essListo()) return; const t = ESS.ctx.currentTime; for(let i = 0; i < 5; i++) essOsc('triangle', 55 + i * 6, t + i * 0.32, 0.3, 0.1, 38); essRuido(t, 1.6, 0.04, 'lowpass', 220, 100, 1); }
+function essPlaca(){ if(!essListo()) return; const t = ESS.ctx.currentTime; essOsc('sine', 587, t, 0.12, 0.05); essOsc('sine', 880, t + 0.1, 0.22, 0.05); }
+function essLlaves(){ if(!essListo()) return; const t = ESS.ctx.currentTime; for(let i = 0; i < 6; i++) essOsc('sine', 1100 + Math.random() * 500, t + i * 0.07, 0.14, 0.025); }
