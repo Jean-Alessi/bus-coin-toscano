@@ -492,8 +492,9 @@ function escFoco(i){
 function escFocoReiniciar(){ const ov = esc.ov; if(!ov) return; ov.estado = ov.o.inicial.slice(); escDibujarLuces(); }
 
 // Secuencia: se tocan elementos (símbolos, colores, notas...) en el orden que se cree correcto. 'clave' = ids separados por coma.
+const escIgualSec = (o, v) => o.sinOrden ? v.slice().sort().join(',') === String(o.clave).split(',').sort().join(',') : v.join(',') === String(o.clave);
 function escAbrirSecuencia(o){
-  if(esc.test){ const r = escRespuesta(); return Promise.resolve(r !== undefined && String(r) === String(o.clave)); }
+  if(esc.test){ const r = escRespuesta(); return Promise.resolve(r !== undefined && escIgualSec(o, String(r).split(','))); }
   return new Promise(res => { esc.ov = { tipo: 'secuencia', o, valor: [], res }; escDibujarSecuencia(); });
 }
 function escDibujarSecuencia(){
@@ -505,7 +506,7 @@ function escSecTocar(id){ const ov = esc.ov; if(!ov || ov.tipo !== 'secuencia') 
 function escSecBorrar(){ const ov = esc.ov; if(!ov) return; ov.valor = []; ov.error = false; escDibujarSecuencia(); }
 function escSecOk(){
   const ov = esc.ov; if(!ov) return;
-  if(ov.valor.join(',') === String(ov.o.clave)){ if(typeof essExito === 'function') essExito(); escOvCerrar(true); }
+  if(escIgualSec(ov.o, ov.valor)){ if(typeof essExito === 'function') essExito(); escOvCerrar(true); }
   else { if(typeof essError === 'function') essError(); ov.error = true; ov.valor = []; escDibujarSecuencia(); }
 }
 
