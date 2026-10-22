@@ -644,6 +644,9 @@ function adminSeleccion(codigo, valor){
 function adminBoliche(codigo, valor){
   db.ref('salas/' + codigo + '/ajustes/boliche').set(valor === 'off' ? 'off' : null).then(() => { feriaToast(valor === 'off' ? 'Boliche cerrado' : 'Boliche abierto'); renderAdminViajes(); });
 }
+function adminBusqueda(codigo, valor){
+  db.ref('salas/' + codigo + '/ajustes/busqueda').set(valor === 'off' ? 'off' : null).then(() => { feriaToast(valor === 'off' ? 'Bus-queda cerrada' : 'Bus-queda abierta'); renderAdminViajes(); });
+}
 function adminPadel(codigo, valor){
   db.ref('salas/' + codigo + '/ajustes/padel').set(valor === 'off' ? 'off' : null).then(() => { feriaToast(valor === 'off' ? 'Padelbus cerrado' : 'Padelbus abierto'); renderAdminViajes(); });
 }
@@ -753,6 +756,8 @@ function adminFeriaPanelHTML(codigo, viaje){
     <select class="fer-select" onchange="adminSeleccion('${codigo}', this.value)"><option value="on" ${viaje && viaje.ajustes && viaje.ajustes.seleccion === 'off' ? '' : 'selected'}>Abierta</option><option value="off" ${viaje && viaje.ajustes && viaje.ajustes.seleccion === 'off' ? 'selected' : ''}>Cerrada</option></select>
     <div class="fer-admin-t">🕺 Confitería bailable <small>(entrada en la Plaza; salas de 12 personas)</small></div>
     <select class="fer-select" onchange="adminBoliche('${codigo}', this.value)"><option value="on" ${viaje && viaje.ajustes && viaje.ajustes.boliche === 'off' ? '' : 'selected'}>Abierta</option><option value="off" ${viaje && viaje.ajustes && viaje.ajustes.boliche === 'off' ? 'selected' : ''}>Cerrada</option></select>
+    <div class="fer-admin-t">🔎 Bus-queda <small>(juegos de escape con sustos: apagala en viajes con chicos chicos)</small></div>
+    <select class="fer-select" onchange="adminBusqueda('${codigo}', this.value)"><option value="on" ${viaje && viaje.ajustes && viaje.ajustes.busqueda === 'off' ? '' : 'selected'}>Abierta</option><option value="off" ${viaje && viaje.ajustes && viaje.ajustes.busqueda === 'off' ? 'selected' : ''}>Cerrada</option></select>
     <div class="fer-admin-t">🎾 Padelbus <small>(club de pádel en la Plaza; de a 2 o de a 4)</small></div>
     <select class="fer-select" onchange="adminPadel('${codigo}', this.value)"><option value="on" ${viaje && viaje.ajustes && viaje.ajustes.padel === 'off' ? '' : 'selected'}>Abierto</option><option value="off" ${viaje && viaje.ajustes && viaje.ajustes.padel === 'off' ? 'selected' : ''}>Cerrado</option></select>
     ${adminFeriaListaHTML(codigo, 'barra', '🍹 Bebidas de la barra', '(uno por línea; sin alcohol en viajes con menores)', de('barra'))}

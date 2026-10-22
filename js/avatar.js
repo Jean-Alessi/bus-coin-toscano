@@ -218,6 +218,35 @@ function iniciarAvatar(){
 
 function avElegirTab(tab){ avTab = tab; avPendiente = null; renderAvatar(); }
 
+// Vista de cuerpo entero (la que se usa en los juegos de escape): tocar la figura cambia de pose y de cara.
+let avVerCuerpo = false, avCuerpoRaf = 0, avCuerpoPose = 0;
+const AV_POSES = [['quieto', 'normal', 'De pie'], ['camina', 'normal', 'Caminando'], ['pensar', 'curioso', 'Pensando'], ['miedo', 'miedo', 'Con miedo'], ['terror', 'terror', '¡Socorro!'], ['linterna', 'serio', 'Con linterna'], ['alcanzar', 'sorpresa', 'Agarrando'], ['alivio', 'alivio', 'Aliviado']];
+function avAlternarCuerpo(){ avVerCuerpo = !avVerCuerpo; renderAvatar(); }
+function avSiguientePose(){ avCuerpoPose = (avCuerpoPose + 1) % AV_POSES.length; }
+function avCuerpoArrancar(){
+  cancelAnimationFrame(avCuerpoRaf);
+  const cv = document.getElementById('av-cuerpo');
+  if(!cv || typeof avcDibujar !== 'function') return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1), W = 200, H = 220;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const p = avPendiente ? Object.assign({}, avEstado.puesto, { [avPendiente.cat]: avPendiente.id }) : avEstado.puesto;
+  const puesto = Object.assign({}, p, { manoAcc: p.manoAcc === 'mochila' ? 'mochila' : null });
+  avcPrecargar(puesto);
+  const t0 = performance.now();
+  const bucle = ts => {
+    const v = document.getElementById('view-avatar');
+    if(!document.getElementById('av-cuerpo') || !v || !v.classList.contains('active')) return;
+    const t = (ts - t0) / 1000, pose = AV_POSES[avCuerpoPose];
+    ctx.clearRect(0, 0, W, H);
+    const g = ctx.createRadialGradient(W / 2, H - 20, 10, W / 2, H - 20, 110); g.addColorStop(0, 'rgba(255,255,255,.35)'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(W / 2, H - 16, 100, 26, 0, 0, 7); ctx.fill();
+    avcDibujar(ctx, puesto, W / 2, H - 14, 0.98, { dir: 1, anim: pose[0], expr: pose[1], t, susto: 1 });
+    const et = document.getElementById('av-pose-nombre'); if(et && et.textContent !== pose[2]) et.textContent = pose[2];
+    avCuerpoRaf = requestAnimationFrame(bucle);
+  };
+  avCuerpoRaf = requestAnimationFrame(bucle);
+}
+
 function avElegirCuerpo(campo, valor){
   avEstado.puesto[campo] = valor;
   avPendiente = null;
@@ -304,11 +333,13 @@ function renderAvatar(){
 
   cont.innerHTML = gEscenaHTML('cielo', `
     <div class="g-hud"><span class="g-pill">🪙 <span class="js-monedas">${monedasCoin}</span></span><span class="g-pill">Mi personaje</span></div>
-    <div class="av-preview">${avatarSVG(vistaPrevia, 176)}</div>
+    <div class="av-preview">${avVerCuerpo ? '<canvas id="av-cuerpo" class="av-lienzo" onclick="avSiguientePose()" aria-label="Tu personaje de cuerpo entero"></canvas>' : avatarSVG(vistaPrevia, 176)}</div>
+    <div class="av-vista"><button class="av-vista-btn" onclick="avAlternarCuerpo()">${avVerCuerpo ? '👤 Ver cara y busto' : '🧍 Ver cuerpo entero'}</button>${avVerCuerpo ? '<span class="av-pose-nombre" id="av-pose-nombre"></span><span class="av-vista-ayuda">Tocá al personaje para cambiar la pose</span>' : ''}</div>
     ${confirmar}
     <div class="av-tabs">${AV_TABS.map(([id, nombre]) => `<button class="av-tab${avTab === id ? ' av-tab-sel' : ''}" onclick="avElegirTab('${id}')">${nombre}</button>`).join('')}</div>
     <div class="av-cuerpo">${cuerpo}</div>
     <p class="av-nota">Las monedas que gastás acá no bajan tu puntaje del ranking.</p>`, 'av-escena');
+  if(avVerCuerpo) avCuerpoArrancar(); else cancelAnimationFrame(avCuerpoRaf);
 }
 
 // Tarjeta de Inicio: lleva a la pantalla del personaje.

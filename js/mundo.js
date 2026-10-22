@@ -6,7 +6,7 @@
 // Datos en salas/{viaje}/: ajustes/modo, ajustes/paradaReal (número de línea), ajustes/proximoBingo,
 // feriaConfig/cartelera (líneas "Hora | Lugar").
 
-const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, bolicheOn: true, padelOn: true, seleccionOn: true, tunelOn: true, tunelMsg: '', tunelDesc: {} };
+const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, bolicheOn: true, padelOn: true, busquedaOn: true, seleccionOn: true, tunelOn: true, tunelMsg: '', tunelDesc: {} };
 const MUNDO_EVENTO_MS = 3 * 3600 * 1000; // un aviso de evento dura 3 horas
 
 const mundoActivo = () => mundo.modo !== 'clasico';
@@ -37,6 +37,14 @@ function mundoEscuchar(){
     if(bolicheAntes !== mundo.bolicheOn && typeof plazaCargarSector === 'function' && typeof plz !== 'undefined' && plz.activo && PLZ_SECTOR){
       if(!mundo.bolicheOn && PLZ_SECTOR.id === 'boliche' && typeof bolicheSalir === 'function') bolicheSalir();
       else if(PLZ_SECTOR.id === 'plaza') plazaCargarSector('plaza');
+    }
+    const busqAntes = mundo.busquedaOn;
+    mundo.busquedaOn = v.busqueda !== 'off';
+    if(busqAntes !== mundo.busquedaOn){
+      const activa = document.querySelector('.view.active');
+      if(!mundo.busquedaOn && activa && (activa.id === 'view-busqueda' || activa.id === 'view-escape')){ if(typeof escSalir === 'function') escSalir(); showView('juegos'); }
+      else if(typeof renderJuegos === 'function' && document.getElementById('juegos-content')) renderJuegos();
+      if(typeof renderHome === 'function' && document.getElementById('home-content')) { try { renderHome(); } catch(e){} }
     }
     const padelAntes = mundo.padelOn;
     mundo.padelOn = v.padel !== 'off';

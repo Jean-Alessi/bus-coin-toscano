@@ -566,7 +566,8 @@ function categoriasJuegosHTML(vista){
   return categoriaJuegosHTML(vista, 'solo', 'categoria-juegos-solo', '🧠', 'Desafiá tu mente', `${TARJETAS_SOLO.length} juegos para vos solo`) +
     categoriaJuegosHTML(vista, 'video', 'categoria-juegos-video', '🎮', 'Video juegos', `${TARJETAS_VIDEO.length} juegos de acción`) +
     categoriaJuegosHTML(vista, 'grupoCartas', 'categoria-juegos-cartas', '🃏', 'Juegos de cartas', `${TARJETAS_GRUPO_CARTAS.length} juegos de cartas`) +
-    categoriaJuegosHTML(vista, 'grupoOtros', 'categoria-juegos-grupo', '🤝', 'Jugar en grupo', `${TARJETAS_GRUPO_OTROS.length} juegos para tu grupo`);
+    categoriaJuegosHTML(vista, 'grupoOtros', 'categoria-juegos-grupo', '🤝', 'Jugar en grupo', `${TARJETAS_GRUPO_OTROS.length} juegos para tu grupo`) +
+    (typeof mundo !== 'undefined' && mundo.busquedaOn === false ? '' : `<div class="categoria-juegos categoria-juegos-busqueda" onclick="showView('busqueda')"><span class="categoria-juegos-icono">🔎</span><div class="categoria-juegos-info"><h2>Bus-queda</h2><p>Juegos de escape con sustos</p></div><span class="categoria-juegos-flecha">›</span></div>`);
 }
 
 function renderCategoriasEnListas(vista){
@@ -584,7 +585,7 @@ function renderJuegos(){
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'padel', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas', 'plaza', 'estacion', 'categorias'];
+const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'padel', 'busqueda', 'escape', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas', 'plaza', 'estacion', 'categorias'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -600,6 +601,8 @@ function plazaActualizarBotonVolver(vista){
 
 function volverDeJuego(){
   const activa = document.querySelector('.view.active');
+  if(activa && activa.id === 'view-escape'){ if(typeof escSalir === 'function') escSalir(); showView('busqueda'); return; } // el avance se guarda solo
+  if(activa && activa.id === 'view-busqueda'){ showView('juegos'); return; }
   if(activa && activa.id === 'view-padel' && typeof padelVolver === 'function' && padelVolver()) return; // en un partido o esperando: primero vuelve a la lista de mesas
   if(plazaOrigen && activa && activa.id === 'view-' + plazaOrigen){ volverALaPlaza(); return; }
   if(activa && activa.id === 'view-trivia'){ triviaVolver(); return; }
@@ -738,6 +741,7 @@ function showView(name){
   if(name==='truco'){ iniciarTruco(); }
   if(name==='buscolor'){ iniciarBuscolor(); }
   if(name==='padel'){ iniciarPadel(); }
+  if(name==='busqueda'){ iniciarBusqueda(); }
   if(name==='comercios'){ iniciarComercios(); }
   if(name==='tienda'){ iniciarPremios(); }
   if(name==='onboard'){ listaPasajerosCargarParaOnboarding(); }
