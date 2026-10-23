@@ -303,12 +303,16 @@ function renderAdminViajes(){
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCursos('${c}')" title="Cursos para la Guerra de cursos">🎓${listaCursos.length ? ' ' + listaCursos.length : ''}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleFeria('${c}')" title="Feria de la plaza: kiosco, agencia y sorteo">🎪</button>
           ${datos[c].destino ? `<button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCanjes('${c}')" title="Ver canjes de comercios">🏪</button>` : ''}
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarPueblo('${c}','${String(datos[c].pueblo || '').replace(/'/g, '')}')" title="Pueblo de origen de los chicos (para la Vidriera)">🏘️ ${datos[c].pueblo ? String(datos[c].pueblo).replace(/</g, '') : 'Pueblo'}</button>
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCopa('${c}')" title="Copa Busmac: anotar los cursos y elegir capitanes">🏆</button>
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarEdad('${c}','${(datos[c].ajustes && datos[c].ajustes.edad) || ''}')" title="Edad del grupo: para 6 a 9 años se muestran solo los juegos para chicos">👦 ${(datos[c].ajustes && datos[c].ajustes.edad) === '6-9' ? '6-9' : 'Todas'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTogglePoker('${c}',${!(datos[c].ajustes && datos[c].ajustes.poker === true)})" title="Póker en este viaje (apagado para estudiantiles)">🃏 ${datos[c].ajustes && datos[c].ajustes.poker === true ? 'Sí' : 'No'}</button>
           <button class="btn-finalizar-viaje" onclick="toggleCerrarViaje('${c}',${!cerrado})">${cerrado ? 'Reabrir' : 'Finalizar'}</button>
           <button class="btn-eliminar-pasajero" onclick="eliminarViaje('${c}')" title="Eliminar viaje">✕</button>
         </span>
       </div>
-      ${typeof adminCursosPanelHTML === 'function' ? adminCursosPanelHTML(c, listaCursos) : ''}
+      ${typeof adminCursosPanelHTML === 'function' ? adminCursosPanelHTML(c, listaCursos, datos[c].ajustes && datos[c].ajustes.metas) : ''}
+      ${typeof adminCopaPanelHTML === 'function' ? adminCopaPanelHTML(c, datos[c]) : ''}
       ${typeof pedidosPanelHTML === 'function' ? pedidosPanelHTML(c) : ''}
       ${typeof adminFeriaPanelHTML === 'function' ? adminFeriaPanelHTML(c, datos[c]) : ''}
       ${listaAbierta ? `
@@ -344,6 +348,14 @@ function adminGuardarLista(codigo){
   listaPasajerosGuardarEnViaje(codigo, texto).then(cantidad => {
     mostrarToast(cantidad ? `Lista cargada: ${cantidad} pasajeros` : 'Lista borrada');
     adminListaAbiertaPara = null;
+    renderAdminViajes();
+  });
+}
+
+function adminCambiarEdad(codigo, actual){
+  const nueva = actual === '6-9' ? null : '6-9';
+  db.ref('salas/' + codigo + '/ajustes/edad').set(nueva).then(() => {
+    mostrarToast(nueva ? 'Grupo de 6 a 9 años: solo juegos para chicos' : 'Todas las edades: todos los juegos');
     renderAdminViajes();
   });
 }
@@ -465,6 +477,8 @@ function goHome(){
   renderHome();
 }
 
+// Cada juego se muestra como una ficha de color (2 por fila), en vez de una
+// lista de filas blancas: el color sigue al de su categoría.
 function renderTarjetas(lista, contenedorId){
   const container = document.getElementById(contenedorId);
   const categoria = contenedorId.split('-').pop();
@@ -524,6 +538,7 @@ function renderHome(){
     <div class="home-logo-banner"><img src="logo-empresa.png?v=2" alt="Logo"></div>
     ${organizadorTarjetaHomeHTML()}
     ${typeof plazaTarjetaHomeHTML === 'function' ? plazaTarjetaHomeHTML() : ''}
+    ${typeof vidTarjetaHTML === 'function' ? vidTarjetaHTML() : ''}
     ${typeof avatarTarjetaHomeHTML === 'function' && (typeof mundoActivo !== 'function' || mundoActivo()) ? avatarTarjetaHomeHTML() : ''}
     ${pwaInstalarHTML()}
     ${ruletaHTML()}`);
@@ -562,30 +577,51 @@ function categoriaJuegosHTML(vista, categoria, clase, icono, titulo, sub){
     ${abierto ? `<div class="categoria-juegos-lista" id="lista-${vista}-${categoria}"></div>` : ''}`;
 }
 
+// Edad del grupo (la elige el organizador por viaje: salas/{viaje}/ajustes/edad).
+// Para los más chicos (6 a 9) se muestran solo los juegos pensados para ellos;
+// de 10 en adelante, todos (el póker sigue apagado aparte).
+const EDAD_PERMITIDOS = {
+  '6-9': new Set(['trivia', 'ahorcado', 'memoria', 'sopa', 'valija', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'pinball', 'plataformas', 'bingo', 'dibujar', 'cuento', 'tutifruti', 'buscolor']),
+};
+let edadGrupo = '', edadCodigoEscuchado = '';
+function edadEscucharAjuste(){
+  if(!codigoViaje || edadCodigoEscuchado === codigoViaje) return;
+  edadCodigoEscuchado = codigoViaje;
+  db.ref('salas/' + codigoViaje + '/ajustes/edad').on('value', snap => {
+    edadGrupo = snap.val() || '';
+    if(document.getElementById('juegos-content') && document.querySelector('#view-juegos.active')) renderJuegos();
+  });
+}
+function juegosPorEdad(lista){ const ok = EDAD_PERMITIDOS[edadGrupo]; return ok ? lista.filter(t => ok.has(t.view)) : lista; }
+
 function categoriasJuegosHTML(vista){
-  return categoriaJuegosHTML(vista, 'solo', 'categoria-juegos-solo', '🧠', 'Desafiá tu mente', `${TARJETAS_SOLO.length} juegos para vos solo`) +
-    categoriaJuegosHTML(vista, 'video', 'categoria-juegos-video', '🎮', 'Video juegos', `${TARJETAS_VIDEO.length} juegos de acción`) +
-    categoriaJuegosHTML(vista, 'grupoCartas', 'categoria-juegos-cartas', '🃏', 'Juegos de cartas', `${TARJETAS_GRUPO_CARTAS.length} juegos de cartas`) +
-    categoriaJuegosHTML(vista, 'grupoOtros', 'categoria-juegos-grupo', '🤝', 'Jugar en grupo', `${TARJETAS_GRUPO_OTROS.length} juegos para tu grupo`) +
-    (typeof mundo !== 'undefined' && mundo.busquedaOn === false ? '' : `<div class="categoria-juegos categoria-juegos-busqueda" onclick="showView('busqueda')"><span class="categoria-juegos-icono">🔎</span><div class="categoria-juegos-info"><h2>Bus-queda</h2><p>Juegos de escape con sustos</p></div><span class="categoria-juegos-flecha">›</span></div>`);
+  const pend = typeof copaPendientes === 'function' ? copaPendientes() : 0;
+  return (typeof vidTarjetaHTML === 'function' ? vidTarjetaHTML() : '') + `<div class="categoria-juegos categoria-juegos-busqueda" onclick="showView('copa')" style="background:linear-gradient(135deg,#7a4dd8,#f2a93b);"><span class="categoria-juegos-icono">🏆</span><div class="categoria-juegos-info"><h2>Copa Busmac <span id="copa-badge" style="${pend ? '' : 'display:none;'}background:#E5484D;color:#fff;border-radius:999px;padding:0 8px;font-size:13px;">${pend || ''}</span></h2><p>Tu curso contra otros pueblos</p></div><span class="categoria-juegos-flecha">›</span></div>` +
+    categoriaJuegosHTML(vista, 'solo', 'categoria-juegos-solo', '🧠', 'Desafiá tu mente', `${juegosPorEdad(TARJETAS_SOLO).length} juegos para vos solo`) +
+    categoriaJuegosHTML(vista, 'video', 'categoria-juegos-video', '🎮', 'Video juegos', `${juegosPorEdad(TARJETAS_VIDEO).length} juegos de acción`) +
+    (juegosPorEdad(TARJETAS_GRUPO_CARTAS).length ? categoriaJuegosHTML(vista, 'grupoCartas', 'categoria-juegos-cartas', '🃏', 'Juegos de cartas', `${juegosPorEdad(TARJETAS_GRUPO_CARTAS).length} juegos de cartas`) : '') +
+    categoriaJuegosHTML(vista, 'grupoOtros', 'categoria-juegos-grupo', '🤝', 'Jugar en grupo', `${juegosPorEdad(TARJETAS_GRUPO_OTROS).length} juegos para tu grupo`) +
+    ((typeof mundo !== 'undefined' && mundo.busquedaOn === false) || edadGrupo === '6-9' ? '' : `<div class="categoria-juegos categoria-juegos-busqueda" onclick="showView('busqueda')"><span class="categoria-juegos-icono">🔎</span><div class="categoria-juegos-info"><h2>Bus-queda</h2><p>Juegos de escape con sustos</p></div><span class="categoria-juegos-flecha">›</span></div>`);
 }
 
 function renderCategoriasEnListas(vista){
-  if(juegosAbiertos.solo) renderTarjetas(TARJETAS_SOLO, `lista-${vista}-solo`);
-  if(juegosAbiertos.video) renderTarjetas(TARJETAS_VIDEO, `lista-${vista}-video`);
-  if(juegosAbiertos.grupoCartas) renderTarjetas(TARJETAS_GRUPO_CARTAS, `lista-${vista}-grupoCartas`);
-  if(juegosAbiertos.grupoOtros) renderTarjetas(TARJETAS_GRUPO_OTROS, `lista-${vista}-grupoOtros`);
+  if(juegosAbiertos.solo) renderTarjetas(juegosPorEdad(TARJETAS_SOLO), `lista-${vista}-solo`);
+  if(juegosAbiertos.video) renderTarjetas(juegosPorEdad(TARJETAS_VIDEO), `lista-${vista}-video`);
+  if(juegosAbiertos.grupoCartas && document.getElementById(`lista-${vista}-grupoCartas`)) renderTarjetas(juegosPorEdad(TARJETAS_GRUPO_CARTAS), `lista-${vista}-grupoCartas`);
+  if(juegosAbiertos.grupoOtros) renderTarjetas(juegosPorEdad(TARJETAS_GRUPO_OTROS), `lista-${vista}-grupoOtros`);
 }
 
 function renderJuegos(){
   pokerEscucharAjuste();
+  edadEscucharAjuste();
+  if(typeof copaEscuchar === 'function') copaEscuchar();
   document.getElementById('juegos-content').innerHTML = gEscenaHTML('neon', categoriasJuegosHTML('juegos'), 'juegos-escena');
   renderCategoriasEnListas('juegos');
 }
 
 // Trivia, Acertijos y Bingo se entran desde el menú "Juegos" del tabbar, así
 // que esa pestaña queda marcada activa aunque ya estés adentro de uno de ellos.
-const TABS_HIJOS_DE_JUEGOS = ['trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'padel', 'busqueda', 'escape', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas', 'plaza', 'estacion', 'categorias'];
+const TABS_HIJOS_DE_JUEGOS = ['copa', 'vidriera', 'trivia', 'acertijos', 'pensamiento', 'ahorcado', 'cuatrouno', 'valija', 'memoria', 'sudoku', 'patrones', 'sopa', 'tutifruti', 'impostor', 'bingo', 'triviavivo', 'cuento', 'dibujar', 'escoba', 'chinchon', 'truco', 'buscolor', 'padel', 'busqueda', 'escape', 'corredor', 'vuelo', 'serpiente', 'tetris', 'ladrillos', 'parking', 'laberinto', 'tanque', 'pinball', 'bombas', 'plataformas', 'solitario', 'videopoker', 'texas', 'plaza', 'estacion', 'categorias'];
 
 // Volver desde cualquier juego: el botón ← del título, el flotante (cuando el
 // juego ocupa toda la escena) y el "atrás" del celular hacen lo mismo. En la
@@ -601,6 +637,9 @@ function plazaActualizarBotonVolver(vista){
 
 function volverDeJuego(){
   const activa = document.querySelector('.view.active');
+  if(activa && activa.id === 'view-truco' && typeof trucoCopa !== 'undefined' && trucoCopa){ trucoSalirModoCopa(); showView('copa'); return; }
+  if(activa && activa.id === 'view-copa' && typeof copaVista !== 'undefined' && copaVista.v !== 'inicio'){ copaIr('inicio'); return; }
+  if(activa && activa.id === 'view-vidriera' && typeof vidAbierto !== 'undefined' && vidAbierto){ vidAbierto = null; vidPreguntaAbierta = null; renderVidriera(); return; }
   if(activa && activa.id === 'view-escape'){ if(typeof escSalir === 'function') escSalir(); showView('busqueda'); return; } // el avance se guarda solo
   if(activa && activa.id === 'view-busqueda'){ showView('juegos'); return; }
   if(activa && activa.id === 'view-padel' && typeof padelVolver === 'function' && padelVolver()) return; // en un partido o esperando: primero vuelve a la lista de mesas
@@ -690,6 +729,7 @@ window.addEventListener('popstate', () => {
 
 function showView(name){
   const activaAntes = document.querySelector('.view.active');
+  if(typeof vidAlCambiarVista === 'function') vidAlCambiarVista(activaAntes ? activaAntes.id.replace('view-', '') : null, name);
   if(activaAntes && activaAntes.id === 'view-estacion' && name !== 'estacion' && typeof estacionSoltar === 'function') estacionSoltar();
   if(activaAntes && activaAntes.id === 'view-plaza' && name !== 'plaza' && name !== 'home') plazaOrigen = name;
   else if(name === 'plaza' || name === 'home') plazaOrigen = null;
@@ -739,6 +779,8 @@ function showView(name){
   if(name==='escoba'){ iniciarEscoba(); }
   if(name==='chinchon'){ iniciarChinchon(); }
   if(name==='truco'){ iniciarTruco(); }
+  if(name==='copa'){ iniciarCopa(); }
+  if(name==='vidriera'){ iniciarVidriera(); }
   if(name==='buscolor'){ iniciarBuscolor(); }
   if(name==='padel'){ iniciarPadel(); }
   if(name==='busqueda'){ iniciarBusqueda(); }
@@ -788,7 +830,8 @@ function renderRanking(){
 
   list.innerHTML = gEscenaHTML('noche', `
     ${typeof cursosSelectorHTML === 'function' ? cursosSelectorHTML() : ''}
-    ${miPuesto >= 0 ? `<div class="g-hud"><span class="g-pill">Tu puesto: ${miPuesto + 1}°</span><span class="g-pill">🪙 ${filas[miPuesto].pts}</span></div>` : ''}
+    ${miPuesto >= 0 ? `<div class="g-hud"><span class="g-pill">Tu puesto: ${miPuesto + 1}°</span><span class="g-pill">🪙 ${filas[miPuesto].pts}</span>${typeof puntosHoyPillHTML === 'function' ? puntosHoyPillHTML() : ''}</div>` : ''}
+    ${typeof puntosHoyDetalleHTML === 'function' ? puntosHoyDetalleHTML() : ''}
     <div class="rk-podio">${podioHTML}</div>
     ${restoHTML ? `<div class="rk-resto">${restoHTML}</div>` : ''}`);
 }
@@ -823,14 +866,21 @@ function ganarMonedas(cantidad){
   guardarMonedas();
   actualizarMonedasEnPantalla();
   if(!miNombre || !miAsiento) return;
+  analyticsRegistrar('monedas_ganadas', { cantidad, juego: analyticsVistaActual });
+  // Los puntos del ranking tienen techo por día (ver puntos.js); la billetera no.
+  const pts = typeof puntosAplicarTope === 'function' ? puntosAplicarTope(cantidad) : cantidad;
+  if(!pts) return;
   const asiento = String(miAsiento);
-  const puntosActuales = (rankingPuntos[asiento] && rankingPuntos[asiento].pts) || 0;
-  const nuevoPts = Math.max(0, puntosActuales + cantidad);
-  rankingPuntos[asiento] = Object.assign({}, rankingPuntos[asiento], { nombre: miNombre, pts: nuevoPts });
+  const previo = rankingPuntos[asiento] || {};
+  const nuevoPts = Math.max(0, (previo.pts || 0) + pts);
+  const mes = typeof puntosMes === 'function' ? puntosMes() : '';
+  const nuevoMes = Math.max(0, ((previo.m && previo.m[mes]) || 0) + pts);
+  rankingPuntos[asiento] = Object.assign({}, previo, { nombre: miNombre, pts: nuevoPts, m: Object.assign({}, previo.m, mes ? { [mes]: nuevoMes } : {}) });
   // .update() en vez de .set(): así no pisa otros campos del mismo registro,
   // como el "mayorDe12" que usa Comercios para decidir qué canjes facturar.
-  rankingRefPuntos().child(asiento).update({ nombre: miNombre, pts: nuevoPts });
-  analyticsRegistrar('monedas_ganadas', { cantidad, juego: analyticsVistaActual });
+  const cambios = { nombre: miNombre, pts: nuevoPts };
+  if(mes) cambios['m/' + mes] = nuevoMes;
+  rankingRefPuntos().child(asiento).update(cambios);
 }
 
 
@@ -878,6 +928,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // Si se abrió desde el QR de un comercio (?canjear=1&...), es el celular
   // DEL COMERCIO, no el de un pasajero: se muestra solo la confirmación del
   // canje y se corta acá, sin arrancar el resto de la app.
+  const datosCupon = typeof vidLeerParamsCupon === 'function' ? vidLeerParamsCupon() : null;
+  if(datosCupon){ vidMostrarPantallaCupon(datosCupon); return; }
   const datosCanje = comerciosLeerParamsCanje();
   if(datosCanje){
     comerciosMostrarPantallaCanje(datosCanje);

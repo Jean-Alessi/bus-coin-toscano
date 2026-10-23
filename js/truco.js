@@ -84,21 +84,55 @@ let trucoMesas = {};
 let trucoMesaIdActual = null;
 let trucoCapacidadElegida = 2;
 
-function trucoRefMesas(){ return db.ref(`salas/${codigoViaje}/truco/mesas`); }
+// Modo Copa (ver copa.js): la mesa vive en copa/partidas/{id}/truco/mesas/m,
+// los jugadores ya están elegidos (reservados, en orden A1, B1, A2, B2…) y
+// cada uno se identifica como "{viaje}-{asiento}" (dos viajes pueden tener el
+// mismo asiento).
+let trucoCopa = null;
+function trucoYo(){ return trucoCopa ? trucoCopa.yo : String(miAsiento || ''); }
+function trucoRefMesas(){ return db.ref(trucoCopa ? trucoCopa.ruta + '/truco/mesas' : `salas/${codigoViaje}/truco/mesas`); }
+let trucoRutaEscuchada = null, trucoRefEscuchada = null;
+
+function trucoEntrarModoCopa(datos){
+  trucoCopa = datos;
+  trucoMesaIdActual = 'm';
+  trucoMesas = {};
+  const ref = trucoRefMesas().child('m');
+  ref.transaction(m => {
+    if(!m) m = { reservados: datos.reservados, capacidad: datos.capacidad, fase: 'esperando', nombres: datos.nombres };
+    if(m.fase !== 'esperando') return m;
+    m.presentes = Object.assign({}, m.presentes, { [datos.yo]: true });
+    m.nombres = Object.assign({}, m.nombres, { [datos.yo]: miNombre });
+    if((m.reservados || []).every(id => m.presentes[id])) Object.assign(m, { jugadores: m.reservados }, trucoEstadoInicial(m.reservados, m.capacidad));
+    return m;
+  });
+}
+function trucoSalirModoCopa(){
+  if(!trucoCopa) return;
+  trucoCopa = null;
+  trucoMesaIdActual = null;
+  trucoMesas = {};
+  trucoEscucharMesas();
+}
+function trucoEscucharMesas(){
+  const ruta = trucoRefMesas().toString();
+  if(trucoRutaEscuchada === ruta) return;
+  if(trucoRefEscuchada) trucoRefEscuchada.off();
+  trucoRutaEscuchada = ruta;
+  trucoRefEscuchada = trucoRefMesas();
+  trucoRefEscuchada.on('value', snap => {
+    trucoMesas = snap.val() || {};
+    trucoRevisarFoldNuevo();
+    renderTruco();
+  });
+}
 
 let trucoListenersListos = false;
 
 function iniciarTruco(){
-  if(!trucoListenersListos){
-    trucoListenersListos = true;
-    trucoRefMesas().on('value', snap => {
-      trucoMesas = snap.val() || {};
-      trucoRevisarFoldNuevo();
-      renderTruco();
-    });
-  } else {
-    renderTruco();
-  }
+  trucoListenersListos = true;
+  trucoEscucharMesas();
+  renderTruco();
 }
 
 // La app no "hace trampa", pero sin ver las cartas de quien se fue al mazo
@@ -114,7 +148,7 @@ function trucoRevisarFoldNuevo(){
   trucoFoldBaseline[trucoMesaIdActual] = clave;
   if(previa === undefined || !clave || clave === previa) return;
   const r = mesa.resultadoMano;
-  const soyYo = String(r.seFue) === String(miAsiento);
+  const soyYo = String(r.seFue) === String(trucoYo());
   const cartasTxt = (r.manoRevelada || []).map(c => escobaNombreCarta(c)).join(', ') || 'sin cartas';
   const quien = soyYo ? 'Te fuiste' : `${mesa.nombres[r.seFue] || `Asiento ${r.seFue}`} se fue`;
   mostrarToast(`🏳️ ${quien} al mazo con: ${cartasTxt}`);
@@ -130,11 +164,11 @@ function trucoElegirCapacidad(n){
 }
 
 function trucoCrearMesa(){
-  if(!miAsiento) return;
+  if(!trucoYo()) return;
   const ref = trucoRefMesas().push();
   ref.set({
-    jugadores: [String(miAsiento)],
-    nombres: { [miAsiento]: miNombre },
+    jugadores: [String(trucoYo())],
+    nombres: { [trucoYo()]: miNombre },
     capacidad: trucoCapacidadElegida,
     fase: 'esperando',
   });
@@ -149,28 +183,31 @@ function trucoRepartirMano(jugadores){
 }
 
 function trucoUnirseAMesa(mesaId){
-  if(!miAsiento) return;
+  if(!trucoYo()) return;
   const mesa = trucoMesas[mesaId];
-  if(!mesa || mesa.fase !== 'esperando' || mesa.jugadores.includes(String(miAsiento)) || mesa.jugadores.length >= mesa.capacidad) return;
-  const jugadores = mesa.jugadores.concat([String(miAsiento)]);
-  const nombres = Object.assign({}, mesa.nombres, { [miAsiento]: miNombre });
+  if(!mesa || mesa.fase !== 'esperando' || mesa.jugadores.includes(String(trucoYo())) || mesa.jugadores.length >= mesa.capacidad) return;
+  const jugadores = mesa.jugadores.concat([String(trucoYo())]);
+  const nombres = Object.assign({}, mesa.nombres, { [trucoYo()]: miNombre });
   const updates = { jugadores, nombres };
 
-  if(jugadores.length === mesa.capacidad){
-    Object.assign(updates, {
-      mano: trucoRepartirMano(jugadores),
-      manoAsiento: jugadores[0], turno: jugadores[0], trickLider: jugadores[0],
-      trickNumero: 0, trickJugadas: [], tricksResultados: [], historialTricks: [],
-      puntajeEquipos: { A: 0, B: 0 },
-      metaPuntos: mesa.capacidad === 2 ? 15 : 30,
-      truco: { nivel: 0, estado: null }, pendienteTruco: null,
-      envido: { estado: 'nadie' }, pendienteEnvido: null,
-      manoNumero: 1, resultadoMano: null, ganadorFinal: null,
-      fase: 'jugando',
-    });
-  }
+  if(jugadores.length === mesa.capacidad) Object.assign(updates, trucoEstadoInicial(jugadores, mesa.capacidad));
   trucoRefMesas().child(mesaId).update(updates);
   trucoMesaIdActual = mesaId;
+}
+
+// Lo que se arma cuando la mesa se completa (mesas comunes y de la Copa).
+function trucoEstadoInicial(jugadores, capacidad){
+  return {
+    mano: trucoRepartirMano(jugadores),
+    manoAsiento: jugadores[0], turno: jugadores[0], trickLider: jugadores[0],
+    trickNumero: 0, trickJugadas: [], tricksResultados: [], historialTricks: [],
+    puntajeEquipos: { A: 0, B: 0 },
+    metaPuntos: capacidad === 2 ? 15 : 30,
+    truco: { nivel: 0, estado: null }, pendienteTruco: null,
+    envido: { estado: 'nadie' }, pendienteEnvido: null,
+    manoNumero: 1, resultadoMano: null, ganadorFinal: null,
+    fase: 'jugando',
+  };
 }
 
 function trucoVolverAlLobby(){
@@ -232,18 +269,18 @@ function trucoAplicarPuntosYContinuar(mesa, equipoGanador, puntos, resumenExtra)
 function trucoJugarCarta(indice){
   const mesa = trucoMesaActual();
   if(!mesa || mesa.fase !== 'jugando' || mesa.pendienteTruco || mesa.pendienteEnvido) return;
-  if(String(mesa.turno) !== String(miAsiento)) return;
-  const miMano = (mesa.mano && mesa.mano[String(miAsiento)]) || [];
+  if(String(mesa.turno) !== String(trucoYo())) return;
+  const miMano = (mesa.mano && mesa.mano[String(trucoYo())]) || [];
   const carta = miMano[indice];
   if(!carta) return;
 
   const nuevaMano = miMano.filter((_, i) => i !== indice);
-  const trickJugadas = (mesa.trickJugadas || []).concat([{ asiento: String(miAsiento), carta }]);
-  const updates = { [`mano/${miAsiento}`]: nuevaMano };
+  const trickJugadas = (mesa.trickJugadas || []).concat([{ asiento: String(trucoYo()), carta }]);
+  const updates = { [`mano/${trucoYo()}`]: nuevaMano };
 
   if(trickJugadas.length < mesa.jugadores.length){
     updates.trickJugadas = trickJugadas;
-    updates.turno = trucoSiguienteJugador(mesa, miAsiento);
+    updates.turno = trucoSiguienteJugador(mesa, trucoYo());
     trucoRefMesas().child(trucoMesaIdActual).update(updates);
     return;
   }
@@ -281,7 +318,7 @@ function trucoJugarCarta(indice){
     // la mano nueva repartida), que en Firebase no puede convivir en el
     // mismo update() con la key puntual "mano/<asiento>" de arriba (una es
     // ancestro de la otra) — la sacamos porque de todos modos queda pisada.
-    delete updates[`mano/${miAsiento}`];
+    delete updates[`mano/${trucoYo()}`];
     Object.assign(updates, trucoAplicarPuntosYContinuar(mesa, equipoGanador, puntos, { motivo: 'jugada', nivel: mesa.truco ? mesa.truco.nivel : 0 }));
   }
 
@@ -303,11 +340,11 @@ function trucoPuedeCantarTruco(mesa, asiento){
 function trucoCantarTruco(){
   const mesa = trucoMesaActual();
   if(!mesa || mesa.fase !== 'jugando' || mesa.pendienteTruco || mesa.pendienteEnvido) return;
-  if(String(mesa.turno) !== String(miAsiento)) return;
-  if(!trucoPuedeCantarTruco(mesa, miAsiento)) return;
+  if(String(mesa.turno) !== String(trucoYo())) return;
+  if(!trucoPuedeCantarTruco(mesa, trucoYo())) return;
   const nivelPedido = (mesa.truco.nivel || 0) + 1;
   trucoRefMesas().child(trucoMesaIdActual).update({
-    pendienteTruco: { nivelPedido, cantadoPor: String(miAsiento), equipoCantador: trucoEquipoDe(mesa.jugadores, miAsiento) },
+    pendienteTruco: { nivelPedido, cantadoPor: String(trucoYo()), equipoCantador: trucoEquipoDe(mesa.jugadores, trucoYo()) },
   });
 }
 
@@ -315,13 +352,13 @@ function trucoResponderTruco(accion){
   const mesa = trucoMesaActual();
   const p = mesa && mesa.pendienteTruco;
   if(!p) return;
-  const miEquipo = trucoEquipoDe(mesa.jugadores, miAsiento);
+  const miEquipo = trucoEquipoDe(mesa.jugadores, trucoYo());
   if(miEquipo === p.equipoCantador) return;
 
   if(accion === 'escalar'){
     if(p.nivelPedido >= 3) return;
     trucoRefMesas().child(trucoMesaIdActual).update({
-      pendienteTruco: { nivelPedido: p.nivelPedido + 1, cantadoPor: String(miAsiento), equipoCantador: miEquipo },
+      pendienteTruco: { nivelPedido: p.nivelPedido + 1, cantadoPor: String(trucoYo()), equipoCantador: miEquipo },
     });
     return;
   }
@@ -347,11 +384,11 @@ function trucoIrseAlMazo(){
   const mesa = trucoMesaActual();
   if(!mesa || mesa.fase !== 'jugando') return;
   if(!confirm('¿Seguro que te vas al mazo? El equipo rival se lleva los puntos de esta mano.')) return;
-  const miEquipo = trucoEquipoDe(mesa.jugadores, miAsiento);
+  const miEquipo = trucoEquipoDe(mesa.jugadores, trucoYo());
   const equipoRival = trucoOtroEquipo(miEquipo);
   const puntos = mesa.truco && mesa.truco.estado === 'aceptado' ? TRUCO_PUNTOS_QUERIDO[mesa.truco.nivel] : 1;
-  const miManoActual = (mesa.mano && mesa.mano[String(miAsiento)]) || [];
-  const updates = trucoAplicarPuntosYContinuar(mesa, equipoRival, puntos, { motivo: 'mazo', seFue: String(miAsiento), manoRevelada: miManoActual });
+  const miManoActual = (mesa.mano && mesa.mano[String(trucoYo())]) || [];
+  const updates = trucoAplicarPuntosYContinuar(mesa, equipoRival, puntos, { motivo: 'mazo', seFue: String(trucoYo()), manoRevelada: miManoActual });
   updates.pendienteTruco = null;
   updates.pendienteEnvido = null;
   trucoRefMesas().child(trucoMesaIdActual).update(updates);
@@ -365,9 +402,9 @@ function trucoEnvidoDisponible(mesa){
 function trucoCantarEnvido(tipo){
   const mesa = trucoMesaActual();
   if(!trucoEnvidoDisponible(mesa)) return;
-  if(String(mesa.turno) !== String(miAsiento)) return;
+  if(String(mesa.turno) !== String(trucoYo())) return;
   trucoRefMesas().child(trucoMesaIdActual).update({
-    pendienteEnvido: { tipo, cantadoPor: String(miAsiento), equipoCantador: trucoEquipoDe(mesa.jugadores, miAsiento) },
+    pendienteEnvido: { tipo, cantadoPor: String(trucoYo()), equipoCantador: trucoEquipoDe(mesa.jugadores, trucoYo()) },
   });
 }
 
@@ -375,7 +412,7 @@ function trucoResponderEnvido(accion){
   const mesa = trucoMesaActual();
   const p = mesa && mesa.pendienteEnvido;
   if(!p) return;
-  const miEquipo = trucoEquipoDe(mesa.jugadores, miAsiento);
+  const miEquipo = trucoEquipoDe(mesa.jugadores, trucoYo());
   if(miEquipo === p.equipoCantador) return;
 
   if(accion === 'no_quiero'){
@@ -411,11 +448,11 @@ function trucoResponderEnvido(accion){
 let trucoPremiadoMesa = null;
 
 function trucoPremiarSiCorresponde(mesa){
-  if(!miAsiento || !mesa || mesa.fase !== 'terminado' || !mesa.ganadorFinal) return;
-  if(trucoPremiadoMesa === trucoMesaIdActual) return;
-  if(!mesa.jugadores.includes(String(miAsiento))) return;
-  trucoPremiadoMesa = trucoMesaIdActual;
-  const miEquipo = trucoEquipoDe(mesa.jugadores, miAsiento);
+  if(!trucoYo() || !mesa || mesa.fase !== 'terminado' || !mesa.ganadorFinal) return;
+  if(trucoPremiadoMesa === (trucoCopa ? trucoCopa.id : trucoMesaIdActual)) return;
+  if(!mesa.jugadores.includes(String(trucoYo()))) return;
+  trucoPremiadoMesa = trucoCopa ? trucoCopa.id : trucoMesaIdActual;
+  const miEquipo = trucoEquipoDe(mesa.jugadores, trucoYo());
   const a = mesa.puntajeEquipos.A, b = mesa.puntajeEquipos.B;
   if(miEquipo === mesa.ganadorFinal){
     ganarMonedas(25);
@@ -431,8 +468,8 @@ function renderTrucoLobby(){
   const listaHTML = mesasArray.length ? mesasArray.map(m => {
     const nombres = m.jugadores.map(a => m.nombres[a]).join(', ');
     const estado = m.fase === 'esperando' ? `Esperando jugadores (${m.jugadores.length}/${m.capacidad})` : m.fase === 'jugando' ? `Jugando (mano ${m.manoNumero})` : 'Terminada';
-    const puedoUnirme = m.fase === 'esperando' && m.jugadores.length < m.capacidad && !m.jugadores.includes(String(miAsiento));
-    const puedoEntrar = m.jugadores.includes(String(miAsiento));
+    const puedoUnirme = m.fase === 'esperando' && m.jugadores.length < m.capacidad && !m.jugadores.includes(String(trucoYo()));
+    const puedoEntrar = m.jugadores.includes(String(trucoYo()));
     return `<div class="bingo-roster-item">
       <span>${nombres} <span style="color:var(--gray);font-size:11px;">(${m.capacidad === 2 ? '1 vs 1' : m.capacidad === 4 ? '2 vs 2' : '3 vs 3'})</span><br><span style="font-size:11px;color:var(--gray);">${estado}</span></span>
       <span class="bingo-roster-derecha">
@@ -457,7 +494,7 @@ function renderTrucoLobby(){
 }
 
 function trucoBannerPendiente(mesa){
-  const miEquipo = trucoEquipoDe(mesa.jugadores, miAsiento);
+  const miEquipo = trucoEquipoDe(mesa.jugadores, trucoYo());
 
   if(mesa.pendienteTruco){
     const p = mesa.pendienteTruco;
@@ -503,6 +540,17 @@ function renderTrucoMesa(){
   const mesa = trucoMesaActual();
   if(!mesa){ trucoVolverAlLobby(); return; }
 
+  if(mesa.fase === 'esperando' && trucoCopa){
+    const res = mesa.reservados || [];
+    cont.innerHTML = `
+      <div class="escena escena-madera">
+        ${gDialogoHTML('🏆 Partido de la Copa', 'Esperando que entren todos los elegidos. Arranca solo cuando están todos.')}
+        ${res.map((id, i) => `<div class="bingo-roster-item"><span>${(mesa.presentes && mesa.presentes[id]) ? '✅' : '⏳'} ${(mesa.nombres && mesa.nombres[id]) || id}</span><span style="font-size:12px;">Equipo ${i % 2 === 0 ? 'A' : 'B'}</span></div>`).join('')}
+        <div class="g-pie"><span onclick="volverDeJuego()">‹ Volver a la Copa</span></div>
+      </div>`;
+    return;
+  }
+
   if(mesa.fase === 'esperando'){
     cont.innerHTML = `
       <div class="escena escena-madera">
@@ -513,9 +561,9 @@ function renderTrucoMesa(){
     return;
   }
 
-  const miEquipo = trucoEquipoDe(mesa.jugadores, miAsiento);
-  const companeros = trucoCompaneros(mesa, miAsiento).map(a => mesa.nombres[a]);
-  const rivales = trucoRivales(mesa, miAsiento).map(a => mesa.nombres[a]);
+  const miEquipo = trucoEquipoDe(mesa.jugadores, trucoYo());
+  const companeros = trucoCompaneros(mesa, trucoYo()).map(a => mesa.nombres[a]);
+  const rivales = trucoRivales(mesa, trucoYo()).map(a => mesa.nombres[a]);
   const marcadorHTML = trucoMarcadorHTML(mesa, miEquipo, companeros, rivales);
 
   if(mesa.fase === 'terminado'){
@@ -524,21 +572,22 @@ function renderTrucoMesa(){
       <div class="escena escena-madera">
         ${marcadorHTML}
         ${gDialogoHTML(`${gano ? '🏆 ¡Ganó tu equipo!' : 'Ganó el equipo rival'}`, `${mesa.puntajeEquipos.A} a ${mesa.puntajeEquipos.B} puntos (a ${mesa.metaPuntos} se termina).`)}
-        <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Cerrar esta mesa</button></div>
-        <div class="g-pie"><span onclick="trucoVolverAlLobby()">‹ Volver a la lista de mesas</span></div>
+        ${trucoCopa ? '<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="volverDeJuego()">Volver a la Copa</button></div>' : `<div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Cerrar esta mesa</button></div>
+        <div class="g-pie"><span onclick="trucoVolverAlLobby()">‹ Volver a la lista de mesas</span></div>`}
       </div>`;
     trucoPremiarSiCorresponde(mesa);
+    if(trucoCopa && typeof copaTrucoTerminado === 'function') copaTrucoTerminado(trucoCopa.id, mesa);
     return;
   }
 
   const bannerPendiente = trucoBannerPendiente(mesa);
-  const miMano = (mesa.mano && mesa.mano[String(miAsiento)]) || [];
-  const soyTurno = !mesa.pendienteTruco && !mesa.pendienteEnvido && String(mesa.turno) === String(miAsiento);
+  const miMano = (mesa.mano && mesa.mano[String(trucoYo())]) || [];
+  const soyTurno = !mesa.pendienteTruco && !mesa.pendienteEnvido && String(mesa.turno) === String(trucoYo());
 
-  const nombreDe = asiento => String(asiento) === String(miAsiento) ? 'Vos' : mesa.nombres[asiento];
+  const nombreDe = asiento => String(asiento) === String(trucoYo()) ? 'Vos' : mesa.nombres[asiento];
 
-  const asientosCompaneros = trucoCompaneros(mesa, miAsiento);
-  const rivalesHTML = `<div class="m-rivales">${mesa.jugadores.filter(a => a !== String(miAsiento)).map(a => {
+  const asientosCompaneros = trucoCompaneros(mesa, trucoYo());
+  const rivalesHTML = `<div class="m-rivales">${mesa.jugadores.filter(a => a !== String(trucoYo())).map(a => {
     const cant = ((mesa.mano && mesa.mano[a]) || []).length;
     return `<div class="m-rival">
       <div class="m-rival-nombre">${mesa.nombres[a]}${asientosCompaneros.includes(a) ? ' 🤝' : ''}</div>
@@ -573,7 +622,7 @@ function renderTrucoMesa(){
         <button class="gbtn gbtn-chico" onclick="trucoCantarEnvido('real_envido')">Real Envido</button>
         <button class="gbtn gbtn-chico" onclick="trucoCantarEnvido('falta_envido')">Falta Envido</button>
       </div>` : '';
-    const nombreProximoTruco = trucoPuedeCantarTruco(mesa, miAsiento) ? TRUCO_NOMBRE_NIVEL[(mesa.truco.nivel || 0) + 1] : null;
+    const nombreProximoTruco = trucoPuedeCantarTruco(mesa, trucoYo()) ? TRUCO_NOMBRE_NIVEL[(mesa.truco.nivel || 0) + 1] : null;
     const trucoBtn = nombreProximoTruco ? `<div class="g-acciones"><button class="gbtn gbtn-rojo gbtn-ancho" onclick="trucoCantarTruco()">¡${nombreProximoTruco}!</button></div>` : '';
     const nivelActual = (mesa.truco && mesa.truco.nivel) || 0;
     const avisoSubir = (!nombreProximoTruco && nivelActual > 0 && nivelActual < 3) ? '<p class="g-ayuda">Ahora solo el rival puede subir el truco</p>' : '';
@@ -592,7 +641,7 @@ function renderTrucoMesa(){
       </div>
       ${bannerPendiente || `${turnoHTML}${accionesHTML}`}
       <div class="m-mano">${miMano.map((c, i) => naipeHTML(c, 'grande', soyTurno ? `trucoJugarCarta(${i})` : null)).join('')}</div>
-      <div class="g-pie"><span onclick="trucoIrseAlMazo()">🏳️ Irme al mazo</span><span onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Abandonar mesa</span></div>
+      <div class="g-pie"><span onclick="trucoIrseAlMazo()">🏳️ Irme al mazo</span>${trucoCopa ? '<span onclick="volverDeJuego()">‹ Copa</span>' : `<span onclick="trucoTerminarMesa('${trucoMesaIdActual}')">Abandonar mesa</span>`}</div>
     </div>`;
 }
 
@@ -600,6 +649,12 @@ function renderTruco(){
   const cont = document.getElementById('truco-content');
   if(!cont) return;
   document.getElementById('truco-sub').textContent = trucoMesaIdActual ? 'En una mesa' : 'Elegí o creá una mesa';
+  if(trucoCopa && !trucoMesas.m){
+    document.getElementById('truco-sub').textContent = 'Copa Busmac';
+    cont.innerHTML = '<div class="escena escena-madera">' + gDialogoHTML('🏆 Preparando la mesa…', 'Un segundo.') + '</div>';
+    return;
+  }
+  if(trucoCopa) document.getElementById('truco-sub').textContent = 'Copa Busmac';
   const enMesa = !!(trucoMesaIdActual && trucoMesas[trucoMesaIdActual]);
   // Dentro de una mesa el título sobra: ese espacio es para que entren las
   // cartas y los botones en una sola pantalla.
