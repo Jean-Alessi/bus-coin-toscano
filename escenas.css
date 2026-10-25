@@ -1406,3 +1406,6 @@ button.tcarta{cursor:default;}
 .vid-qr{background:#fff;padding:4px;border-radius:8px;flex-shrink:0;}
 
 .plz-canvas3d{display:block; width:100%; height:auto; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent;}
+
+.plz-caja{position:relative;}
+.plz-b3cam{position:absolute; right:8px; top:8px; border:none; border-radius:14px; padding:6px 10px; font-size:13px; font-weight:800; font-family:inherit; color:#fff; background:rgba(15,42,77,.8); border:2px solid rgba(255,255,255,.5); cursor:pointer; line-height:1.2;}
