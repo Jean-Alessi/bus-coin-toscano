@@ -829,6 +829,11 @@ button.tcarta{cursor:default;}
 .m-mano-solapada .tcarta{margin-left:calc(-1 * var(--solape, 20px));}
 .m-mano-solapada .tcarta:first-child{margin-left:0;}
 
+/* Versión de tienda (TWA): sin Panel general del dueño */
+.modo-tienda .btn-solo-web{display:none;}
+.entrada-legal{font-size:12px; font-weight:600; text-align:center; margin:4px 6px 10px; opacity:.85; text-shadow:0 1px 3px rgba(0,0,0,.4);}
+.entrada-legal a{color:inherit; text-decoration:underline;}
+
 /* Flecha de volver flotante: solo cuando el juego oculta su título y ocupa toda la escena */
 .btn-back-flotante{display:none;}
 .juego-inmersivo .btn-back-flotante, .truco-en-mesa .btn-back-flotante{
@@ -1409,3 +1414,5 @@ button.tcarta{cursor:default;}
 
 .plz-caja{position:relative;}
 .plz-b3cam{position:absolute; right:8px; top:8px; border:none; border-radius:14px; padding:6px 10px; font-size:13px; font-weight:800; font-family:inherit; color:#fff; background:rgba(15,42,77,.8); border:2px solid rgba(255,255,255,.5); cursor:pointer; line-height:1.2;}
+
+.plz-b3noche{top:46px;}
