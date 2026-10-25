@@ -136,6 +136,7 @@ function iniciarPlaza(){
   plz.t = 0; plz.conectado = false;
   plz.bots = plazaEsDemo() ? plazaCrearBots() : [];
   plazaRender();
+  if(typeof plaza3dIniciar === 'function') plaza3dIniciar();
   plazaActualizarCantidad();
   if(typeof feriaIniciar === 'function') feriaIniciar();
   if(typeof cartitasIniciar === 'function') cartitasIniciar();
@@ -271,6 +272,7 @@ async function plazaIrASala(k){
 
 function plazaAlSalir(silencioso){
   cancelAnimationFrame(plz.raf);
+  if(typeof plaza3dDetener === 'function') plaza3dDetener();
   if(plz.activo && !plz.enMicro) plz.posGuardada = { x: plz.yo.x, y: plz.yo.y, t: Date.now(), viaje: (typeof codigoViaje !== 'undefined' ? codigoViaje : ''), sector: plz.sector };
   plz.pose = null;
   if(typeof feriaAlSalir === 'function') feriaAlSalir();
@@ -362,7 +364,7 @@ function plazaRender(){
     <div id="plaza-seleccion"></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
-    <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrirParadas()">🚌 Micro</button></div>`, 'plz-escena');
+    <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrirParadas()">🚌 Micro</button><button class="gbtn gbtn-chico-texto" id="plaza-b3d" onclick="plaza3dAlternar()">🧊 3D</button></div>`, 'plz-escena');
   plz.canvas = cont.querySelector('canvas');
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   plz.canvas.width = PLZ.VW * dpr; plz.canvas.height = PLZ.VH * dpr;
@@ -562,7 +564,8 @@ function plazaPaso(dt){
   plz.cam.y = Math.max(0, Math.min(PLZ.H - PLZ.VH, plz.yo.y - PLZ.VH / 2 - 20));
   const puerta = plazaPuertaCercana();
   if((puerta && puerta.id) !== (plz.puerta && plz.puerta.id)){ plz.puerta = puerta; plazaRenderAccion(); }
-  if(plz.ctx) plazaDibujar(plz.ctx);
+  if(plz.modo3d && typeof plaza3dFrame === 'function') plaza3dFrame(dt);
+  else if(plz.ctx) plazaDibujar(plz.ctx);
 }
 
 // ---- Dibujo ----

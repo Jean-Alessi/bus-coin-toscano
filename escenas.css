@@ -1404,3 +1404,5 @@ button.tcarta{cursor:default;}
 .vid-cupon{display:flex;justify-content:space-between;gap:10px;align-items:center;background:#fff;border:2px dashed #f2b33d;border-radius:14px;padding:10px;margin-bottom:8px;color:#0f2a4d;}
 .vid-cupon-usado{opacity:.55;border-style:solid;border-color:#ccd;}
 .vid-qr{background:#fff;padding:4px;border-radius:8px;flex-shrink:0;}
+
+.plz-canvas3d{display:block; width:100%; height:auto; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent;}
