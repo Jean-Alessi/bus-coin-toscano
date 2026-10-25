@@ -487,6 +487,7 @@ function plazaChoca(x, y){
     if(x > e.x - 6 && x < e.x + e.w + 6 && y > e.y + 24 && y < e.y + e.h) return true;
   }
   for(const b of PLZ_BLOQUES){ if(x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h) return true; }
+  if(plz.modo3d && typeof plaza3dChoca === 'function' && plaza3dChoca(x, y)) return true; // en 3D también chocan árboles, bancos, hamacas...
   return false;
 }
 
