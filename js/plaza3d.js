@@ -8,7 +8,7 @@
 // Medidas: 1 unidad 3D = 10 píxeles de la plaza 2D (x → X, y → Z).
 
 const P3 = { THREE_URL: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', K: 0.1 };
-const p3 = { listo: false, r: null, escena: null, cam: null, canvas: null, avatares: {}, etiquetas: {}, yaw: 0, dist: 20, alto: 24, mira: null, anim: [], t: 0, luz: null, sol: null, sector: '', tiempoCambio: 0 };
+const p3 = { listo: false, r: null, escena: null, cam: null, canvas: null, avatares: {}, etiquetas: {}, yaw: 0, dist: 20, alto: 24, mira: null, anim: [], t: 0, luz: null, sol: null, sector: '', tiempoCambio: 0, zonas: [], faroles: [], carteles: {}, destino: null, nubes: [], fps: { t: 0, n: 0, listo: false } };
 
 function plaza3dCargar(){
   if(window.THREE) return Promise.resolve();
@@ -44,6 +44,30 @@ function p3Etiqueta(texto, o){
   sp.scale.set(w / (o.escala || 30), h / (o.escala || 30), 1); sp.renderOrder = 10;
   p3.etiquetas[clave] = sp;
   return sp.clone();
+}
+
+// Cartel grande y legible, inclinado sobre el techo hacia la cámara (como el cartel de la fachada en el 2D).
+function p3Cartel(e, color, ancho){
+  const clave = 'cartel|' + e.emoji + '|' + e.nombre + '|' + color;
+  if(!p3.etiquetas[clave]){
+    const c = document.createElement('canvas'); c.width = 400; c.height = 150; const x = c.getContext('2d');
+    x.fillStyle = color; x.beginPath(); if(x.roundRect) x.roundRect(4, 4, 392, 142, 30); else x.rect(4, 4, 392, 142); x.fill();
+    x.strokeStyle = '#ffffff'; x.lineWidth = 8; x.stroke();
+    x.fillStyle = 'rgba(255,255,255,.18)'; x.beginPath(); if(x.roundRect) x.roundRect(10, 10, 380, 50, 24); else x.rect(10, 10, 380, 50); x.fill();
+    x.font = '56px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#fff'; x.fillText(e.emoji, 64, 77);
+    let tam = 54; x.font = '800 ' + tam + 'px Poppins, sans-serif';
+    while(x.measureText(e.nombre).width > 270 && tam > 22){ tam -= 2; x.font = '800 ' + tam + 'px Poppins, sans-serif'; }
+    x.lineWidth = 7; x.strokeStyle = 'rgba(0,0,0,.45)'; x.strokeText(e.nombre, 238, 80); x.fillStyle = '#fff'; x.fillText(e.nombre, 238, 80);
+    const tex = new THREE.CanvasTexture(c); tex.minFilter = THREE.LinearFilter; p3.etiquetas[clave] = tex;
+  }
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(ancho, ancho * 150 / 400), new THREE.MeshBasicMaterial({ map: p3.etiquetas[clave], transparent: true, side: THREE.DoubleSide }));
+  return m;
+}
+// Marca en el piso (alfombra de la puerta o círculo de una atracción): se enciende cuando estás cerca, igual que el botón de abajo.
+function p3Zona(id, x, z, w, d, redonda){
+  const m = new THREE.Mesh(redonda ? new THREE.CircleGeometry(w, 20) : new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; m.position.set(x, 0.06, z); p3.escena.add(m); p3.zonas.push({ mesh: m, id, base: redonda ? 0.16 : 0.38 });
+  return m;
 }
 
 // ---- Personaje low poly con la ropa y el pelo del avatar ----
@@ -95,7 +119,7 @@ function p3Avatar(puesto){
 function p3Limpiar(){
   if(!p3.escena) return;
   while(p3.escena.children.length) p3.escena.remove(p3.escena.children[0]);
-  p3.avatares = {}; p3.anim = [];
+  p3.avatares = {}; p3.anim = []; p3.zonas = []; p3.faroles = []; p3.carteles = {}; p3.nubes = []; p3.destino = null;
 }
 
 function p3Luces(){
@@ -110,30 +134,84 @@ function p3Noche(){
   return Math.max(0, Math.min(1, a));
 }
 
+function p3TexTejas(base){
+  const clave = 'tejas|' + base;
+  if(p3.etiquetas[clave]) return p3.etiquetas[clave];
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128; const x = c.getContext('2d');
+  x.fillStyle = base; x.fillRect(0, 0, 128, 128);
+  for(let f = 0; f < 8; f++){ for(let i = 0; i < 8; i++){ const ox = (f % 2) * 8, px = i * 16 + ox; x.fillStyle = 'rgba(0,0,0,' + (0.05 + ((i * 7 + f * 3) % 5) * 0.03) + ')'; x.fillRect(px, f * 16, 15, 14); x.fillStyle = 'rgba(255,255,255,.1)'; x.fillRect(px, f * 16, 15, 3); } x.fillStyle = 'rgba(0,0,0,.28)'; x.fillRect(0, f * 16 + 14, 128, 2); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; p3.etiquetas[clave] = t; return t;
+}
+function p3TexAdoquin(base){
+  const clave = 'adoq|' + base;
+  if(p3.etiquetas[clave]) return p3.etiquetas[clave];
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128; const x = c.getContext('2d');
+  x.fillStyle = p3Mezcla(base, '#000000', 0.28).getStyle(); x.fillRect(0, 0, 128, 128);
+  const col = p3Color(base);
+  for(let f = 0; f < 7; f++){ for(let i = 0; i < 7; i++){ const px = i * 19 + (f % 2) * 9 - 4, py = f * 19; const v = ((i * 13 + f * 29) % 7) / 7; x.fillStyle = col.clone().multiplyScalar(0.86 + v * 0.22).getStyle(); x.beginPath(); if(x.roundRect) x.roundRect(px + 1, py + 1, 17, 17, 5); else x.rect(px + 1, py + 1, 17, 17); x.fill(); } }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; p3.etiquetas[clave] = t; return t;
+}
+function p3Maceta(x, z){
+  p3Cil(0.5, 0.38, 0.8, 7, '#C0603A', x, 0.4, z); p3Esf(0.62, '#3E9B4F', x, 1.2, z, null, 6);
+  [[-0.3, 0.1], [0.3, 0.2], [0, -0.3]].forEach(([dx, dz], i) => p3Esf(0.16, ['#FF5A7A', '#FFD84D', '#ffffff'][i], x + dx, 1.5, z + dz, null, 4));
+}
+function p3Farol(x, z){
+  p3Cil(0.14, 0.2, 4.4, 5, '#2b2f3a', x, 2.2, z); p3Caja(0.9, 0.12, 0.12, '#2b2f3a', x + 0.4, 4.4, z);
+  const lamp = p3Caja(0.5, 0.7, 0.5, '#FFD98A', x + 0.8, 4.2, z); lamp.material = new THREE.MeshBasicMaterial({ color: 0xFFE3A0 });
+  p3Cono(0.45, 0.35, '#2b2f3a', x + 0.8, 4.7, z, null, 4);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xFFC860, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false })); glow.scale.set(5, 5, 1); glow.position.set(x + 0.8, 4.2, z); p3.escena.add(glow); p3.faroles.push(glow);
+}
+
 function p3Edificio(e, s){
   const x = e.x * P3.K, z = e.y * P3.K, w = e.w * P3.K, d = e.h * P3.K, abajo = e.lado !== 'arriba';
   const cx = x + w / 2, cz = z + d / 2;
   if(e.mesa){ // mesa redonda con sillas
     p3Cil(3.2, 3.2, 1.3, 10, '#2f7d4f', cx, 0.65, cz); p3Cil(3.4, 3.4, 0.2, 10, '#8a5a30', cx, 1.35, cz);
     for(let i = 0; i < 6; i++){ const a = i * Math.PI / 3; p3Caja(1.1, 1.1, 1.1, '#6a4422', cx + Math.sin(a) * 4.4, 0.55, cz + Math.cos(a) * 4.4); }
-    const et = p3Etiqueta(e.emoji + ' ' + e.nombre); et.position.set(cx, 5.2, cz); p3.escena.add(et); return;
+    p3Zona(e.id, cx, cz, 6.4, 0, true); const et = p3Etiqueta(e.emoji + ' ' + e.nombre, { tam: 26, escala: 26 }); et.position.set(cx, 5.4, cz); p3.escena.add(et); return;
   }
+  const casa = !e.puesto && !e.padel && !e.neon && !e.sel;       // las casas llevan techo de tejas a dos aguas
   const alto = e.padel ? 5 : e.puesto ? 4.4 : e.compacto ? 5.6 : 7.2;
   let color = e.color || '#888';
   if(e.neon) color = '#17102e'; if(e.sel) color = '#c8e3f7';
-  const cuerpo = p3Caja(w, alto, d, color, cx, alto / 2, cz);
-  p3Caja(w + 0.6, 0.6, d + 0.6, p3Mezcla(color, '#000000', 0.35).getStyle(), cx, alto + 0.3, cz);
-  if(e.neon){ p3Caja(w * 0.9, 0.35, 0.2, '#ff4ddb', cx, alto - 0.8, abajo ? z + d + 0.12 : z - 0.12).material = new THREE.MeshBasicMaterial({ color: 0xff4ddb }); p3Caja(w * 0.9, 0.35, 0.2, '#4dd9ff', cx, 1.0, abajo ? z + d + 0.12 : z - 0.12).material = new THREE.MeshBasicMaterial({ color: 0x4dd9ff }); }
+  p3Caja(w, alto, d, color, cx, alto / 2, cz);
+  if(casa){
+    p3Caja(w + 0.3, 0.9, d + 0.3, p3Mezcla(color, '#6a5a4a', 0.55).getStyle(), cx, 0.45, cz);                         // zócalo de piedra
+    const rh = 3.4, teja = p3Mezcla(color, '#B4552E', 0.72).getStyle();
+    const tex = p3TexTejas(teja).clone(); tex.needsUpdate = true; tex.repeat.set(4, 2);
+    const techo = new THREE.Mesh(p3Plano(new THREE.ConeGeometry(1, rh, 4)), new THREE.MeshLambertMaterial({ map: tex })); techo.rotation.y = Math.PI / 4; techo.scale.set((w + 1) / Math.SQRT2, 1, (d + 1) / Math.SQRT2); techo.position.set(cx, alto + rh / 2, cz); p3.escena.add(techo);
+    p3Caja(w + 1.1, 0.35, d + 1.1, p3Mezcla(color, '#000000', 0.5).getStyle(), cx, alto + 0.1, cz);
+  } else p3Caja(w + 0.6, 0.6, d + 0.6, p3Mezcla(color, '#000000', 0.35).getStyle(), cx, alto + 0.3, cz);
+  const fz = abajo ? z + d : z;
+  const lado = abajo ? 1 : -1;
+  if(e.neon){ [[alto - 0.8, 0xff4ddb], [1.0, 0x4dd9ff]].forEach(([yy, col]) => { const b = p3Caja(w * 0.9, 0.35, 0.2, '#ffffff', cx, yy, fz + lado * 0.12); b.material = new THREE.MeshBasicMaterial({ color: col }); }); }
   if(e.sel){ [0, 1, 2].forEach(i => p3Caja(w / 6, alto, d + 0.1, '#74ACDF', x + w / 6 + i * w / 3, alto / 2, cz)); }
-  if(e.padel){ // techo de vidrio con la cancha
+  if(e.padel){
     p3Caja(w - 2, 0.15, d - 2, '#2E6FD0', cx, alto + 0.7, cz); p3Caja(0.2, 0.2, d - 2.4, '#ffffff', cx, alto + 0.85, cz); p3Caja(w - 2.4, 0.2, 0.2, '#ffffff', cx, alto + 0.85, cz);
     const bola = p3Esf(0.5, '#D9F236', cx, alto + 1.6, cz, null, 6); p3.anim.push(t => { bola.position.x = cx + Math.sin(t * 1.8) * (w / 2 - 3); bola.position.y = alto + 1.6 + Math.abs(Math.sin(t * 3.6)) * 1.6; });
   }
-  // puerta y toldo
-  const pz = abajo ? z + d + 0.1 : z - 0.1;
-  p3Caja(2.2, 3.2, 0.3, e.neon ? '#ff4ddb' : '#5A3A22', cx, 1.6, pz);
-  if(e.puesto){ for(let i = 0; i < 6; i++) p3Caja(w / 6, 0.25, 2.4, i % 2 ? '#ffffff' : p3Mezcla(color, '#000000', 0.2).getStyle(), x + w / 12 + i * w / 6, 3.4 - 0.2, abajo ? z + d + 1.0 : z - 1.0).rotation.x = abajo ? 0.25 : -0.25; }
-  const et = p3Etiqueta(e.emoji + ' ' + e.nombre); et.position.set(cx, alto + (e.padel ? 3.4 : 2.0), cz); p3.escena.add(et);
+  // puerta con marco, escalón y macetas
+  p3Caja(3, 3.7, 0.3, e.neon ? '#ff4ddb' : '#3A2418', cx, 1.85, fz + lado * 0.08);
+  p3Caja(2.2, 3.2, 0.3, e.neon ? '#ff9ae9' : '#8A5A32', cx, 1.6, fz + lado * 0.2);
+  p3Caja(3.4, 0.25, 1.4, '#9a9488', cx, 0.12, fz + lado * 0.9);
+  if(e.puesto){ for(let i = 0; i < 6; i++) p3Caja(w / 6, 0.25, 2.4, i % 2 ? '#ffffff' : p3Mezcla(color, '#000000', 0.2).getStyle(), x + w / 12 + i * w / 6, 3.4 - 0.2, fz + lado * 1.0).rotation.x = abajo ? 0.25 : -0.25; }
+  if(casa){
+    p3Maceta(cx - 2.6, fz + lado * 1.1); p3Maceta(cx + 2.6, fz + lado * 1.1);
+    [-0.3, 0.3].forEach(k => {   // ventanas con marco y postigos
+      const vx = cx + w * k, vy = alto * 0.62, vz = fz + lado * 0.12;
+      p3Caja(2.6, 2.8, 0.25, '#5A3A22', vx, vy, vz); const v = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.3), new THREE.MeshBasicMaterial({ color: 0xA9D8FF })); v.position.set(vx, vy, vz + lado * 0.14); if(!abajo) v.rotation.y = Math.PI; p3.escena.add(v);
+      p3Caja(0.12, 2.3, 0.1, '#5A3A22', vx, vy, vz + lado * 0.16); p3Caja(2.1, 0.12, 0.1, '#5A3A22', vx, vy, vz + lado * 0.16);
+      [-1, 1].forEach(l => p3Caja(0.8, 2.8, 0.15, p3Mezcla(color, '#1a3a2a', 0.65).getStyle(), vx + l * 1.7, vy, vz + lado * 0.08));
+      p3Caja(2.9, 0.25, 0.7, '#8A7A68', vx, vy - 1.55, vz + lado * 0.4);
+    });
+  }
+  // cartel grande y legible, inclinado hacia la cámara (en las casas, apoyado en el techo)
+  p3Zona(e.id, cx, fz + lado * 2.8, Math.min(8, w * 0.7), 4.2, false);
+  const anchoCartel = Math.min(w * 1.0, 13.5), cartel = p3Cartel(e, e.neon ? '#7E2DBB' : (e.sel ? '#4A8FC4' : color), anchoCartel);
+  const gc = new THREE.Group();
+  if(casa){ const rh = 3.4, pend = Math.atan2(rh, d / 2 + 0.5), t = 0.4; gc.position.set(cx, alto + t * rh + 0.5, z + d + 0.5 - t * (d / 2 + 0.5)); cartel.rotation.x = -(Math.PI / 2 - pend); }
+  else { gc.position.set(cx, alto + 0.6 + anchoCartel * 0.2, z + d - 0.3); cartel.rotation.x = -0.87; [-1, 1].forEach(l => p3Caja(0.25, anchoCartel * 0.24 + 0.4, 0.25, '#3a3a44', cx + l * anchoCartel * 0.36, alto + anchoCartel * 0.1 + 0.4, z + d - 0.3)); }
+  gc.add(cartel); p3.escena.add(gc); p3.carteles[e.id] = gc;
 }
 
 function p3Arbol(x, z, k){
@@ -149,13 +227,18 @@ function p3Plaza(s){
   if(f){ const fx = f.x * P3.K, fz = f.y * P3.K, r = f.r * P3.K; p3Cil(r, r + 0.3, 1.0, 12, '#B8C2D1', fx, 0.5, fz); const agua = p3Cil(r - 0.8, r - 0.8, 0.1, 12, '#6AC2FF', fx, 1.0, fz); p3Cil(0.5, 0.7, 3.2, 6, '#C7CEDA', fx, 1.8, fz); const anillo = p3Cil(1, 1, 0.08, 10, '#ffffff', fx, 1.12, fz); anillo.material.transparent = true; p3.anim.push(t => { const k = 0.4 + (t * 0.5) % 1 * 2.2; anillo.scale.set(k, 1, k); anillo.material.opacity = 1 - (k - 0.4) / 2.2; }); }
   [[26, 200], [614, 200], [26, 280], [614, 280], [26, 400], [614, 400], [26, 470], [614, 470], [120, 210], [540, 210], [90, 500], [560, 505]].forEach(([x, y], i) => p3Arbol(x * P3.K, y * P3.K, (i * 37) % 10 / 10));
   // bancos
-  [[96, 452], [506, 452]].forEach(([x, y]) => { const bx = (x + 17) * P3.K, bz = y * P3.K; p3Caja(8.2, 0.4, 1.4, '#B8793B', bx, 1.4, bz); p3Caja(8.2, 1.4, 0.3, '#8A5A2B', bx, 2.3, bz - 0.8); [-3.6, 3.6].forEach(dx => p3Caja(0.4, 1.4, 1.2, '#5A3A22', bx + dx, 0.7, bz)); });
+  [[96, 452, 'banco1'], [506, 452, 'banco2']].forEach(([x, y, id]) => { const bx = (x + 17) * P3.K, bz = y * P3.K, g = new THREE.Group(); g.position.set(bx, 0, bz); g.scale.set(1.5, 1.5, 1.5); p3Caja(8.2, 0.45, 1.8, '#E0A04C', 0, 1.5, 0, g); p3Caja(8.2, 1.7, 0.4, '#C0752B', 0, 2.6, -0.95, g); [-3.6, 3.6].forEach(dx => p3Caja(0.5, 1.5, 1.6, '#6A4422', dx, 0.75, 0, g)); p3.escena.add(g); p3Zona(id, bx, bz, 7.4, 0, true); const ic = p3Etiqueta('🪑', { tam: 34, fondo: 'rgba(255,255,255,.4)', escala: 24 }); ic.position.set(bx, 6.4, bz); p3.escena.add(ic); });
   // hamacas
   const hx = 6, hz = 29; [0, 1].forEach(i => { const px = i ? 20.5 : 5.5; p3Caja(0.4, 8.5, 0.4, '#8A5A2B', px, 4.2, hz).rotation.z = i ? -0.15 : 0.15; p3Caja(0.4, 8.5, 0.4, '#8A5A2B', px, 4.2, hz + 3).rotation.z = i ? -0.15 : 0.15; });
   p3Caja(15.4, 0.4, 0.4, '#8A5A2B', 13, 8.4, hz + 0); p3Caja(15.4, 0.4, 0.4, '#8A5A2B', 13, 8.4, hz + 3);
   [7.8, 12.4, 17].forEach((x, i) => { const g = new THREE.Group(); g.position.set(x, 8.2, hz + 1.5); p3Caja(0.1, 6.2, 0.1, '#444', -0.9, -3.1, 0, g); p3Caja(0.1, 6.2, 0.1, '#444', 0.9, -3.1, 0, g); p3Caja(2.2, 0.35, 1.2, '#E5586E', 0, -6.2, 0, g); p3.escena.add(g); p3.anim.push(t => { g.rotation.x = Math.sin(t * 1.2 + i) * 0.12; }); });
   // cama elástica
-  const tx = 50, tz = 32.8; p3Cil(5.8, 6, 0.6, 12, '#FFD84D', tx, 0.5, tz); const tela = p3Cil(5, 5, 0.1, 12, '#2B3A67', tx, 0.82, tz); p3.anim.push(t => { tela.position.y = 0.82 + Math.max(0, Math.sin(t * 5)) * 0.1; });
+  const tx = 50, tz = 32.8; p3Cil(7, 7.2, 0.9, 14, '#FFD84D', tx, 0.45, tz); p3Cil(7.2, 7.2, 0.25, 14, '#E5484D', tx, 0.95, tz); const tela = p3Cil(6.1, 6.1, 0.15, 14, '#2B3A67', tx, 1.06, tz);
+  [0, 1, 2].forEach(i => { const b = p3Caja(12, 0.05, 0.4, '#ffffff', tx, 1.16, tz); b.rotation.y = i * Math.PI / 3; });
+  if(typeof ARC_LOGO !== 'undefined' && ARC_LOGO.complete && ARC_LOGO.naturalWidth){ const tl = new THREE.Texture(ARC_LOGO); tl.needsUpdate = true; const lg = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), new THREE.MeshBasicMaterial({ map: tl, transparent: true })); lg.rotation.x = -Math.PI / 2; lg.position.set(tx, 1.2, tz); p3.escena.add(lg); }
+  p3.anim.push(t => { tela.position.y = 1.06 + Math.max(0, Math.sin(t * 5)) * 0.14; }); p3Zona('trampolin', tx, tz, 8.4, 0, true);
+  [['🤸', tx, 5.6, tz], ['🛝', 13, 11.2, 31], ['⚖️', 32, 5.2, 25], ['🪙', 32, 6.6, 34]].forEach(([em, x, y, z]) => { const ic = p3Etiqueta(em, { tam: 34, fondo: 'rgba(255,255,255,.4)', escala: 24 }); ic.position.set(x, y, z); p3.escena.add(ic); });
+  p3Zona('hamacas', 13, 30.5, 10, 0, true); p3Zona('subibaja', 32, 25, 9, 0, true); p3Zona('fuente', 32, 34, 7.6, 0, true);
   // subibaja
   const sb = new THREE.Group(); sb.position.set(32, 1.2, 25); p3Cono(0.9, 1.6, '#8A5A2B', 0, -0.4, 0, null, 4); const tabla = p3Caja(11.6, 0.5, 1.6, '#E5586E', 0, 0, 0, sb); p3.escena.add(sb); p3.anim.push(() => { tabla.rotation.z = (plz.sbS || 0) / 58 * 0.9; });
   // parada del micro
@@ -171,7 +254,7 @@ function p3Construir(){
   p3.sector = s.id;
   p3Luces();
   p3.escena.background = p3Color(s.parque ? '#8fd0ff' : s.fuera); p3.escena.fog = new THREE.Fog(p3.escena.background.getHex(), 70, 150);
-  const suelo = new THREE.Mesh(new THREE.PlaneGeometry(W, H), p3Mat(s.suelo)); suelo.rotation.x = -Math.PI / 2; suelo.position.set(W / 2, 0, H / 2); p3.escena.add(suelo);
+  const tAd = p3TexAdoquin(p3Mezcla(s.suelo, '#8a7a6a', s.parque ? 0.18 : 0.3).getStyle()).clone(); tAd.needsUpdate = true; tAd.repeat.set(W / 8, H / 8); const suelo = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshLambertMaterial({ map: tAd })); suelo.rotation.x = -Math.PI / 2; suelo.position.set(W / 2, 0, H / 2); p3.escena.add(suelo);
   if(!s.sinPasillos){ const c = new THREE.Mesh(new THREE.PlaneGeometry(6.8, H - 19), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22 })); c.rotation.x = -Math.PI / 2; c.position.set(W / 2, 0.02, 15 + (H - 19) / 2); p3.escena.add(c); }
   // borde bajito alrededor
   const bc = s.borde || s.fuera, b = 1.2;
@@ -182,10 +265,14 @@ function p3Construir(){
   // atracciones sin modelo propio: un cartel flotante con su emoji
   PLZ_ATRACCIONES.forEach(a => {
     if(a.id === 'parada' || ['hamacas', 'trampolin', 'banco1', 'banco2', 'fuente', 'subibaja'].indexOf(a.id) >= 0 && s.parque) return;
+    if(a.pose === 3 && a.zona){ p3Caja(a.zona.w * P3.K * 0.9, 1.2, a.zona.h * P3.K * 0.6, '#8A5A2B', (a.zona.x + a.zona.w / 2) * P3.K, 0.6, (a.zona.y + a.zona.h / 2) * P3.K); }
     if(!a.zona) return;
-    const et = p3Etiqueta(a.emoji, { tam: 34, fondo: 'rgba(255,255,255,.25)' }); et.position.set((a.zona.x + a.zona.w / 2) * P3.K, 3.2, (a.zona.y + a.zona.h / 2) * P3.K); p3.escena.add(et);
+    p3Zona(a.id, (a.zona.x + a.zona.w / 2) * P3.K, (a.zona.y + a.zona.h / 2) * P3.K, Math.min(a.zona.w, a.zona.h) * P3.K * 0.5, 0, true);
+    const et = p3Etiqueta(a.emoji, { tam: 34, fondo: 'rgba(255,255,255,.4)', escala: 24 }); et.position.set((a.zona.x + a.zona.w / 2) * P3.K, 4.2, (a.zona.y + a.zona.h / 2) * P3.K); p3.escena.add(et);
   });
-  p3.luzNoche = true;
+  [[44, 150], [596, 150], [44, 340], [596, 340], [44, 520], [596, 520]].forEach(([fx, fy]) => { if(fy * P3.K < H - 4) p3Farol(fx * P3.K, fy * P3.K); });
+  p3.destino = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.3, 20), new THREE.MeshBasicMaterial({ color: 0xFFD84D, transparent: true, opacity: 0.9, depthWrite: false })); p3.destino.rotation.x = -Math.PI / 2; p3.destino.visible = false; p3.escena.add(p3.destino);
+  if(s.parque){ for(let i = 0; i < 6; i++){ const n = new THREE.Group(); [[0, 0, 4], [3.6, -0.6, 3.2], [-3.4, -0.4, 3], [1, 1.2, 3.2]].forEach(([x, y, r]) => { const b = p3Esf(r, '#ffffff', x, y, 0, n, 6); b.material.transparent = true; b.material.opacity = 0.92; }); n.position.set(i * 14 + 6, 40 + (i % 3) * 5, 8 + (i * 17) % 60); p3.escena.add(n); p3.nubes.push(n); } }
 }
 
 // ---- Personajes ----
@@ -241,6 +328,12 @@ function p3Cuadro(dt){
   plz.bots.forEach((b, i) => { const a = p3Personaje('b' + i, b.a); p3Mover(a, b.x, b.y, b.n, b.caminando, b.pose || 0, b.m != null && ahoraMs < b.hasta ? PLZ_FRASES[b.m] : null, i); });
   Object.keys(p3.avatares).forEach(k => { const a = p3.avatares[k]; if(!a.vivo){ p3.escena.remove(a.g); delete p3.avatares[k]; } });
   p3.anim.forEach(f => f(p3.t));
+  const nochePct = p3Noche(); p3.faroles.forEach(g => { g.material.opacity = 0.18 + 0.75 * nochePct; });
+  const cerca = plz.puerta ? plz.puerta.id : null;
+  p3.zonas.forEach(z => { const on = cerca && z.id === cerca; z.mesh.material.opacity = z.base + (on ? 0.35 + 0.25 * Math.sin(p3.t * 7) : 0); const k = on ? 1 + 0.07 * Math.sin(p3.t * 7) : 1; z.mesh.scale.set(k, k, k); });
+  Object.keys(p3.carteles).forEach(id => { const k = id === cerca ? 1.1 + 0.05 * Math.sin(p3.t * 7) : 1; p3.carteles[id].scale.set(k, k, k); });
+  if(p3.destino){ if(plz.obj){ p3.destino.visible = true; p3.destino.position.set(plz.obj.x * P3.K, 0.1, plz.obj.y * P3.K); const k = 1 + 0.2 * Math.sin(p3.t * 8); p3.destino.scale.set(k, k, k); } else p3.destino.visible = false; }
+  p3.nubes.forEach((n, i) => { n.position.x += dt * (1.2 + i * 0.15); if(n.position.x > PLZ.W * P3.K + 20) n.position.x = -20; });
   // cámara
   const tx = plz.yo.x * P3.K, tz = plz.yo.y * P3.K;
   if(!p3.mira) p3.mira = new THREE.Vector3(tx, 2, tz); else { p3.mira.x += (tx - p3.mira.x) * Math.min(1, dt * 6); p3.mira.z += (tz - p3.mira.z) * Math.min(1, dt * 6); }
@@ -254,6 +347,8 @@ function p3Cuadro(dt){
 
 function plaza3dFrame(dt){
   if(!p3.listo || !plz.modo3d) return;
+  // Modo liviano: si el celular va lento, baja la resolución (se nota poco y rinde mucho más).
+  if(!p3.fps.listo){ p3.fps.t += dt; p3.fps.n++; if(p3.fps.n >= 90){ p3.fps.listo = true; if(p3.fps.t / p3.fps.n > 0.04 && p3.r.getPixelRatio() > 1){ p3.r.setPixelRatio(1); p3.r.setSize(PLZ.VW, PLZ.VH, false); if(typeof mostrarToast === 'function') mostrarToast('Modo liviano: bajé un poco la calidad para que vaya más fluido'); } } }
   try { p3Cuadro(dt); p3.r.render(p3.escena, p3.cam); } catch(e){ console.error(e); plaza3dApagar(true, 'No se pudo dibujar el 3D en este celular'); }
 }
 
@@ -270,7 +365,7 @@ async function plaza3dEncender(guardar){
     p3.r = new THREE.WebGLRenderer({ canvas, antialias: pr < 1.5, powerPreference: 'low-power' });
     p3.r.setPixelRatio(pr); p3.r.setSize(PLZ.VW, PLZ.VH, false);
     p3.escena = new THREE.Scene(); p3.cam = new THREE.PerspectiveCamera(52, PLZ.VW / PLZ.VH, 0.5, 220); p3.canvas = canvas;
-    p3.mira = null; p3.yaw = 0; p3.t = 0;
+    p3.mira = null; p3.yaw = 0; p3.t = 0; p3.fps = { t: 0, n: 0, listo: false };
     if(plz.canvas) plz.canvas.style.display = 'none';
     caja.appendChild(canvas);
     plaza3dEntrada(canvas);
