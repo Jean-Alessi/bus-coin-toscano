@@ -273,7 +273,7 @@ function renderAdminViajes(){
   }
   cont.innerHTML = `<p class="link-chico">Conectado como ${agenciaActualNombre}. <span onclick="agenciasCerrarSesion()" style="text-decoration:underline;cursor:pointer;">Cerrar sesión</span></p><p style="color:var(--gray);font-size:13px;">Cargando viajes...</p>`;
   const agenciaIdAlPedir = agenciaActualId;
-  db.ref('salas').orderByChild('agenciaId').equalTo(agenciaActualId).once('value').then(snap => {
+  modulosCargar(['admin']).then(() => db.ref('salas').orderByChild('agenciaId').equalTo(agenciaActualId).once('value')).then(snap => {
     // Si mientras cargaba se cerró sesión (o se inició otra), esta respuesta
     // ya está vieja: no pisar la pantalla de login con datos de otra sesión.
     if(agenciaActualId !== agenciaIdAlPedir) return;
@@ -507,6 +507,7 @@ function organizadorTarjetaHomeHTML(){
 }
 
 function renderHome(){
+  modulosPrecargarDeInicio();
   pokerEscucharAjuste();
   if(typeof mundoEscuchar === 'function') mundoEscuchar();
   const saludo = document.getElementById('home-saludo');
@@ -727,7 +728,22 @@ window.addEventListener('popstate', () => {
   }
 });
 
-function showView(name){
+// Qué arranca cada pantalla al abrirse. Las funciones viven en el módulo de cada juego (ver modulos.js), por eso se llaman recién ahora.
+const INICIAR_VISTA = {
+  juegos: () => renderJuegos(), trivia: () => iniciarTrivia(), acertijos: () => iniciarAcertijos(), pensamiento: () => iniciarPensamiento(), ahorcado: () => iniciarAhorcado(),
+  cuatrouno: () => iniciarCuatrouno(), valija: () => iniciarValija(), memoria: () => iniciarMemoria(), solitario: () => iniciarSolitario(), categorias: () => iniciarCategorias(),
+  videopoker: () => iniciarVideoPoker(), texas: () => iniciarTexas(), avatar: () => iniciarAvatar(), plaza: () => iniciarPlaza(), estacion: () => iniciarEstacion(),
+  sudoku: () => iniciarSudoku(), patrones: () => iniciarPatrones(), sopa: () => iniciarSopa(), tutifruti: () => iniciarTutifruti(), impostor: () => iniciarImpostor(),
+  ranking: () => renderRanking(), bingo: () => iniciarBingo(), triviavivo: () => iniciarTriviaVivo(), cuento: () => iniciarCuento(), dibujar: () => iniciarDibujar(),
+  escoba: () => iniciarEscoba(), chinchon: () => iniciarChinchon(), truco: () => iniciarTruco(), copa: () => iniciarCopa(), vidriera: () => iniciarVidriera(),
+  buscolor: () => iniciarBuscolor(), padel: () => iniciarPadel(), busqueda: () => iniciarBusqueda(), comercios: () => iniciarComercios(), tienda: () => iniciarPremios(),
+  onboard: () => listaPasajerosCargarParaOnboarding(),
+};
+
+// Abre una pantalla; si su módulo todavía no se descargó, lo baja primero (ver modulosParaVista en modulos.js).
+function showView(name){ return modulosParaVista(name, () => mostrarVista(name)); }
+
+function mostrarVista(name){
   const activaAntes = document.querySelector('.view.active');
   if(typeof vidAlCambiarVista === 'function') vidAlCambiarVista(activaAntes ? activaAntes.id.replace('view-', '') : null, name);
   if(activaAntes && activaAntes.id === 'view-estacion' && name !== 'estacion' && typeof estacionSoltar === 'function') estacionSoltar();
@@ -750,43 +766,8 @@ function showView(name){
   const tabName = (name === 'avatar' || name === 'plaza' || name === 'estacion') ? 'home' : (TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : name);
   const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
   if(tab) tab.classList.add('active');
-  if(name==='juegos'){ renderJuegos(); }
-  if(name==='trivia'){ iniciarTrivia(); }
-  if(name==='acertijos'){ iniciarAcertijos(); }
-  if(name==='pensamiento'){ iniciarPensamiento(); }
-  if(name==='ahorcado'){ iniciarAhorcado(); }
-  if(name==='cuatrouno'){ iniciarCuatrouno(); }
-  if(name==='valija'){ iniciarValija(); }
-  if(name==='memoria'){ iniciarMemoria(); }
-  if(name==='solitario'){ iniciarSolitario(); }
-  if(name==='categorias'){ iniciarCategorias(); }
-  if(name==='videopoker'){ iniciarVideoPoker(); }
-  if(name==='texas'){ iniciarTexas(); }
-  if(name==='avatar'){ iniciarAvatar(); }
-  if(name==='plaza'){ iniciarPlaza(); }
-  if(name==='estacion'){ iniciarEstacion(); }
+  const arranque = INICIAR_VISTA[name]; if(arranque) arranque();
   if(typeof ARC_JUEGOS !== 'undefined' && ARC_JUEGOS[name]){ arcIniciarVista(name); }
-  if(name==='sudoku'){ iniciarSudoku(); }
-  if(name==='patrones'){ iniciarPatrones(); }
-  if(name==='sopa'){ iniciarSopa(); }
-  if(name==='tutifruti'){ iniciarTutifruti(); }
-  if(name==='impostor'){ iniciarImpostor(); }
-  if(name==='ranking'){ renderRanking(); }
-  if(name==='bingo'){ iniciarBingo(); }
-  if(name==='triviavivo'){ iniciarTriviaVivo(); }
-  if(name==='cuento'){ iniciarCuento(); }
-  if(name==='dibujar'){ iniciarDibujar(); }
-  if(name==='escoba'){ iniciarEscoba(); }
-  if(name==='chinchon'){ iniciarChinchon(); }
-  if(name==='truco'){ iniciarTruco(); }
-  if(name==='copa'){ iniciarCopa(); }
-  if(name==='vidriera'){ iniciarVidriera(); }
-  if(name==='buscolor'){ iniciarBuscolor(); }
-  if(name==='padel'){ iniciarPadel(); }
-  if(name==='busqueda'){ iniciarBusqueda(); }
-  if(name==='comercios'){ iniciarComercios(); }
-  if(name==='tienda'){ iniciarPremios(); }
-  if(name==='onboard'){ listaPasajerosCargarParaOnboarding(); }
 }
 
 const MEDALLAS_RANKING = ['🥇', '🥈', '🥉'];
@@ -930,7 +911,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // canje y se corta acá, sin arrancar el resto de la app.
   const datosCupon = typeof vidLeerParamsCupon === 'function' ? vidLeerParamsCupon() : null;
   if(datosCupon){ vidMostrarPantallaCupon(datosCupon); return; }
-  const datosCanje = comerciosLeerParamsCanje();
+  const datosCanje = typeof comerciosLeerParamsCanje === 'function' ? comerciosLeerParamsCanje() : null;
   if(datosCanje){
     comerciosMostrarPantallaCanje(datosCanje);
     return;

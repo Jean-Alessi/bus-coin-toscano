@@ -186,3 +186,9 @@ function mundoIrAlBoliche(){
   plz.posGuardada = { x: pos.x, y: pos.y, t: Date.now(), viaje: (typeof codigoViaje !== 'undefined' ? codigoViaje : ''), sector: 'plaza' };
   showView('plaza');
 }
+
+// Tarjeta del inicio que lleva al micro (vive acá porque el inicio se arma antes de bajar la plaza).
+function plazaTarjetaHomeHTML(){
+  if(typeof mundoActivo === 'function' && !mundoActivo()) return '';
+  return `<div class="av-home plz-home" onclick="showView('estacion')"><div class="plz-home-img">🚌</div><div class="av-home-txt"><h3>Subite al micro</h3><p>5 paradas: shopping, juegos, mesas, eventos y plaza</p></div><span class="av-home-flecha">›</span></div>`;
+}

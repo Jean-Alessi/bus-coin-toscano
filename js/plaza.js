@@ -136,7 +136,7 @@ function iniciarPlaza(){
   plz.t = 0; plz.conectado = false;
   plz.bots = plazaEsDemo() ? plazaCrearBots() : [];
   plazaRender();
-  if(typeof plaza3dIniciar === 'function') plaza3dIniciar();
+  plazaIniciar3D();
   plazaActualizarCantidad();
   if(typeof feriaIniciar === 'function') feriaIniciar();
   if(typeof cartitasIniciar === 'function') cartitasIniciar();
@@ -270,6 +270,15 @@ async function plazaIrASala(k){
   await plazaConectar(String(k));
 }
 
+// Si el 3D estaba prendido la última vez, se descarga (si hace falta) y se vuelve a prender.
+function plazaIniciar3D(){
+  let quiere = false; try { quiere = localStorage.getItem('busmac-plaza3d') === 'si'; } catch(e){}
+  if(typeof plaza3dIniciar === 'function') plaza3dIniciar();
+  else if(quiere) modulosCargar(['plaza3d']).then(() => { if(plz.activo && typeof plaza3dIniciar === 'function') plaza3dIniciar(); });
+}
+// Botón 🧊 3D / 🗺️ 2D: baja el módulo 3D la primera vez.
+function plazaAlternar3D(){ return modulosCargar(['plaza3d']).then(() => plaza3dAlternar()); }
+
 function plazaAlSalir(silencioso){
   cancelAnimationFrame(plz.raf);
   if(typeof plaza3dDetener === 'function') plaza3dDetener();
@@ -364,7 +373,7 @@ function plazaRender(){
     <div id="plaza-seleccion"></div>
     <div id="plaza-accion" class="plz-accion"></div>
     <div id="plaza-menu"></div>
-    <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrirParadas()">🚌 Micro</button><button class="gbtn gbtn-chico-texto" id="plaza-b3d" onclick="plaza3dAlternar()">🧊 3D</button></div>`, 'plz-escena');
+    <div class="g-acciones plz-botones"><button class="gbtn gbtn-chico-texto" onclick="plazaToggleMenu()">💬 Decir</button><button class="gbtn gbtn-chico-texto" onclick="showView('avatar')">👕 Personaje</button><button class="gbtn gbtn-chico-texto" onclick="plazaAbrirSalas()">🚪 Sala</button><button class="gbtn gbtn-chico-texto" onclick="feriaPasaporte()">📒 Pasaporte</button><button class="gbtn gbtn-chico-texto" onclick="microAbrirParadas()">🚌 Micro</button><button class="gbtn gbtn-chico-texto" id="plaza-b3d" onclick="plazaAlternar3D()">🧊 3D</button></div>`, 'plz-escena');
   plz.canvas = cont.querySelector('canvas');
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   plz.canvas.width = PLZ.VW * dpr; plz.canvas.height = PLZ.VH * dpr;
@@ -893,7 +902,3 @@ function plazaDibujar(ctx){
 }
 
 // Tarjeta de Inicio: lleva a la Estación (el mundo). En modo clásico no se muestra.
-function plazaTarjetaHomeHTML(){
-  if(typeof mundoActivo === 'function' && !mundoActivo()) return '';
-  return `<div class="av-home plz-home" onclick="showView('estacion')"><div class="plz-home-img">🚌</div><div class="av-home-txt"><h3>Subite al micro</h3><p>5 paradas: shopping, juegos, mesas, eventos y plaza</p></div><span class="av-home-flecha">›</span></div>`;
-}
