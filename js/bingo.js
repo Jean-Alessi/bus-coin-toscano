@@ -2,11 +2,9 @@ let bingo = null;
 let bingoPasajeros = {};
 let bingoCartones = {};
 let bingoSeleccion = [];
-let bingoMostrandoPin = false;
 
 // El PIN de organizador vive en js/marca.js (MARCA.pinOrganizador), para
 // que cambiarlo por cliente sea un solo lugar en todo el código.
-const BINGO_PIN_ORGANIZADOR = MARCA.pinOrganizador;
 const BINGO_CANTIDAD_CARTON = 12;
 const BINGO_TAMANO_CARTON = 3;
 // Números del cartón: 00 al 99, como en un bingo/lotería tradicional.
@@ -68,16 +66,8 @@ function bingoEstadoVacio(){
   return { fase: 'cerrado', bolsa: [], sorteados: [], ultimaLlamada: null, ganadorCartonLleno: null };
 }
 
-function bingoEsOrganizador(){
-  return localStorage.getItem('bingo-organizador') === 'si';
-}
-
 // Deja de ser organizador en ESTE celular/navegador (útil para volver a probar
 // la vista de pasajero, o si se marcó por error). No afecta a otros dispositivos.
-function bingoCerrarSesionOrganizador(){
-  localStorage.removeItem('bingo-organizador');
-  renderBingo();
-}
 
 function bingoRegistrarPasajero(asiento, nombre){
   bingoRefPasajeros().child(String(asiento)).set(nombre);
@@ -143,29 +133,6 @@ function iniciarBingo(){
   } else {
     renderBingo();
   }
-}
-
-function bingoMostrarPinOrganizador(){
-  bingoMostrandoPin = true;
-  renderBingo();
-  if(typeof renderImpostor === 'function') renderImpostor();
-}
-
-function bingoIntentarSerOrganizador(){
-  const input = document.getElementById('bingo-pin-input');
-  const pin = input ? input.value.trim() : '';
-  const error = document.getElementById('bingo-pin-error');
-  if(pin !== BINGO_PIN_ORGANIZADOR){
-    if(error) error.textContent = 'PIN incorrecto';
-    return;
-  }
-  localStorage.setItem('bingo-organizador', 'si');
-  bingoMostrandoPin = false;
-  renderBingo();
-  // El mismo PIN también da el rol de director en El Impostor — si esa
-  // pantalla está abierta (o se abrió antes en esta sesión), se refresca
-  // también para que aparezcan sus controles sin tener que ir y volver.
-  if(typeof renderImpostor === 'function') renderImpostor();
 }
 
 function bingoToggleNumero(numero){
@@ -300,17 +267,6 @@ function bingoCartonHTML(asiento, titulo, carton, interactivo){
 
 // El acceso por PIN para ser organizador queda discreto, abajo de todo: un
 // pasajero común no tiene por qué fijarse en él.
-function bingoPinHTML(){
-  if(!bingoMostrandoPin){
-    return `<div class="g-pie"><span onclick="bingoMostrarPinOrganizador()">👤 ¿Sos el organizador? Entrá acá</span></div>`;
-  }
-  return `
-    <div class="bingo-pin-box">
-      <input type="password" id="bingo-pin-input" class="bingo-input-numero" inputmode="numeric" maxlength="4" placeholder="PIN del organizador">
-      <div class="g-acciones"><button class="gbtn gbtn-ancho" onclick="bingoIntentarSerOrganizador()">Entrar como organizador</button></div>
-      <p id="bingo-pin-error" class="bingo-pin-error"></p>
-    </div>`;
-}
 
 function bingoOrdenAsientos(mapa){
   return Object.keys(mapa).sort((a, b) => Number(a) - Number(b));
@@ -328,10 +284,6 @@ function bingoBannerFinalHTML(terminado, bolsaAgotada){
   if(terminado) return gDialogoHTML('🏆 ¡BINGO!', `Ganó ${bingoPasajeros[bingo.ganadorCartonLleno]} (asiento ${bingo.ganadorCartonLleno}) con el cartón lleno.`);
   if(bolsaAgotada) return gDialogoHTML('Se cantaron los 100 números', 'Nadie completó el cartón esta vez.');
   return '';
-}
-
-function bingoCerrarSesionOrganizadorHTML(){
-  return `<div class="g-pie"><span onclick="bingoCerrarSesionOrganizador()">Cerrar sesión de organizador</span></div>`;
 }
 
 function renderBingo(){

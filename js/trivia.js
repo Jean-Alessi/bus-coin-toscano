@@ -162,26 +162,6 @@ const TEMAS = {
   },
 };
 
-function barajar(lista){
-  const copia = lista.slice();
-  for(let i = copia.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
-    [copia[i], copia[j]] = [copia[j], copia[i]];
-  }
-  return copia;
-}
-
-// Mezcla el orden de las opciones de una pregunta (y recalcula cuál es la
-// correcta) para que la respuesta correcta no quede siempre en el mismo
-// lugar entre partida y partida.
-function barajarOpciones(pregunta){
-  const opcionCorrecta = pregunta.opciones[pregunta.correcta];
-  const nuevasOpciones = barajar(pregunta.opciones);
-  return Object.assign({}, pregunta, {
-    opciones: nuevasOpciones,
-    correcta: nuevasOpciones.indexOf(opcionCorrecta),
-  });
-}
 
 function iniciarTrivia(){
   temaActual = null;
