@@ -6,6 +6,10 @@
 // Datos en salas/{viaje}/: ajustes/modo, ajustes/paradaReal (número de línea), ajustes/proximoBingo,
 // feriaConfig/cartelera (líneas "Hora | Lugar").
 
+// Nombres cortos de las paradas (los mismos de sectores.js) para poder avisar de un evento sin tener la plaza descargada.
+const MUNDO_PARADAS = { shopping: 'Shopping', arcade: 'Arcade', mesas: 'Mesas', eventos: 'Eventos', plaza: 'Plaza' };
+function mundoNombreParada(id){ return (typeof PLZ_SECTORES !== 'undefined' && PLZ_SECTORES[id]) ? PLZ_SECTORES[id].corto : MUNDO_PARADAS[id]; }
+
 const mundo = { modo: 'mundo', recorrido: [], actual: -1, bingo: '', oyentes: [], viaje: '', primera: true, evento: null, bolicheOn: true, padelOn: true, busquedaOn: true, seleccionOn: true, tunelOn: true, tunelMsg: '', tunelDesc: {} };
 const MUNDO_EVENTO_MS = 3 * 3600 * 1000; // un aviso de evento dura 3 horas
 
@@ -24,7 +28,7 @@ function mundoEscuchar(){
     mundo.actual = typeof v.paradaReal === 'number' ? v.paradaReal : -1;
     mundo.bingo = typeof v.proximoBingo === 'string' ? v.proximoBingo : '';
     const eventoAntes = mundo.evento;
-    mundo.evento = v.evento && v.evento.texto && PLZ_SECTORES[v.evento.sector] ? v.evento : null;
+    mundo.evento = v.evento && v.evento.texto && mundoNombreParada(v.evento.sector) ? v.evento : null;
     mundo.tunelOn = v.tunel !== 'off';
     const selAntes = mundo.seleccionOn;
     mundo.seleccionOn = v.seleccion !== 'off';
@@ -52,7 +56,7 @@ function mundoEscuchar(){
     mundo.tunelMsg = typeof v.tunelMensaje === 'string' ? v.tunelMensaje : '';
     mundoAlCambiar(antes);
     if(!mundo.primera && mundo.evento && mundoEventoActivo() && (!eventoAntes || eventoAntes.t !== mundo.evento.t) && typeof mostrarToast === 'function'){
-      mostrarToast('📢 ' + mundo.evento.texto + ' · en ' + PLZ_SECTORES[mundo.evento.sector].corto, 'gain');
+      mostrarToast('📢 ' + mundo.evento.texto + ' · en ' + mundoNombreParada(mundo.evento.sector), 'gain');
       if(typeof reproducirMelodia === 'function') reproducirMelodia([784, 988, 1175, 988], 120, 'sine');
     }
   });
@@ -143,6 +147,7 @@ function mundoRecorridoHTML(){
 
 // Ir a una parada desde cualquier lado (estación, mapa o micro).
 function mundoIrA(id){
+  if(typeof PLZ_SECTORES === 'undefined'){ modulosCargar(['plaza']).then(() => mundoIrA(id)); return; }
   if(typeof micCerrarSiempre === 'function') micCerrarSiempre();
   if(!PLZ_SECTORES[id]) return;
   const activa = document.querySelector('.view.active');
@@ -154,6 +159,7 @@ function mundoIrA(id){
 
 // Atajo a la Casa de la Selección: te deja frente a su puerta en el Shopping.
 function mundoIrALaSeleccion(){
+  if(typeof PLZ_SECTORES === 'undefined'){ modulosCargar(['plaza']).then(() => mundoIrALaSeleccion()); return; }
   if(!mundo.seleccionOn){ if(typeof mostrarToast === 'function') mostrarToast('La Casa de la Selección está cerrada en este viaje'); return; }
   if(typeof micCerrarSiempre === 'function') micCerrarSiempre();
   const e = PLZ_SECTORES.shopping.armar().edificios.find(x => x.id === 'seleccion');
@@ -175,6 +181,7 @@ function mundoIrAPadelbus(){
 
 // Atajo a la confitería bailable: te deja frente a la puerta de neón de la Plaza.
 function mundoIrAlBoliche(){
+  if(typeof PLZ_SECTORES === 'undefined'){ modulosCargar(['plaza']).then(() => mundoIrAlBoliche()); return; }
   if(!mundo.bolicheOn){ if(typeof mostrarToast === 'function') mostrarToast('La confitería bailable está cerrada en este viaje'); return; }
   if(typeof micCerrarSiempre === 'function') micCerrarSiempre();
   const e = PLZ_SECTORES.plaza.armar().edificios.find(x => x.id === 'boliche');

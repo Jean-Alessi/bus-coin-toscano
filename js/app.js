@@ -470,7 +470,7 @@ function goHome(){
   document.body.classList.remove('viaje-cerrado');
   rankingUnirse();
   activarListenerCierreDeViaje();
-  iniciarComerciosDestino();
+  modulosCargar(['comercios']).then(() => iniciarComerciosDestino()).catch(() => {}); // en segundo plano: entrar al viaje no depende de esto
   showView('home');
   document.getElementById('tabbar').style.display = 'flex';
   actualizarMonedasEnPantalla();
