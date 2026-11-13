@@ -307,6 +307,7 @@ function renderAdminViajes(){
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarPueblo('${c}','${String(datos[c].pueblo || '').replace(/'/g, '')}')" title="Pueblo de origen de los chicos (para la Vidriera)">🏘️ ${datos[c].pueblo ? String(datos[c].pueblo).replace(/</g, '') : 'Pueblo'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCopa('${c}')" title="Copa Busmac: anotar los cursos y elegir capitanes">🏆</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarEdad('${c}','${(datos[c].ajustes && datos[c].ajustes.edad) || ''}')" title="Edad del grupo: para 6 a 9 años se muestran solo los juegos para chicos">👦 ${(datos[c].ajustes && datos[c].ajustes.edad) === '6-9' ? '6-9' : 'Todas'}</button>
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTopePuntos('${c}', ${(datos[c].ajustes && Number(datos[c].ajustes.topePuntosDia)) || 0})" title="Tope de puntos del ranking que puede sumar cada pasajero por día (o el normal de 100)">⭐ ${(datos[c].ajustes && Number(datos[c].ajustes.topePuntosDia) > 0) ? Number(datos[c].ajustes.topePuntosDia) + ' pts/día' : 'Puntos: normal'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTopeFichas('${c}', ${(datos[c].ajustes && Number(datos[c].ajustes.topeFichas)) || 0})" title="Tope de fichas que puede ganar cada pasajero en este viaje (o libres)">🪙 ${(datos[c].ajustes && Number(datos[c].ajustes.topeFichas) > 0) ? 'Tope ' + Number(datos[c].ajustes.topeFichas) : 'Fichas libres'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTogglePoker('${c}',${!(datos[c].ajustes && datos[c].ajustes.poker === true)})" title="Póker en este viaje (apagado para estudiantiles)">🃏 ${datos[c].ajustes && datos[c].ajustes.poker === true ? 'Sí' : 'No'}</button>
           <button class="btn-finalizar-viaje" onclick="toggleCerrarViaje('${c}',${!cerrado})">${cerrado ? 'Reabrir' : 'Finalizar'}</button>
@@ -397,6 +398,18 @@ function adminCambiarEdad(codigo, actual){
   const nueva = actual === '6-9' ? null : '6-9';
   db.ref('salas/' + codigo + '/ajustes/edad').set(nueva).then(() => {
     mostrarToast(nueva ? 'Grupo de 6 a 9 años: solo juegos para chicos' : 'Todas las edades: todos los juegos');
+    renderAdminViajes();
+  });
+}
+
+// Tope de PUNTOS del ranking por día y por pasajero: un número (por ejemplo 1000), o vacío para el tope normal (100 por día: 50 solo + 50 en grupo).
+function adminTopePuntos(codigo, actual){
+  const txt = prompt('Cuántos puntos del ranking puede sumar cada pasajero por día en este viaje.\n\nEscribí un número (por ejemplo 1000) o dejalo vacío para el tope normal de 100 por día.', actual > 0 ? String(actual) : '');
+  if(txt === null) return;
+  const n = parseInt(String(txt).replace(/\D/g, ''), 10);
+  const ref = db.ref('salas/' + codigo + '/ajustes/topePuntosDia');
+  (n > 0 ? ref.set(n) : ref.remove()).then(() => {
+    mostrarToast(n > 0 ? 'Cada pasajero puede sumar hasta ' + n + ' puntos por día' : 'Puntos con el tope normal (100 por día)');
     renderAdminViajes();
   });
 }
@@ -917,6 +930,7 @@ function topeFichasEscuchar(){
   if(typeof codigoViaje === 'undefined' || !codigoViaje || topeFichasCodigo === codigoViaje) return;
   topeFichasCodigo = codigoViaje;
   try { db.ref('salas/' + codigoViaje + '/ajustes/topeFichas').on('value', snap => { const v = Number(snap.val()); topeFichas = v > 0 ? Math.floor(v) : 0; }); } catch(e){}
+  try { db.ref('salas/' + codigoViaje + '/ajustes/topePuntosDia').on('value', snap => { const v = Number(snap.val()); puntosTopeDia = v > 0 ? Math.floor(v) : 0; if(document.querySelector('#view-ranking.active') && typeof renderRanking === 'function') renderRanking(); }); } catch(e){}
 }
 function fichasLeerGanadas(){
   const clave = 'fichas-ganadas-' + codigoViaje;

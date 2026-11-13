@@ -29,41 +29,52 @@ function puntosTipoActual(){
   return PUNTOS_VISTAS_GRUPO.has(vista) ? 'grupo' : 'solo';
 }
 
+// Tope propio de este viaje (lo fija el organizador: salas/{viaje}/ajustes/topePuntosDia). Si hay uno, vale UN solo número por día
+// (sin repartir entre solo y grupo); si no, rige el normal de arriba (50 + 50).
+let puntosTopeDia = 0;
+
 // Devuelve cuántos de esos puntos entran hoy en el ranking (las restas pasan
 // enteras: nunca hacen falta topes para bajar).
 function puntosAplicarTope(cantidad){
   if(!(cantidad > 0)) return cantidad;
   const tipo = puntosTipoActual();
-  const tope = tipo === 'grupo' ? PUNTOS_TOPE_GRUPO : PUNTOS_TOPE_SOLO;
   const { clave, d } = puntosLeerDia();
-  const permitido = Math.max(0, Math.min(cantidad, tope - (d[tipo] || 0)));
+  const propio = puntosTopeDia > 0;
+  const tope = propio ? puntosTopeDia : (tipo === 'grupo' ? PUNTOS_TOPE_GRUPO : PUNTOS_TOPE_SOLO);
+  const usado = propio ? (d.solo || 0) + (d.grupo || 0) : (d[tipo] || 0);
+  const permitido = Math.max(0, Math.min(cantidad, tope - usado));
   d[tipo] = (d[tipo] || 0) + permitido;
+  const marca = propio ? 'todo' : tipo;
   let avisar = false;
-  if(permitido < cantidad && !d.avisado[tipo]){ d.avisado[tipo] = true; avisar = true; }
+  if(permitido < cantidad && !d.avisado[marca]){ d.avisado[marca] = true; avisar = true; }
   try { localStorage.setItem(clave, JSON.stringify(d)); } catch(e){}
   if(avisar && typeof mostrarToast === 'function'){
     const otro = tipo === 'grupo' ? 'jugando solo' : 'jugando en grupo';
     const lleno = (d.solo || 0) >= PUNTOS_TOPE_SOLO && (d.grupo || 0) >= PUNTOS_TOPE_GRUPO;
-    setTimeout(() => mostrarToast(lleno
-      ? '🌟 ¡Completaste los 100 puntos de hoy! Mañana sumás más. Las monedas para tu personaje siguen.'
-      : `Ya hiciste los ${tope} puntos de hoy ${tipo === 'grupo' ? 'en grupo' : 'jugando solo'}. Te quedan puntos ${otro}.`), 2900);
+    setTimeout(() => mostrarToast(propio
+      ? `🌟 ¡Completaste los ${tope} puntos de hoy! Mañana sumás más. Las monedas para tu personaje siguen.`
+      : lleno
+        ? '🌟 ¡Completaste los 100 puntos de hoy! Mañana sumás más. Las monedas para tu personaje siguen.'
+        : `Ya hiciste los ${tope} puntos de hoy ${tipo === 'grupo' ? 'en grupo' : 'jugando solo'}. Te quedan puntos ${otro}.`), 2900);
   }
   return permitido;
 }
 
 function puntosHoyTotal(){
   const { d } = puntosLeerDia();
-  return { solo: d.solo || 0, grupo: d.grupo || 0, total: (d.solo || 0) + (d.grupo || 0), tope: PUNTOS_TOPE_SOLO + PUNTOS_TOPE_GRUPO };
+  return { solo: d.solo || 0, grupo: d.grupo || 0, total: (d.solo || 0) + (d.grupo || 0), tope: puntosTopeDia > 0 ? puntosTopeDia : PUNTOS_TOPE_SOLO + PUNTOS_TOPE_GRUPO };
 }
 
 // Pastilla para el Ranking: "Hoy 63/100" con el detalle solo/grupo.
 function puntosHoyPillHTML(){
   const h = puntosHoyTotal();
-  return `<span class="g-pill" title="Solo ${h.solo}/${PUNTOS_TOPE_SOLO} · En grupo ${h.grupo}/${PUNTOS_TOPE_GRUPO}">Hoy ${h.total}/${h.tope}</span>`;
+  return `<span class="g-pill" title="${puntosTopeDia > 0 ? 'Tope de puntos de hoy' : `Solo ${h.solo}/${PUNTOS_TOPE_SOLO} · En grupo ${h.grupo}/${PUNTOS_TOPE_GRUPO}`}">Hoy ${h.total}/${h.tope}</span>`;
 }
 
 function puntosHoyDetalleHTML(){
   const h = puntosHoyTotal();
-  const barra = (v, t, color) => `<div style="flex:1;"><div style="font-size:11.5px;font-weight:700;opacity:.85;margin-bottom:3px;">${color === 'solo' ? '🧠 Solo' : '🤝 En grupo'} ${v}/${t}</div><div style="height:8px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden;"><span style="display:block;height:100%;width:${Math.round(v / t * 100)}%;background:${color === 'solo' ? '#ffb347' : '#5ee08a'};"></span></div></div>`;
-  return `<div class="g-dialogo" style="padding:10px 14px;"><div class="g-dialogo-titulo" style="font-size:15px;">Puntos de hoy: ${h.total} de ${h.tope}</div><div style="display:flex;gap:12px;margin-top:6px;">${barra(h.solo, PUNTOS_TOPE_SOLO, 'solo')}${barra(h.grupo, PUNTOS_TOPE_GRUPO, 'grupo')}</div><div class="g-dialogo-sub" style="margin-top:6px;">Gana el que juega todos los días un rato, no el que se pasa horas. Las monedas para tu personaje no tienen tope.</div></div>`;
+  const barra = (v, t, color) => `<div style="flex:1;"><div style="font-size:11.5px;font-weight:700;opacity:.85;margin-bottom:3px;">${color === 'solo' ? '🧠 Solo' : color === 'todo' ? '⭐ Puntos de hoy' : '🤝 En grupo'} ${v}/${t}</div><div style="height:8px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden;"><span style="display:block;height:100%;width:${Math.min(100, Math.round(v / t * 100))}%;background:${color === 'solo' ? '#ffb347' : color === 'todo' ? '#ffd84d' : '#5ee08a'};"></span></div></div>`;
+  const barras = puntosTopeDia > 0 ? barra(h.total, h.tope, 'todo') : barra(h.solo, PUNTOS_TOPE_SOLO, 'solo') + barra(h.grupo, PUNTOS_TOPE_GRUPO, 'grupo');
+  const nota = puntosTopeDia > 0 ? 'Cuanto más jugás, más puntos sumás. Las monedas para tu personaje tienen su propio tope.' : 'Gana el que juega todos los días un rato, no el que se pasa horas. Las monedas para tu personaje no tienen tope.';
+  return `<div class="g-dialogo" style="padding:10px 14px;"><div class="g-dialogo-titulo" style="font-size:15px;">Puntos de hoy: ${h.total} de ${h.tope}</div><div style="display:flex;gap:12px;margin-top:6px;">${barras}</div><div class="g-dialogo-sub" style="margin-top:6px;">${nota}</div></div>`;
 }
