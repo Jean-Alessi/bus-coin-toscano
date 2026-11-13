@@ -389,6 +389,17 @@ function feriaSorteoEstadoHTML(){
 
 // ---- Acciones ----
 
+// Si el organizador cargó el WhatsApp del coordinador de este viaje, después de un pedido se ofrece avisarle también por ahí.
+function feriaWhatsAppHTML(texto){
+  if(typeof waCoordinador === 'undefined' || !waCoordinador) return '';
+  feria.waMsg = 'Hola, soy ' + miNombre + ' (asiento ' + miAsiento + ') del viaje ' + codigoViaje + '. ' + texto;
+  return '<button class="gbtn gbtn-ancho" style="margin-top:10px;background:#25D366;" onclick="feriaAvisarWhatsApp()">📲 Avisar también por WhatsApp</button>';
+}
+function feriaAvisarWhatsApp(){
+  if(!waCoordinador || !feria.waMsg) return;
+  window.open('https://wa.me/' + waCoordinador + '?text=' + encodeURIComponent(feria.waMsg), '_blank');
+}
+
 function feriaTerminarPuesto(id, dato, html, marcarHecho){
   if(marcarHecho !== false) feriaRef('feria/' + id + '/hecho/' + feriaYo()).set(dato || true);
   feriaSalirDelPuesto();
@@ -403,7 +414,7 @@ function feriaPedirKiosco(i){
   const item = feriaKiosco()[i];
   if(!item) return;
   feriaRef('pedidos/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), item, t: feriaTS(), estado: 'pendiente' });
-  feriaTerminarPuesto('kiosco', { item, t: feriaTS() }, `<div class="fer-grande">${feriaEmojiDe(item)}</div><p class="fer-texto">¡Pedido listo! El coordinador te lleva <b>${feriaEsc(item)}</b> a tu asiento.</p>`);
+  feriaTerminarPuesto('kiosco', { item, t: feriaTS() }, `<div class="fer-grande">${feriaEmojiDe(item)}</div><p class="fer-texto">¡Pedido listo! El coordinador te lleva <b>${feriaEsc(item)}</b> a tu asiento.</p>${feriaWhatsAppHTML('🍬 Pedido de kiosco: ' + item)}`);
 }
 
 function feriaCodigoCupon(){
@@ -450,13 +461,13 @@ function feriaPedirServicio(i){
   const tipo = feriaLista('servicios')[i];
   if(!tipo) return;
   feriaRef('servicios/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), tipo, t: feriaTS(), estado: 'pendiente' });
-  feriaTerminarPuesto('coordinador', null, `<div class="fer-grande">🧑‍✈️</div><p class="fer-texto">¡Listo! El coordinador recibió tu pedido: <b>${feriaEsc(tipo)}</b>.</p>`, false);
+  feriaTerminarPuesto('coordinador', null, `<div class="fer-grande">🧑‍✈️</div><p class="fer-texto">¡Listo! El coordinador recibió tu pedido: <b>${feriaEsc(tipo)}</b>.</p>${feriaWhatsAppHTML('🧑‍✈️ ' + tipo)}`, false);
 }
 
 function feriaAvisarCumple(){
   if(feria.dentro !== 'coordinador') return;
   feriaRef('cumples/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), t: feriaTS(), estado: 'nuevo' });
-  feriaTerminarPuesto('coordinador', null, '<div class="fer-grande">🎂</div><p class="fer-texto">¡Feliz cumpleaños! 🎉 El coordinador va a avisarlo en el micro y en la plaza te va a aparecer una torta.</p>', false);
+  feriaTerminarPuesto('coordinador', null, '<div class="fer-grande">🎂</div><p class="fer-texto">¡Feliz cumpleaños! 🎉 El coordinador va a avisarlo en el micro y en la plaza te va a aparecer una torta.</p>' + feriaWhatsAppHTML('🎂 Hoy es mi cumpleaños'), false);
 }
 
 function feriaPedirFarmacia(i){
@@ -465,7 +476,7 @@ function feriaPedirFarmacia(i){
   const motivo = urgente ? 'Necesita ayuda ahora' : feriaLista('farmacia')[i];
   if(!motivo) return;
   feriaRef('farmacia/' + feriaYo()).set({ n: String(miNombre).slice(0, 30), motivo, urgente, t: feriaTS(), estado: 'pendiente' });
-  feriaTerminarPuesto('farmacia', null, `<div class="fer-grande">${urgente ? '🚨' : '💊'}</div><p class="fer-texto">${urgente ? '¡Aviso enviado!' : 'Listo, avisamos al coordinador.'} Va a ir a verte${urgente ? ' enseguida' : ''}.</p><p class="fer-sub">Si te sentís peor, avisale a un adulto.</p>`, false);
+  feriaTerminarPuesto('farmacia', null, `<div class="fer-grande">${urgente ? '🚨' : '💊'}</div><p class="fer-texto">${urgente ? '¡Aviso enviado!' : 'Listo, avisamos al coordinador.'} Va a ir a verte${urgente ? ' enseguida' : ''}.</p><p class="fer-sub">Si te sentís peor, avisale a un adulto.</p>${feriaWhatsAppHTML(urgente ? '🚨 URGENTE: necesito ayuda ahora' : '💊 ' + motivo)}`, false);
 }
 
 function feriaPuntuar(q, v){ feria.encuesta[q] = v; feriaRenderPanel(); }

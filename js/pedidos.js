@@ -41,7 +41,7 @@ function pedidosVigilar(codigos){
     const d = pedidosDatos[viaje] = {};
     PED_ORDEN.forEach(t => {
       const r = db.ref('salas/' + viaje + '/' + PED_TIPOS[t].carpeta);
-      const cb = r.on('value', s => { d[t] = s.val() || {}; pedidosRefrescar(viaje); });
+      const cb = r.on('value', s => { const nuevo = s.val() || {}; pedidosDetectarNuevos(viaje, t, nuevo); d[t] = nuevo; pedidosRefrescar(viaje); });
       pedidosOyentes.push({ viaje, r, cb });
     });
   });
@@ -132,4 +132,76 @@ function pedidosPanelHTML(viaje, siempre){
       </div>`).join('') : '<div class="fer-vacio">No hay pedidos todavía. Cuando un pasajero pida algo en la plaza, aparece acá.</div>'}</div>
     <div class="fer-botones-admin"><button class="fer-mini" onclick="pedidosLimpiarHechos('${viaje}')">🧹 Limpiar atendidos</button></div>
   </div>`;
+}
+
+// ---- Avisos al coordinador: suena, vibra y avisa cuando entra un pedido nuevo ----
+// Anda mientras la app está abierta en este celular (el panel de viajes escucha los pedidos). Se prende con el botón 🔔 del panel.
+// Sin servidor: si el celular está bloqueado o la app cerrada, el sistema la pausa y el aviso puede no llegar (para eso, el WhatsApp).
+let pedidosConocidos = {};          // 'viaje|tipo' → asientos pendientes ya vistos (la primera lectura no avisa)
+let pedidosWakeLock = null, pedidosTitulo = '', pedidosTituloTimer = 0;
+function pedidosAvisosActivos(){ try { return localStorage.getItem('avisos-pedidos') === 'si'; } catch(e){ return false; } }
+
+function pedidosDetectarNuevos(viaje, tipo, datos){
+  const pend = PED_TIPOS[tipo].pendiente, clave = viaje + '|' + tipo;
+  const ahora = Object.keys(datos).filter(a => (datos[a] || {}).estado === pend);
+  const antes = pedidosConocidos[clave];
+  pedidosConocidos[clave] = new Set(ahora);
+  if(!antes) return;
+  const nuevos = ahora.filter(a => !antes.has(a)).map(a => ({ tipo, asiento: a, x: datos[a] || {} }));
+  if(nuevos.length && pedidosAvisosActivos()) pedidosAvisar(viaje, nuevos);
+}
+
+function pedidosSonar(urgente){
+  try {
+    if(!sonidoAudioCtx) sonidoAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = sonidoAudioCtx; if(ctx.state === 'suspended') ctx.resume();
+    (urgente ? [988, 784, 988, 784, 988] : [784, 988, 1175]).forEach((f, i) => {
+      const t0 = ctx.currentTime + i * 0.24, osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.type = 'triangle'; osc.frequency.value = f; osc.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.35, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+      osc.start(t0); osc.stop(t0 + 0.23);
+    });
+  } catch(e){}
+}
+
+function pedidosAvisar(viaje, nuevos){
+  const urgente = nuevos.some(n => n.x.urgente), n0 = nuevos[0], t = PED_TIPOS[n0.tipo];
+  const texto = t.emoji + ' ' + (n0.x.n || 'Asiento ' + n0.asiento) + ' (asiento ' + n0.asiento + '): ' + (n0.x.item || n0.x.tipo || n0.x.motivo || t.nombre) + (nuevos.length > 1 ? ' y ' + (nuevos.length - 1) + ' más' : '');
+  pedidosSonar(urgente);
+  try { if(navigator.vibrate) navigator.vibrate(urgente ? [500, 200, 500, 200, 500] : [300, 150, 300]); } catch(e){}
+  if(typeof mostrarToast === 'function') mostrarToast('📥 ' + (urgente ? '🚨 URGENTE · ' : '') + viaje + ' · ' + texto);
+  // título de la pestaña parpadeando hasta que se vuelva a mirar
+  if(!pedidosTituloTimer){
+    pedidosTitulo = document.title; let k = 0;
+    pedidosTituloTimer = setInterval(() => { document.title = (k++ % 2 ? pedidosTitulo : '📥 ¡Pedido nuevo!'); if(!document.hidden && k > 6){ clearInterval(pedidosTituloTimer); pedidosTituloTimer = 0; document.title = pedidosTitulo; } }, 900);
+  }
+  // si la app está en segundo plano pero viva, también como notificación del celular
+  try {
+    if('Notification' in window && Notification.permission === 'granted' && document.hidden){
+      const op = { body: texto, icon: 'icons/icon-192.png', tag: 'pedido', renotify: true, vibrate: [300, 150, 300] };
+      if(navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(r => r.showNotification('📥 Pedido nuevo', op)); else new Notification('📥 Pedido nuevo', op);
+    }
+  } catch(e){}
+}
+
+async function pedidosPedirPantalla(){
+  try { if('wakeLock' in navigator && !pedidosWakeLock){ pedidosWakeLock = await navigator.wakeLock.request('screen'); pedidosWakeLock.addEventListener('release', () => { pedidosWakeLock = null; }); } } catch(e){}
+}
+document.addEventListener('visibilitychange', () => { if(!document.hidden && pedidosAvisosActivos()) pedidosPedirPantalla(); });
+if(pedidosAvisosActivos()) pedidosPedirPantalla();
+
+// Botón 🔔 del panel: prende o apaga los avisos de este celular. Al prenderlos hace sonar una prueba (el navegador exige un toque para dejar sonar).
+function pedidosAvisosToggle(){
+  if(pedidosAvisosActivos()){
+    try { localStorage.setItem('avisos-pedidos', 'no'); } catch(e){}
+    if(pedidosWakeLock){ try { pedidosWakeLock.release(); } catch(e){} pedidosWakeLock = null; }
+    mostrarToast('Avisos de pedidos apagados');
+  } else {
+    try { localStorage.setItem('avisos-pedidos', 'si'); } catch(e){}
+    pedidosSonar(false); try { if(navigator.vibrate) navigator.vibrate(200); } catch(e){}
+    try { if('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
+    pedidosPedirPantalla();
+    mostrarToast('🔔 Avisos activados: suena y vibra con cada pedido. Dejá la app abierta y la pantalla prendida.');
+  }
+  if(typeof renderAdminViajes === 'function') renderAdminViajes();
 }

@@ -263,6 +263,26 @@ function mostrarAdminViajes(){
   renderAdminViajes();
 }
 
+// Avisos de pedidos de ESTE celular (el del coordinador): suenan y vibran cuando entra un pedido (ver pedidos.js).
+function adminAvisosHTML(){
+  let on = false; try { on = localStorage.getItem('avisos-pedidos') === 'si'; } catch(e){}
+  return `<div class="vj-card" style="padding:10px 14px;"><div class="vj-grid">${adminBtnHTML('pedidosAvisosToggle()', on ? '🔔' : '🔕', on ? 'Avisos de pedidos: ACTIVOS' : 'Activar avisos de pedidos', on ? 'Suena y vibra con cada pedido nuevo. Dejá la app abierta.' : 'Que este celular suene y vibre cuando un pasajero pida algo', 'Solo en este celular; la app tiene que estar abierta', on ? 'vj-on' : '')}</div></div>`;
+}
+
+// Número de WhatsApp del coordinador de un viaje (con código de área, sin 0 ni 15): los pasajeros pueden avisarle desde la app.
+function adminWhatsApp(codigo, actual){
+  const txt = prompt('WhatsApp del coordinador de este viaje.\n\nEscribilo con código de área, sin 0 ni 15 (por ejemplo 3469 123456). Los pasajeros van a poder avisarle por WhatsApp cuando pidan algo. Dejalo vacío para quitarlo.', actual ? String(actual).replace(/^549/, '') : '');
+  if(txt === null) return;
+  let d = String(txt).replace(/\D/g, '');
+  const ref = db.ref('salas/' + codigo + '/ajustes/whatsappCoordinador');
+  if(!d){ ref.remove().then(() => { mostrarToast('WhatsApp del coordinador quitado'); renderAdminViajes(); }); return; }
+  if(d.startsWith('00')) d = d.slice(2);
+  if(d.startsWith('54')){ if(d.length === 12 && d[2] !== '9') d = '549' + d.slice(2); }
+  else { if(d.startsWith('0')) d = d.slice(1); if(d.length === 10) d = '549' + d; }
+  if(d.length < 12 || d.length > 15){ mostrarToast('Ese número no parece completo: escribilo con código de área, sin 0 ni 15 (ej: 3469 123456)'); return; }
+  ref.set(d).then(() => { mostrarToast('Los pasajeros pueden avisar por WhatsApp al +' + d); renderAdminViajes(); });
+}
+
 // Botón grande del panel de viajes: ícono + nombre + cómo está ahora. 'estado' puede llevar HTML (la burbuja de pedidos).
 function adminBtnHTML(accion, icono, titulo, estado, ayuda, extra){
   return `<button class="vj-btn${extra ? ' ' + extra : ''}" onclick="${accion}" title="${ayuda || ''}"><span class="vj-ico">${icono}</span><span class="vj-txt"><b>${titulo}</b>${estado ? `<small>${estado}</small>` : ''}</span></button>`;
@@ -289,7 +309,7 @@ function renderAdminViajes(){
       return;
     }
     if(typeof pedidosVigilar === 'function') pedidosVigilar(codigos);
-    cont.innerHTML = `<div class="section-label">Viajes guardados</div>` + codigos.map(c => {
+    cont.innerHTML = `<div class="section-label">Viajes guardados</div>` + adminAvisosHTML() + codigos.map(c => {
       const pasajeros = Object.keys((datos[c].ranking && datos[c].ranking.puntos) || {}).length;
       const cerrado = !!datos[c].cerrado;
       const capacidad = datos[c].capacidad;
@@ -310,6 +330,7 @@ function renderAdminViajes(){
         <div class="vj-grid">
           ${adminBtnHTML(`adminToggleRanking('${c}')`, '🥇', 'Ranking y premios', 'Quién va ganando y vouchers', 'Ver quién va ganando, los premios y si ya los retiraron')}
           ${adminBtnHTML(`pedidosToggle('${c}')`, '📥', `Pedidos<span id="pedidos-num-${c}" class="vj-badge">${pend ? ' ' + pend : ''}</span>`, 'Kiosco, farmacia, coordinador', 'Bandeja con todos los pedidos de los pasajeros')}
+          ${adminBtnHTML(`adminWhatsApp('${c}','${aj.whatsappCoordinador || ''}')`, '📲', 'WhatsApp del coordinador', aj.whatsappCoordinador ? '+' + aj.whatsappCoordinador : 'Sin cargar', 'Número al que el pasajero puede avisar por WhatsApp cuando pide algo', aj.whatsappCoordinador ? 'vj-on' : '')}
           ${adminBtnHTML(`adminToggleFeria('${c}')`, '🎪', 'Feria y sorteo', 'Kiosco, agencia, sorteo', 'Feria de la plaza: kiosco, agencia y sorteo')}
           ${datos[c].destino ? adminBtnHTML(`adminToggleCanjes('${c}')`, '🏪', 'Canjes de comercios', String(datos[c].destino).replace(/[<>"']/g, ''), 'Ver los canjes de comercios del viaje') : ''}
         </div>
@@ -959,7 +980,7 @@ function actualizarMonedasEnPantalla(){
 // (un número; si no está, las fichas son libres). Cuenta lo que se GANA en este viaje (no lo que se gasta). Se guarda en el celular, por viaje;
 // la primera vez arranca desde los puntos que el ranking ya tenía de esa persona. Los PUNTOS del ranking no se tocan (siguen con su techo diario),
 // así el orden de los premios no se empata.
-let topeFichas = 0, topeFichasCodigo = '', metaPuntos = 0;
+let topeFichas = 0, topeFichasCodigo = '', metaPuntos = 0, waCoordinador = '';
 // Orden del ranking: si el viaje es una carrera a una meta, los que llegaron van primero, por orden de llegada; después, por puntos.
 function rankingComparar(x, y, usarMeta){
   if(usarMeta){
@@ -973,6 +994,7 @@ function topeFichasEscuchar(){
   if(typeof codigoViaje === 'undefined' || !codigoViaje || topeFichasCodigo === codigoViaje) return;
   topeFichasCodigo = codigoViaje;
   try { db.ref('salas/' + codigoViaje + '/ajustes/topeFichas').on('value', snap => { const v = Number(snap.val()); topeFichas = v > 0 ? Math.floor(v) : 0; }); } catch(e){}
+  try { db.ref('salas/' + codigoViaje + '/ajustes/whatsappCoordinador').on('value', snap => { waCoordinador = String(snap.val() || '').replace(/\D/g, ''); }); } catch(e){}
   try { db.ref('salas/' + codigoViaje + '/ajustes/metaPuntos').on('value', snap => { const v = Number(snap.val()); metaPuntos = v > 0 ? Math.floor(v) : 0; if(document.querySelector('#view-ranking.active') && typeof renderRanking === 'function') renderRanking(); }); } catch(e){}
   try { db.ref('salas/' + codigoViaje + '/ajustes/topePuntosDia').on('value', snap => { const v = Number(snap.val()); puntosTopeDia = v > 0 ? Math.floor(v) : 0; if(document.querySelector('#view-ranking.active') && typeof renderRanking === 'function') renderRanking(); }); } catch(e){}
 }

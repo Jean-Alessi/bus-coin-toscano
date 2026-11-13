@@ -39,15 +39,15 @@ const MODULOS = {
   vidriera: { f: ['vidriera.js?v=1'], n: ['comercios'] },
   voucher: { f: ['vouchers.js?v=1'] },
   tienda: { f: ['tienda.js?v=78'], n: ['voucher'] },
-  plaza: { f: ['plaza.js?v=27', 'feria.js?v=11', 'sectores.js?v=10', 'estacion.js?v=6', 'mesas.js?v=1', 'tunel.js?v=1', 'boliche.js?v=9', 'seleccion.js?v=4', 'micro.js?v=7', 'padellogica.js?v=1', 'padelbus.js?v=2', 'cartitas.js?v=2'], n: ['voucher'] },
+  plaza: { f: ['plaza.js?v=27', 'feria.js?v=12', 'sectores.js?v=10', 'estacion.js?v=6', 'mesas.js?v=1', 'tunel.js?v=1', 'boliche.js?v=9', 'seleccion.js?v=4', 'micro.js?v=7', 'padellogica.js?v=1', 'padelbus.js?v=2', 'cartitas.js?v=2'], n: ['voucher'] },
   escape: { f: ['escapesonido.js?v=8', 'escape.js?v=11', 'escape1.js?v=3', 'escapelib.js?v=1', 'escape2.js?v=1', 'escape3.js?v=1', 'escape4.js?v=1', 'escape5.js?v=1'] },
   plaza3d: { f: ['plaza3dmod.js?v=3', 'plaza3d.js?v=12'], n: ['plaza'] },
-  admin: { f: ['pedidos.js?v=2'], n: ['comercios', 'vidriera', 'copa', 'plaza'] },
+  admin: { f: ['pedidos.js?v=3'], n: ['comercios', 'vidriera', 'copa', 'plaza'] },
 };
 
 const MODULOS_VISTAS = { 'comercios': 'comercios', 'trivia': 'trivia', 'acertijos': 'acertijos', 'pensamiento': 'pensamiento', 'ahorcado': 'ahorcado', 'cuatrouno': 'cuatrouno', 'valija': 'valija', 'memoria': 'memoria', 'corredor': 'arcade', 'vuelo': 'arcade', 'serpiente': 'arcade', 'tetris': 'arcade', 'ladrillos': 'arcade', 'parking': 'arcade', 'laberinto': 'arcade', 'tanque': 'arcade', 'pinball': 'arcade', 'bombas': 'arcade', 'plataformas': 'arcade', 'solitario': 'solitario', 'videopoker': 'videopoker', 'texas': 'texas', 'estacion': 'plaza', 'plaza': 'plaza', 'categorias': 'categorias', 'sudoku': 'sudoku', 'patrones': 'patrones', 'sopa': 'sopa', 'tutifruti': 'tutifruti', 'impostor': 'impostor', 'bingo': 'bingo', 'triviavivo': 'triviaVivo', 'cuento': 'cuento', 'dibujar': 'dibujar', 'escoba': 'escoba', 'chinchon': 'chinchon', 'vidriera': 'vidriera', 'copa': 'copa', 'truco': 'copa', 'buscolor': 'buscolor', 'busqueda': 'escape', 'escape': 'escape', 'padel': 'plaza', 'tienda': 'tienda' };
 
-const MODULOS_FUNCIONES = { mostrarAdminComercios: 'comercios', mostrarAdminVidriera: 'vidriera', adminToggleFeria: 'plaza', adminToggleCopa: 'copa', adminCambiarPueblo: 'vidriera', pedidosToggle: 'admin', plazaAlternar3D: 'plaza3d' };
+const MODULOS_FUNCIONES = { mostrarAdminComercios: 'comercios', mostrarAdminVidriera: 'vidriera', adminToggleFeria: 'plaza', adminToggleCopa: 'copa', adminCambiarPueblo: 'vidriera', pedidosToggle: 'admin', pedidosAvisosToggle: 'admin', plazaAlternar3D: 'plaza3d' };
 
 const modulosHechos = new Set();      // módulos ya cargados
 const modulosEnCurso = {};            // módulo -> promesa
