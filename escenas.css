@@ -1433,7 +1433,6 @@ button.tcarta{cursor:default;}
 .vj-aviso-cerrado{background:#FFF4DB; color:#8A5A00;}
 .vj-grupo{font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:#6b7a99; margin:16px 0 7px;}
 .vj-grid{display:grid; grid-template-columns:1fr; gap:8px;}
-@media (min-width:600px){.vj-grid{grid-template-columns:1fr 1fr;}}
 .vj-btn{display:flex; align-items:center; gap:12px; text-align:left; width:100%; min-width:0; box-sizing:border-box; min-height:62px; padding:8px 10px; border-radius:14px; border:2px solid #D7E2F3; background:#F4F8FE; color:#0F2A4D; font-family:inherit; cursor:pointer;}
 .vj-btn:active{transform:translateY(1px); background:#E6EFFB;}
 .vj-btn.vj-on{background:#FFF1E0; border-color:#F2B26B;}
