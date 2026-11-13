@@ -38,7 +38,7 @@ const MODULOS = {
   comercios: { f: ['comercios.js?v=11', 'flyers.js?v=1'] },
   vidriera: { f: ['vidriera.js?v=1'], n: ['comercios'] },
   voucher: { f: ['vouchers.js?v=1'] },
-  tienda: { f: ['tienda.js?v=77'], n: ['voucher'] },
+  tienda: { f: ['tienda.js?v=78'], n: ['voucher'] },
   plaza: { f: ['plaza.js?v=27', 'feria.js?v=11', 'sectores.js?v=10', 'estacion.js?v=6', 'mesas.js?v=1', 'tunel.js?v=1', 'boliche.js?v=9', 'seleccion.js?v=4', 'micro.js?v=7', 'padellogica.js?v=1', 'padelbus.js?v=2', 'cartitas.js?v=2'], n: ['voucher'] },
   escape: { f: ['escapesonido.js?v=8', 'escape.js?v=11', 'escape1.js?v=3', 'escapelib.js?v=1', 'escape2.js?v=1', 'escape3.js?v=1', 'escape4.js?v=1', 'escape5.js?v=1'] },
   plaza3d: { f: ['plaza3dmod.js?v=3', 'plaza3d.js?v=12'], n: ['plaza'] },

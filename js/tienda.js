@@ -71,7 +71,7 @@ function habilitarEleccionPremios(){
     const puntos = snap.val() || {};
     const orden = Object.keys(puntos)
       .filter(a => puntos[a])
-      .sort((a, b) => (puntos[b].pts || 0) - (puntos[a].pts || 0))
+      .sort((a, b) => rankingComparar(puntos[a], puntos[b], metaPuntos > 0))
       .slice(0, 4);
     if(!orden.length){
       mostrarToast('Todavía no hay nadie en el ranking');

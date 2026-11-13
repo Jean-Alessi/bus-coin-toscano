@@ -307,6 +307,7 @@ function renderAdminViajes(){
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarPueblo('${c}','${String(datos[c].pueblo || '').replace(/'/g, '')}')" title="Pueblo de origen de los chicos (para la Vidriera)">🏘️ ${datos[c].pueblo ? String(datos[c].pueblo).replace(/</g, '') : 'Pueblo'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCopa('${c}')" title="Copa Busmac: anotar los cursos y elegir capitanes">🏆</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarEdad('${c}','${(datos[c].ajustes && datos[c].ajustes.edad) || ''}')" title="Edad del grupo: para 6 a 9 años se muestran solo los juegos para chicos">👦 ${(datos[c].ajustes && datos[c].ajustes.edad) === '6-9' ? '6-9' : 'Todas'}</button>
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminMetaPuntos('${c}', ${(datos[c].ajustes && Number(datos[c].ajustes.metaPuntos)) || 0})" title="Carrera: gana el primero que llega a la meta de puntos; el 2°, 3° y 4° por orden de llegada">🏁 ${(datos[c].ajustes && Number(datos[c].ajustes.metaPuntos) > 0) ? 'Meta ' + Number(datos[c].ajustes.metaPuntos) : 'Sin carrera'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTopePuntos('${c}', ${(datos[c].ajustes && Number(datos[c].ajustes.topePuntosDia)) || 0})" title="Tope de puntos del ranking que puede sumar cada pasajero por día (o el normal de 100)">⭐ ${(datos[c].ajustes && Number(datos[c].ajustes.topePuntosDia) > 0) ? Number(datos[c].ajustes.topePuntosDia) + ' pts/día' : 'Puntos: normal'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTopeFichas('${c}', ${(datos[c].ajustes && Number(datos[c].ajustes.topeFichas)) || 0})" title="Tope de fichas que puede ganar cada pasajero en este viaje (o libres)">🪙 ${(datos[c].ajustes && Number(datos[c].ajustes.topeFichas) > 0) ? 'Tope ' + Number(datos[c].ajustes.topeFichas) : 'Fichas libres'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTogglePoker('${c}',${!(datos[c].ajustes && datos[c].ajustes.poker === true)})" title="Póker en este viaje (apagado para estudiantiles)">🃏 ${datos[c].ajustes && datos[c].ajustes.poker === true ? 'Sí' : 'No'}</button>
@@ -347,9 +348,10 @@ function adminToggleRanking(codigo){
 function adminRankingHTML(codigo, viaje){
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const puntos = (viaje.ranking && viaje.ranking.puntos) || {};
-  const filas = Object.keys(puntos).map(as => ({ asiento: as, nombre: puntos[as].nombre || '?', pts: Number(puntos[as].pts) || 0 })).sort((p, q) => q.pts - p.pts || String(p.nombre).localeCompare(String(q.nombre)));
+  const usarMeta = Number(viaje.ajustes && viaje.ajustes.metaPuntos) > 0;
+  const filas = Object.keys(puntos).map(as => ({ asiento: as, nombre: puntos[as].nombre || '?', pts: Number(puntos[as].pts) || 0, meta: Number(puntos[as].meta) || 0 })).sort((p, q) => rankingComparar(p, q, usarMeta) || String(p.nombre).localeCompare(String(q.nombre)));
   const medallas = ['🥇', '🥈', '🥉'];
-  const cuerpo = filas.length ? filas.map((f, i) => `<div class="bingo-roster-item"><span>${medallas[i] || (i + 1) + '°'} <b>${esc(f.nombre)}</b> <small style="opacity:.7;">asiento ${esc(f.asiento)}</small></span><span class="bingo-roster-derecha"><b>${f.pts}</b> pts</span></div>`).join('') : '<p style="font-size:12.5px;color:var(--gray);">Todavía nadie sumó puntos en este viaje.</p>';
+  const cuerpo = filas.length ? filas.map((f, i) => `<div class="bingo-roster-item"><span>${medallas[i] || (i + 1) + '°'} <b>${esc(f.nombre)}</b> <small style="opacity:.7;">asiento ${esc(f.asiento)}</small></span><span class="bingo-roster-derecha"><b>${f.pts}</b> pts${usarMeta && f.meta ? ' 🏁 ' + new Date(f.meta).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}</span></div>`).join('') : '<p style="font-size:12.5px;color:var(--gray);">Todavía nadie sumó puntos en este viaje.</p>';
   // Premios: quién ganó qué y si ya lo retiró (vouchers.js). 'ranking' = los 4 primeros que eligieron; 'sorteo' = el ganador de la feria.
   const premios = viaje.premios || {}, vouchers = viaje.vouchers || {};
   const orden = Array.isArray(premios.orden) ? premios.orden : Object.values(premios.orden || {});
@@ -400,6 +402,17 @@ function adminCambiarEdad(codigo, actual){
     mostrarToast(nueva ? 'Grupo de 6 a 9 años: solo juegos para chicos' : 'Todas las edades: todos los juegos');
     renderAdminViajes();
   });
+}
+
+// Carrera: la meta de puntos que hay que alcanzar primero. Si el tope diario es más bajo que la meta, se sube a la meta para que se pueda llegar en un día.
+function adminMetaPuntos(codigo, actual){
+  const txt = prompt('Carrera de puntos: gana el primero que llega a la meta, y el 2°, 3° y 4° según el orden en que van llegando.\n\nEscribí la meta (por ejemplo 1000) o dejalo vacío para quitar la carrera.', actual > 0 ? String(actual) : '');
+  if(txt === null) return;
+  const n = parseInt(String(txt).replace(/\D/g, ''), 10);
+  const ref = db.ref('salas/' + codigo + '/ajustes/metaPuntos'), refDia = db.ref('salas/' + codigo + '/ajustes/topePuntosDia');
+  const listo = () => { mostrarToast(n > 0 ? 'Carrera a ' + n + ' puntos: gana el primero en llegar' : 'Sin carrera: el ranking vuelve a ser por puntos'); renderAdminViajes(); };
+  if(!(n > 0)){ ref.remove().then(listo); return; }
+  ref.set(n).then(() => refDia.once('value')).then(snap => { const dia = Number(snap.val()) || 0; return dia < n ? refDia.set(n) : null; }).then(listo);
 }
 
 // Tope de PUNTOS del ranking por día y por pasajero: un número (por ejemplo 1000), o vacío para el tope normal (100 por día: 50 solo + 50 en grupo).
@@ -856,8 +869,8 @@ function renderRanking(){
   if(typeof cursosEscuchar === 'function') cursosEscuchar();
   if(typeof cursosVistaActiva === 'function' && cursosVistaActiva()){ list.innerHTML = cursosRankingHTML(); return; }
   const filas = Object.keys(rankingPuntos)
-    .map(asiento => ({ asiento, nombre: rankingPuntos[asiento].nombre, pts: rankingPuntos[asiento].pts, avatar: rankingPuntos[asiento].avatar, me: asiento === String(miAsiento) }))
-    .sort((a,b)=> b.pts - a.pts);
+    .map(asiento => ({ asiento, nombre: rankingPuntos[asiento].nombre, pts: rankingPuntos[asiento].pts, avatar: rankingPuntos[asiento].avatar, meta: rankingPuntos[asiento].meta, me: asiento === String(miAsiento) }))
+    .sort((x, y) => rankingComparar(x, y, metaPuntos > 0));
   if(!filas.length){
     list.innerHTML = gEscenaHTML('noche', gDialogoHTML('🏆 Todavía nadie sumó puntos', 'Jugá y sumá monedas para aparecer acá.'));
     return;
@@ -874,7 +887,7 @@ function renderRanking(){
       ${l.pos === 0 ? '<div class="rk-corona">👑</div>' : ''}
       <div class="rk-avatar">${carita(r, 62)}</div>
       <div class="rk-nombre">${r.me ? 'Vos' : r.nombre}</div>
-      <div class="rk-pts">${r.pts} pts</div>
+      <div class="rk-pts">${r.pts} pts${r.meta && metaPuntos > 0 ? ' 🏁' : ''}</div>
       <div class="rk-base"><span>${MEDALLAS_RANKING[l.pos]}</span></div>
     </div>`;
   }).join('');
@@ -884,13 +897,14 @@ function renderRanking(){
       <span class="rk-fila-num">${i + 4}</span>
       <span class="rk-fila-avatar">${carita(r, 34)}</span>
       <span class="rk-fila-nombre">${r.me ? 'Vos' : r.nombre}<small>asiento ${r.asiento}</small></span>
-      <span class="rk-fila-pts">${r.pts} pts</span>
+      <span class="rk-fila-pts">${r.pts} pts${r.meta && metaPuntos > 0 ? ' 🏁' : ''}</span>
     </div>`).join('');
 
   list.innerHTML = gEscenaHTML('noche', `
     ${typeof cursosSelectorHTML === 'function' ? cursosSelectorHTML() : ''}
     ${miPuesto >= 0 ? `<div class="g-hud"><span class="g-pill">Tu puesto: ${miPuesto + 1}°</span><span class="g-pill">🪙 ${filas[miPuesto].pts}</span>${typeof puntosHoyPillHTML === 'function' ? puntosHoyPillHTML() : ''}</div>` : ''}
     ${typeof puntosHoyDetalleHTML === 'function' ? puntosHoyDetalleHTML() : ''}
+    ${metaPuntos > 0 ? `<div class="g-dialogo" style="padding:10px 14px;"><div class="g-dialogo-titulo" style="font-size:15px;">🏁 Carrera a ${metaPuntos} puntos</div><div class="g-dialogo-sub">Gana el primero en llegar; el 2°, 3° y 4° puesto según el orden de llegada. Ya llegaron: ${filas.filter(r => Number(r.meta) > 0).length}.</div></div>` : ''}
     <div class="rk-podio">${podioHTML}</div>
     ${restoHTML ? `<div class="rk-resto">${restoHTML}</div>` : ''}`);
 }
@@ -925,11 +939,21 @@ function actualizarMonedasEnPantalla(){
 // (un número; si no está, las fichas son libres). Cuenta lo que se GANA en este viaje (no lo que se gasta). Se guarda en el celular, por viaje;
 // la primera vez arranca desde los puntos que el ranking ya tenía de esa persona. Los PUNTOS del ranking no se tocan (siguen con su techo diario),
 // así el orden de los premios no se empata.
-let topeFichas = 0, topeFichasCodigo = '';
+let topeFichas = 0, topeFichasCodigo = '', metaPuntos = 0;
+// Orden del ranking: si el viaje es una carrera a una meta, los que llegaron van primero, por orden de llegada; después, por puntos.
+function rankingComparar(x, y, usarMeta){
+  if(usarMeta){
+    const mx = Number(x.meta) > 0, my = Number(y.meta) > 0;
+    if(mx && my) return Number(x.meta) - Number(y.meta);
+    if(mx !== my) return mx ? -1 : 1;
+  }
+  return (y.pts || 0) - (x.pts || 0);
+}
 function topeFichasEscuchar(){
   if(typeof codigoViaje === 'undefined' || !codigoViaje || topeFichasCodigo === codigoViaje) return;
   topeFichasCodigo = codigoViaje;
   try { db.ref('salas/' + codigoViaje + '/ajustes/topeFichas').on('value', snap => { const v = Number(snap.val()); topeFichas = v > 0 ? Math.floor(v) : 0; }); } catch(e){}
+  try { db.ref('salas/' + codigoViaje + '/ajustes/metaPuntos').on('value', snap => { const v = Number(snap.val()); metaPuntos = v > 0 ? Math.floor(v) : 0; if(document.querySelector('#view-ranking.active') && typeof renderRanking === 'function') renderRanking(); }); } catch(e){}
   try { db.ref('salas/' + codigoViaje + '/ajustes/topePuntosDia').on('value', snap => { const v = Number(snap.val()); puntosTopeDia = v > 0 ? Math.floor(v) : 0; if(document.querySelector('#view-ranking.active') && typeof renderRanking === 'function') renderRanking(); }); } catch(e){}
 }
 function fichasLeerGanadas(){
@@ -974,6 +998,11 @@ function ganarMonedas(cantidad){
   // .update() en vez de .set(): así no pisa otros campos del mismo registro,
   // como el "mayorDe12" que usa Comercios para decidir qué canjes facturar.
   const cambios = { nombre: miNombre, pts: nuevoPts };
+  if(metaPuntos > 0 && (previo.pts || 0) < metaPuntos && nuevoPts >= metaPuntos && !previo.meta){
+    const antes = Object.keys(rankingPuntos).filter(k => k !== asiento && Number(rankingPuntos[k].meta) > 0).length;
+    cambios.meta = firebase.database.ServerValue.TIMESTAMP; rankingPuntos[asiento].meta = Date.now();
+    setTimeout(() => mostrarToast('🏁 ¡Llegaste a los ' + metaPuntos + ' puntos! Quedaste en el puesto ' + (antes + 1) + '°', 'gain'), 600);
+  }
   if(mes) cambios['m/' + mes] = nuevoMes;
   rankingRefPuntos().child(asiento).update(cambios);
 }
