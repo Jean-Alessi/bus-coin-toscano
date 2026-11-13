@@ -263,6 +263,11 @@ function mostrarAdminViajes(){
   renderAdminViajes();
 }
 
+// Botón grande del panel de viajes: ícono + nombre + cómo está ahora. 'estado' puede llevar HTML (la burbuja de pedidos).
+function adminBtnHTML(accion, icono, titulo, estado, ayuda, extra){
+  return `<button class="vj-btn${extra ? ' ' + extra : ''}" onclick="${accion}" title="${ayuda || ''}"><span class="vj-ico">${icono}</span><span class="vj-txt"><b>${titulo}</b>${estado ? `<small>${estado}</small>` : ''}</span></button>`;
+}
+
 function renderAdminViajes(){
   const cont = document.getElementById('admin-viajes-content');
   if(!cont) return;
@@ -294,26 +299,39 @@ function renderAdminViajes(){
       const listoParaBorrar = !!datos[c].listoParaBorrar;
       const canjesAbiertos = adminCanjesAbiertoPara === c;
       const mayoresDe12 = Object.values((datos[c].ranking && datos[c].ranking.puntos) || {}).filter(p => p.mayorDe12).length;
-      return `<div class="bingo-roster-item">
-        <span>${c}${cerrado ? ' 🔒' : ''}${listoParaBorrar ? ' <span style="color:#B85A0B;font-weight:600;">· ✅ Listo para borrar</span>' : ''}</span>
-        <span class="bingo-roster-derecha">
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;background:#E5586E;color:#fff;" onclick="pedidosToggle('${c}')" title="Bandeja con todos los pedidos de los pasajeros">📥<span id="pedidos-num-${c}">${typeof pedidosPendientes === 'function' && pedidosPendientes(c) ? ' ' + pedidosPendientes(c) : ''}</span></button>
-          <span>${pasajeros}${capacidad ? '/' + capacidad : ''} pasajero${pasajeros === 1 ? '' : 's'}</span>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleLista('${c}')" title="Cargar lista de pasajeros">📋${listaLen ? ' ' + listaLen : ''}</button>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCursos('${c}')" title="Cursos para la Guerra de cursos">🎓${listaCursos.length ? ' ' + listaCursos.length : ''}</button>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleRanking('${c}')" title="Ver quién va ganando (ranking del viaje)">🥇${pasajeros ? ' ' + pasajeros : ''}</button>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleFeria('${c}')" title="Feria de la plaza: kiosco, agencia y sorteo">🎪</button>
-          ${datos[c].destino ? `<button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCanjes('${c}')" title="Ver canjes de comercios">🏪</button>` : ''}
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarPueblo('${c}','${String(datos[c].pueblo || '').replace(/'/g, '')}')" title="Pueblo de origen de los chicos (para la Vidriera)">🏘️ ${datos[c].pueblo ? String(datos[c].pueblo).replace(/</g, '') : 'Pueblo'}</button>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCopa('${c}')" title="Copa Busmac: anotar los cursos y elegir capitanes">🏆</button>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarEdad('${c}','${(datos[c].ajustes && datos[c].ajustes.edad) || ''}')" title="Edad del grupo: para 6 a 9 años se muestran solo los juegos para chicos">👦 ${(datos[c].ajustes && datos[c].ajustes.edad) === '6-9' ? '6-9' : 'Todas'}</button>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminMetaPuntos('${c}', ${(datos[c].ajustes && Number(datos[c].ajustes.metaPuntos)) || 0})" title="Carrera: gana el primero que llega a la meta de puntos; el 2°, 3° y 4° por orden de llegada">🏁 ${(datos[c].ajustes && Number(datos[c].ajustes.metaPuntos) > 0) ? 'Meta ' + Number(datos[c].ajustes.metaPuntos) : 'Sin carrera'}</button>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTopePuntos('${c}', ${(datos[c].ajustes && Number(datos[c].ajustes.topePuntosDia)) || 0})" title="Tope de puntos del ranking que puede sumar cada pasajero por día (o el normal de 100)">⭐ ${(datos[c].ajustes && Number(datos[c].ajustes.topePuntosDia) > 0) ? Number(datos[c].ajustes.topePuntosDia) + ' pts/día' : 'Puntos: normal'}</button>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTopeFichas('${c}', ${(datos[c].ajustes && Number(datos[c].ajustes.topeFichas)) || 0})" title="Tope de fichas que puede ganar cada pasajero en este viaje (o libres)">🪙 ${(datos[c].ajustes && Number(datos[c].ajustes.topeFichas) > 0) ? 'Tope ' + Number(datos[c].ajustes.topeFichas) : 'Fichas libres'}</button>
-          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTogglePoker('${c}',${!(datos[c].ajustes && datos[c].ajustes.poker === true)})" title="Póker en este viaje (apagado para estudiantiles)">🃏 ${datos[c].ajustes && datos[c].ajustes.poker === true ? 'Sí' : 'No'}</button>
-          <button class="btn-finalizar-viaje" onclick="toggleCerrarViaje('${c}',${!cerrado})">${cerrado ? 'Reabrir' : 'Finalizar'}</button>
-          <button class="btn-eliminar-pasajero" onclick="eliminarViaje('${c}')" title="Eliminar viaje">✕</button>
-        </span>
+      const aj = datos[c].ajustes || {};
+      const pend = typeof pedidosPendientes === 'function' ? pedidosPendientes(c) : 0;
+      const metaN = Number(aj.metaPuntos) || 0, diaN = Number(aj.topePuntosDia) || 0, fichasN = Number(aj.topeFichas) || 0;
+      const pueblo = datos[c].pueblo ? String(datos[c].pueblo).replace(/[<>"']/g, '') : '';
+      return `<div class="vj-card">
+        <div class="vj-cab"><span class="vj-codigo">${c}${cerrado ? ' 🔒' : ''}</span><span class="vj-pax">👥 ${pasajeros}${capacidad ? '/' + capacidad : ''} pasajero${pasajeros === 1 ? '' : 's'}</span></div>
+        ${cerrado ? '<div class="vj-aviso vj-aviso-cerrado">🔒 Viaje finalizado: nadie más puede entrar</div>' : ''}${listoParaBorrar ? '<div class="vj-aviso">✅ Listo para borrar</div>' : ''}
+        <div class="vj-grupo">📊 Seguimiento</div>
+        <div class="vj-grid">
+          ${adminBtnHTML(`adminToggleRanking('${c}')`, '🥇', 'Ranking y premios', 'Quién va ganando y vouchers', 'Ver quién va ganando, los premios y si ya los retiraron')}
+          ${adminBtnHTML(`pedidosToggle('${c}')`, '📥', `Pedidos<span id="pedidos-num-${c}" class="vj-badge">${pend ? ' ' + pend : ''}</span>`, 'Kiosco, farmacia, coordinador', 'Bandeja con todos los pedidos de los pasajeros')}
+          ${adminBtnHTML(`adminToggleFeria('${c}')`, '🎪', 'Feria y sorteo', 'Kiosco, agencia, sorteo', 'Feria de la plaza: kiosco, agencia y sorteo')}
+          ${datos[c].destino ? adminBtnHTML(`adminToggleCanjes('${c}')`, '🏪', 'Canjes de comercios', String(datos[c].destino).replace(/[<>"']/g, ''), 'Ver los canjes de comercios del viaje') : ''}
+        </div>
+        <div class="vj-grupo">🏁 Puntos y fichas</div>
+        <div class="vj-grid">
+          ${adminBtnHTML(`adminMetaPuntos('${c}', ${metaN})`, '🏁', 'Carrera de puntos', metaN ? 'Meta de ' + metaN + ' puntos' : 'Sin carrera', 'Gana el primero que llega a la meta; el 2°, 3° y 4° por orden de llegada', metaN ? 'vj-on' : '')}
+          ${adminBtnHTML(`adminTopePuntos('${c}', ${diaN})`, '⭐', 'Puntos por día', diaN ? 'Hasta ' + diaN + ' por día' : 'Normal (100 por día)', 'Cuántos puntos del ranking puede sumar cada pasajero por día', diaN ? 'vj-on' : '')}
+          ${adminBtnHTML(`adminTopeFichas('${c}', ${fichasN})`, '🪙', 'Tope de fichas', fichasN ? 'Hasta ' + fichasN + ' en el viaje' : 'Libres, sin tope', 'Cuántas fichas puede ganar cada pasajero en este viaje', fichasN ? 'vj-on' : '')}
+        </div>
+        <div class="vj-grupo">👥 Grupo y juegos</div>
+        <div class="vj-grid">
+          ${adminBtnHTML(`adminToggleLista('${c}')`, '📋', 'Lista de pasajeros', listaLen ? listaLen + ' cargados' : 'Sin cargar', 'Cargar la lista de pasajeros para que cada uno elija su nombre')}
+          ${adminBtnHTML(`adminToggleCursos('${c}')`, '🎓', 'Cursos', listaCursos.length ? listaCursos.length + ' cargados' : 'Sin cargar', 'Cursos para la Guerra de cursos')}
+          ${adminBtnHTML(`adminToggleCopa('${c}')`, '🏆', 'Copa Busmac', 'Capitanes y desafíos', 'Copa Busmac: anotar los cursos y elegir capitanes')}
+          ${adminBtnHTML(`adminCambiarPueblo('${c}','${pueblo.replace(/'/g, '')}')`, '🏘️', 'Pueblo de origen', pueblo || 'Sin definir', 'Pueblo de los chicos (para la Vidriera)')}
+          ${adminBtnHTML(`adminCambiarEdad('${c}','${aj.edad || ''}')`, '👦', 'Edad del grupo', aj.edad === '6-9' ? 'Solo juegos de 6 a 9' : 'Todas las edades', 'Con 6 a 9 años se muestran solo los juegos para chicos', aj.edad === '6-9' ? 'vj-on' : '')}
+          ${adminBtnHTML(`adminTogglePoker('${c}',${!(aj.poker === true)})`, '🃏', 'Póker', aj.poker === true ? 'Habilitado' : 'Apagado', 'Póker en este viaje (apagado para estudiantiles)', aj.poker === true ? 'vj-on' : '')}
+        </div>
+        <div class="vj-pie">
+          <button class="vj-fin" onclick="toggleCerrarViaje('${c}',${!cerrado})">${cerrado ? '🔓 Reabrir viaje' : '🏁 Finalizar viaje'}</button>
+          <button class="vj-del" onclick="eliminarViaje('${c}')">🗑️ Eliminar viaje</button>
+        </div>
       </div>
       ${typeof adminCursosPanelHTML === 'function' ? adminCursosPanelHTML(c, listaCursos, datos[c].ajustes && datos[c].ajustes.metas) : ''}
       ${typeof adminCopaPanelHTML === 'function' ? adminCopaPanelHTML(c, datos[c]) : ''}
@@ -447,6 +465,7 @@ function adminTogglePoker(codigo, habilitar){
 }
 
 function eliminarViaje(codigo){
+  if(!confirm('¿Eliminar el viaje ' + codigo + '? Se borra todo (ranking, premios, pedidos) y no se puede deshacer.')) return;
   db.ref('salas/' + codigo).remove().then(() => renderAdminViajes());
 }
 
@@ -454,6 +473,7 @@ function eliminarViaje(codigo){
 // después): solo marca la sala como cerrada, y desde ese momento nadie más
 // puede entrar con ese código. "Reabrir" deshace eso, por si hace falta.
 function toggleCerrarViaje(codigo, cerrar){
+  if(cerrar && !confirm('¿Finalizar el viaje ' + codigo + '? Nadie más va a poder entrar, y a los que están adentro les avisa que terminó.')) return;
   db.ref('salas/' + codigo + '/cerrado').set(cerrar).then(() => renderAdminViajes());
 }
 

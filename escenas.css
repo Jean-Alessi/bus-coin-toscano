@@ -1422,3 +1422,28 @@ button.tcarta{cursor:default;}
 .cargando-modulo.show{opacity:1; transform:translate(-50%, 0);}
 .cargando-modulo span{display:inline-block; animation:cargandoMov 1s ease-in-out infinite;}
 @keyframes cargandoMov{0%,100%{transform:translateX(-3px);}50%{transform:translateX(3px);}}
+
+
+/* Panel de viajes del organizador: una tarjeta por viaje, con botones grandes y con nombre */
+.organizador-escena .vj-card{background:#fff; border:3px solid #fff; border-radius:18px; box-shadow:0 4px 0 rgba(0,0,0,.3); padding:14px; margin-bottom:22px; color:#0F2A4D;}
+.vj-cab{display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap;}
+.vj-codigo{font-size:22px; font-weight:800; letter-spacing:.5px;}
+.vj-pax{font-size:14px; font-weight:700; color:#5b6b85;}
+.vj-aviso{margin-top:8px; padding:7px 10px; border-radius:10px; background:#E7F8EE; color:#14753C; font-weight:800; font-size:13px;}
+.vj-aviso-cerrado{background:#FFF4DB; color:#8A5A00;}
+.vj-grupo{font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:#6b7a99; margin:16px 0 7px;}
+.vj-grid{display:grid; grid-template-columns:1fr; gap:8px;}
+@media (min-width:600px){.vj-grid{grid-template-columns:1fr 1fr;}}
+.vj-btn{display:flex; align-items:center; gap:12px; text-align:left; width:100%; min-width:0; box-sizing:border-box; min-height:62px; padding:8px 10px; border-radius:14px; border:2px solid #D7E2F3; background:#F4F8FE; color:#0F2A4D; font-family:inherit; cursor:pointer;}
+.vj-btn:active{transform:translateY(1px); background:#E6EFFB;}
+.vj-btn.vj-on{background:#FFF1E0; border-color:#F2B26B;}
+.vj-ico{font-size:28px; line-height:1; flex:none; width:34px; text-align:center;}
+.vj-txt{display:flex; flex-direction:column; min-width:0; gap:2px;}
+.vj-txt b{font-size:15.5px; line-height:1.15; font-weight:800;}
+.vj-txt small{font-size:13px; color:#5b6b85; font-weight:600; line-height:1.2; overflow-wrap:anywhere;}
+.vj-btn.vj-on .vj-txt small{color:#9A5A12;}
+.vj-badge{background:#E5484D; color:#fff; border-radius:999px; padding:0 7px; margin-left:6px; font-size:12px;}
+.vj-badge:empty{display:none;}
+.vj-pie{display:grid; grid-template-columns:1fr; gap:8px; margin-top:18px;}
+.vj-fin{border:none; border-radius:14px; padding:14px 8px; font-size:15px; font-weight:800; font-family:inherit; color:#fff; background:linear-gradient(180deg,var(--orange-soft),var(--orange)); box-shadow:0 3px 0 var(--orange-sombra); cursor:pointer;}
+.vj-del{border:2px solid #E5484D; border-radius:14px; padding:14px 8px; font-size:15px; font-weight:800; font-family:inherit; color:#B3261E; background:#fff; cursor:pointer;}
