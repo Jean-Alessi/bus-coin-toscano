@@ -223,13 +223,18 @@ function renderPremiosViaje(){
   }
 
   const terminado = premiosCantidadElegida() >= orden.length;
+  // Si ya elegí mi premio: mi voucher con QR para reclamarlo en la empresa (ver vouchers.js)
+  const miEleccion = premiosState.elecciones[String(miAsiento)];
+  const miVoucherHTML = (miEleccion != null && typeof voucherTarjetaHTML === 'function' && codigoViaje) ? voucherTarjetaHTML('ranking', codigoViaje, miAsiento, premiosState.lista[miEleccion]) : '';
 
   cont.innerHTML = gEscenaHTML('oro', `
     <div class="section-label">Elección de premios</div>
     <div class="podio">${podioHTML}</div>
     ${cuartoPuesto}
     ${miTurnoHTML}
+    ${miVoucherHTML}
     ${premiosGridHTML(elegidosPorIndice)}
     ${terminado ? '<p class="tienda-nota">🎊 Ya eligieron todos. ¡Felicitaciones a los ganadores!</p>' : ''}
     ${esOrganizador && !terminado ? '<div class="g-acciones" style="grid-template-columns:1fr;margin-top:10px;"><button class="gbtn gbtn-no gbtn-ancho" style="font-size:14px;" onclick="premiosCancelarEleccion()">↩️ Cancelar la elección (la dejo para más tarde)</button></div><p class="link-chico" onclick="premiosFinalizarIgual()">Finalizar el viaje igual, aunque falten elegir premios</p>' : ''}`);
+  if(typeof voucherPintarQRs === 'function') voucherPintarQRs();
 }

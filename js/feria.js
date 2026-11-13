@@ -306,7 +306,7 @@ function feriaRenderPanel(){
     cuerpo = `<h3 class="fer-titulo">🛍️ Tienda Busmac</h3><div class="fer-grande">👕</div><p class="fer-texto">Se sortea: <b>${feriaEsc(premio)}</b></p>
       <p class="fer-sub">${s.activo ? 'El sorteo está abierto: retirá tu número en el puesto (uno por persona).' : 'El sorteo todavía no está abierto. El coordinador avisa cuándo.'}</p>
       <p class="fer-texto">${nums} número${nums === 1 ? '' : 's'} repartido${nums === 1 ? '' : 's'}${mio && mio.num ? ' · El tuyo: <b>#' + mio.num + '</b>' : ''}</p>
-      ${s.ganador ? '<p class="fer-texto">🎉 Ganó el número <b>#' + s.ganador.num + '</b> (' + feriaEsc(s.ganador.n || '') + ')</p>' : ''}`;
+      ${s.ganador ? feriaSorteoEstadoHTML() : ''}`;
     botones = (s.activo && !(mio && mio.num) ? '<button class="gbtn gbtn-ancho" onclick="feriaIrAlSorteo()">🎟️ Ir al puesto del sorteo</button>' : '') + cerrar;
   } else if(p.modo === 'fotoSel'){
     cuerpo = `<h3 class="fer-titulo">📸 Foto con el plantel</h3><canvas id="fer-foto" width="600" height="420" class="fer-foto"></canvas><p class="fer-sub">Con tu personaje, la copa y el equipo (son personajes). Espacio de fans, no oficial.</p>`;
@@ -375,6 +375,7 @@ function feriaRenderPanel(){
     botones += (id === 'cartelera' ? '<button class="gbtn gbtn-ancho" onclick="feriaCerrarPanel()">Cerrar</button>' : '<button class="gbtn gbtn-ancho gbtn-no" onclick="feriaCerrarPanel()">Salir</button>');
   }
   cont.innerHTML = `<div class="plz-modal"><div class="plz-modal-caja">${cuerpo}<div class="fer-botones">${botones}</div></div></div>`;
+  if(typeof voucherPintarQRs === 'function') voucherPintarQRs();
   if(p.modo === 'foto') setTimeout(feriaDibujarFoto, 30);
   if(p.modo === 'fotoSel') setTimeout(() => { if(typeof seleccionDibujarFoto === 'function') seleccionDibujarFoto(); }, 30);
 }
@@ -382,7 +383,8 @@ function feriaRenderPanel(){
 function feriaSorteoEstadoHTML(){
   const g = feria.sorteo && feria.sorteo.ganador;
   if(!g) return '<p class="fer-sub">El coordinador anuncia el ganador en la plaza.</p>';
-  return `<p class="fer-texto">🎉 Ganó el número <b>#${g.num}</b> (${feriaEsc(g.n || '')})</p>`;
+  const mio = String(g.asiento) === String(feriaYo()) && typeof voucherTarjetaHTML === 'function' && codigoViaje;
+  return `<p class="fer-texto">🎉 Ganó el número <b>#${g.num}</b> (${feriaEsc(g.n || '')})</p>` + (mio ? voucherTarjetaHTML('sorteo', codigoViaje, feriaYo(), ((feria.sorteo && feria.sorteo.premio) || '').trim() || 'Premio del sorteo') : '');
 }
 
 // ---- Acciones ----

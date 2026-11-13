@@ -333,6 +333,11 @@ function renderAdminViajes(){
 }
 
 let adminRankingAbiertoPara = null;
+// El organizador marca a mano que un premio ya se entregó (la empresa también puede hacerlo escaneando el QR del ganador).
+function adminMarcarEntregado(codigo, tipo, asiento, premio){
+  if(!confirm('¿Marcar como entregado el premio "' + premio + '" (asiento ' + asiento + ')? No se puede deshacer.')) return;
+  db.ref('salas/' + codigo + '/vouchers/' + tipo + '-' + asiento).transaction(actual => actual ? undefined : { t: Date.now(), premio }).then(() => { mostrarToast('Premio marcado como entregado'); renderAdminViajes(); });
+}
 function adminToggleRanking(codigo){
   adminRankingAbiertoPara = adminRankingAbiertoPara === codigo ? null : codigo;
   renderAdminViajes();
@@ -344,9 +349,24 @@ function adminRankingHTML(codigo, viaje){
   const filas = Object.keys(puntos).map(as => ({ asiento: as, nombre: puntos[as].nombre || '?', pts: Number(puntos[as].pts) || 0 })).sort((p, q) => q.pts - p.pts || String(p.nombre).localeCompare(String(q.nombre)));
   const medallas = ['🥇', '🥈', '🥉'];
   const cuerpo = filas.length ? filas.map((f, i) => `<div class="bingo-roster-item"><span>${medallas[i] || (i + 1) + '°'} <b>${esc(f.nombre)}</b> <small style="opacity:.7;">asiento ${esc(f.asiento)}</small></span><span class="bingo-roster-derecha"><b>${f.pts}</b> pts</span></div>`).join('') : '<p style="font-size:12.5px;color:var(--gray);">Todavía nadie sumó puntos en este viaje.</p>';
+  // Premios: quién ganó qué y si ya lo retiró (vouchers.js). 'ranking' = los 4 primeros que eligieron; 'sorteo' = el ganador de la feria.
+  const premios = viaje.premios || {}, vouchers = viaje.vouchers || {};
+  const orden = Array.isArray(premios.orden) ? premios.orden : Object.values(premios.orden || {});
+  const lista = Array.isArray(premios.lista) ? premios.lista : Object.values(premios.lista || {});
+  const nombreDe = as => (puntos[as] && puntos[as].nombre) || ('Asiento ' + as);
+  const filaPremio = (tipo, as, etiqueta, premio) => {
+    const ent = vouchers[tipo + '-' + as];
+    const estado = !premio ? '<span style="opacity:.7;">sin elegir todavía</span>' : (ent ? '✅ retirado' : `⏳ pendiente <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:2px 8px;font-size:11px;" onclick="adminMarcarEntregado('${esc(codigo)}','${tipo}','${esc(as)}','${esc(premio)}')">Marcar entregado</button>`);
+    return `<div class="bingo-roster-item"><span>${etiqueta} <b>${esc(nombreDe(as))}</b> <small style="opacity:.7;">asiento ${esc(as)}</small><br><small>${premio ? '🎁 ' + esc(premio) : ''}</small></span><span class="bingo-roster-derecha">${estado}</span></div>`;
+  };
+  const filasPremios = [];
+  orden.forEach((as, i) => { const el = premios.elecciones ? premios.elecciones[as] : null; filasPremios.push(filaPremio('ranking', as, ['🥇', '🥈', '🥉', '🎗️'][i] || (i + 1) + '°', el != null ? lista[el] : '')); });
+  if(viaje.sorteo && viaje.sorteo.ganador) filasPremios.push(filaPremio('sorteo', viaje.sorteo.ganador.asiento, '🎟️ Sorteo #' + esc(viaje.sorteo.ganador.num), (viaje.sorteo.premio || '').trim() || 'Premio del sorteo'));
+  const premiosHTML = filasPremios.length ? `<div class="section-label" style="margin-top:12px;">🎁 Premios y vouchers (el ganador muestra un QR; la empresa lo escanea y confirma)</div>${filasPremios.join('')}` : '';
   return `<div style="margin:-6px 0 12px;">
     <div class="section-label">🥇 Ranking de ${esc(codigo)} · ${filas.length} pasajero${filas.length === 1 ? '' : 's'} <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:2px 8px;font-size:11px;" onclick="renderAdminViajes()" title="Actualizar">🔄</button></div>
     <div style="max-height:360px;overflow:auto;">${cuerpo}</div>
+    ${premiosHTML}
   </div>`;
 }
 
@@ -539,6 +559,15 @@ function organizadorTarjetaHomeHTML(){
   return `<div class="av-home org-home" onclick="irAlPanelOrganizador()"><div class="org-home-img">⚙️</div><div class="av-home-txt"><h3>Panel del organizador</h3><p>Viajes, cursos, comercios y póker</p></div><span class="av-home-flecha">›</span></div>`;
 }
 
+// Tarjeta del inicio con el último voucher de premio que ganó esta persona (se guarda en el celular al verlo; sirve aunque el viaje haya terminado).
+function vouchersLocalesHTML(){
+  let l = []; try { l = JSON.parse(localStorage.getItem('mis-vouchers')) || []; } catch(e){}
+  if(!l.length) return '';
+  const v = l[0], esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  const url = location.pathname + '?voucher=1&viaje=' + encodeURIComponent(v.viaje) + '&asiento=' + encodeURIComponent(v.asiento) + '&tipo=' + encodeURIComponent(v.tipo);
+  return `<div class="av-home plz-home" onclick="location.href='${esc(url)}'"><div class="plz-home-img">🎟️</div><div class="av-home-txt"><h3>Tu voucher de premio</h3><p>${esc(v.premio)} · tocá para mostrarlo en la empresa</p></div><span class="av-home-flecha">›</span></div>`;
+}
+
 function renderHome(){
   topeFichasEscuchar();
   modulosPrecargarDeInicio();
@@ -575,6 +604,7 @@ function renderHome(){
     ${typeof plazaTarjetaHomeHTML === 'function' ? plazaTarjetaHomeHTML() : ''}
     ${typeof vidTarjetaHTML === 'function' ? vidTarjetaHTML() : ''}
     ${typeof avatarTarjetaHomeHTML === 'function' && (typeof mundoActivo !== 'function' || mundoActivo()) ? avatarTarjetaHomeHTML() : ''}
+    ${vouchersLocalesHTML()}
     ${pwaInstalarHTML()}
     ${ruletaHTML()}`);
 }
@@ -795,7 +825,7 @@ function mostrarVista(name){
   analyticsAlCambiarVista(name);
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
-  if(name === 'codigo-viaje') document.body.classList.remove('viaje-cerrado');
+  if(name === 'codigo-viaje'){ document.body.classList.remove('viaje-cerrado'); const hv = document.getElementById('vouchers-codigo'); if(hv) hv.innerHTML = vouchersLocalesHTML(); }
   plazaActualizarBotonVolver(name);
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   const tabName = (name === 'avatar' || name === 'plaza' || name === 'estacion') ? 'home' : (TABS_HIJOS_DE_JUEGOS.includes(name) ? 'juegos' : name);
@@ -979,6 +1009,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // Si se abrió desde el QR de un comercio (?canjear=1&...), es el celular
   // DEL COMERCIO, no el de un pasajero: se muestra solo la confirmación del
   // canje y se corta acá, sin arrancar el resto de la app.
+  const datosVoucher = typeof voucherLeerParams === 'function' ? voucherLeerParams() : null;
+  if(datosVoucher){ voucherMostrarPantalla(datosVoucher); return; }
   const datosCupon = typeof vidLeerParamsCupon === 'function' ? vidLeerParamsCupon() : null;
   if(datosCupon){ vidMostrarPantallaCupon(datosCupon); return; }
   const datosCanje = typeof comerciosLeerParamsCanje === 'function' ? comerciosLeerParamsCanje() : null;
