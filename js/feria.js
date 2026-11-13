@@ -21,11 +21,7 @@
 
 const FERIA_DEFECTO = {
   kiosco: ['Alfajor', 'Caramelos', 'Bombón', 'Chicle', 'Turrón'],
-  promos: [
-    { t: 'Bariloche 7 noches', d: 'Aéreo, hotel y excursiones', off: 10 },
-    { t: 'Mendoza fin de semana largo', d: 'Bodegas y alta montaña', off: 8 },
-    { t: 'Viaje de egresados 2027', d: 'Reservá tu lugar hoy', off: 5 },
-  ],
+  promos: [],   // sin ejemplos a propósito: cada agencia carga los viajes que de verdad vende (panel de la feria del organizador)
   radio: ['Cumbia', 'Rock nacional', 'Pop', 'Reggaetón', 'Folklore', 'Cuarteto', 'Clásicos en español', 'Electrónica'],
   servicios: ['Una manta', 'Agua', 'Cargar el celular', 'Parada para el baño', 'Consulta al coordinador'],
   farmacia: ['Dolor de cabeza', 'Dolor de panza', 'Mareo o náuseas', 'Alergia', 'Curita o venda', 'Dolor de garganta'],
@@ -63,8 +59,7 @@ function feriaLista(clave){
 }
 function feriaKiosco(){ return feriaLista('kiosco'); }
 function feriaPromos(){
-  const l = feriaListaDe(feria.config && feria.config.promos).filter(p => p && p.t);
-  return l.length ? l : FERIA_DEFECTO.promos;
+  return feriaListaDe(feria.config && feria.config.promos).filter(p => p && p.t);
 }
 
 function feriaStand(id){
@@ -346,7 +341,7 @@ function feriaRenderPanel(){
     if(id === 'kiosco'){
       cuerpo = `<h3 class="fer-titulo">🍬 Kiosco</h3><p class="fer-texto">Elegí una golosina de cortesía. ¡El coordinador te la lleva a tu asiento! Podés pedir una sola vez.</p>${feriaOpciones(feriaKiosco(), 'feriaPedirKiosco')}`;
     } else if(id === 'agencia'){
-      cuerpo = `<h3 class="fer-titulo">✈️ Agencia de viajes</h3><p class="fer-texto">Mirá las promos y pedí tu descuento. Podés elegir una sola vez.</p><div class="fer-promos">${feriaPromos().map((pr, i) => `<div class="fer-promo"><div><b>${feriaEsc(pr.t)}</b><div class="fer-sub">${feriaEsc(pr.d || '')}</div></div><button class="gbtn gbtn-chico-texto" onclick="feriaPedirPromo(${i})">${Number(pr.off) ? pr.off + '% off' : 'Quiero'}</button></div>`).join('')}</div>`;
+      cuerpo = `<h3 class="fer-titulo">✈️ Agencia de viajes</h3>${feriaPromos().length ? '<p class="fer-texto">Mirá las promos y pedí tu descuento. Podés elegir una sola vez.</p>' : '<p class="fer-texto">Todavía no hay promos cargadas. Preguntale al coordinador por los próximos viajes. 😊</p>'}<div class="fer-promos">${feriaPromos().map((pr, i) => `<div class="fer-promo"><div><b>${feriaEsc(pr.t)}</b><div class="fer-sub">${feriaEsc(pr.d || '')}</div></div><button class="gbtn gbtn-chico-texto" onclick="feriaPedirPromo(${i})">${Number(pr.off) ? pr.off + '% off' : 'Quiero'}</button></div>`).join('')}</div>`;
     } else if(id === 'sorteo'){
       const sorteo = feria.sorteo || {};
       if(!sorteo.activo) cuerpo = '<h3 class="fer-titulo">🎟️ Sorteo</h3><p class="fer-texto">El sorteo todavía no está abierto. Pasá más tarde: el coordinador lo avisa.</p>';
@@ -686,6 +681,20 @@ function adminFeriaGuardarLista(codigo, clave){
   db.ref('salas/' + codigo + '/feriaConfig/' + clave).set(items.length ? items : null).then(() => { feriaToast('Guardado'); renderAdminViajes(); });
 }
 
+// Promos de otro viaje de la misma agencia (el más reciente que tenga), para no escribirlas de nuevo en cada viaje.
+function feriaPromosDeOtroViaje(codigo){
+  const todos = window.adminTodosLosViajes || {};
+  const util = k => feriaListaDe((todos[k].feriaConfig || {}).promos).filter(p => p && p.t);
+  const k = Object.keys(todos).filter(x => x !== codigo && util(x).length).sort((a, b) => (Number(todos[b].creado) || 0) - (Number(todos[a].creado) || 0))[0];
+  return k ? { codigo: k, promos: util(k) } : null;
+}
+function adminFeriaTraerPromos(codigo){
+  const o = feriaPromosDeOtroViaje(codigo), el = document.getElementById('admin-feria-promos-' + codigo);
+  if(!o || !el) return;
+  el.value = o.promos.map(p => [p.t, p.d || '', p.off || 0].join(' | ')).join('\n');
+  feriaToast('Cargué las promos de ' + o.codigo + '. Revisalas y tocá "Guardar promos".');
+}
+
 function adminFeriaGuardarPromos(codigo){
   const el = document.getElementById('admin-feria-promos-' + codigo);
   const promos = (el ? el.value : '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, 8).map(l => {
@@ -726,7 +735,8 @@ function adminFeriaPanelHTML(codigo, viaje){
   if(adminFeriaAbiertaPara !== codigo) return '';
   const cfg = (viaje && viaje.feriaConfig) || {};
   const de = clave => { const l = feriaListaDe(cfg[clave]).map(String); return l.length ? l : FERIA_DEFECTO[clave]; };
-  const promos = feriaListaDe(cfg.promos).length ? feriaListaDe(cfg.promos) : FERIA_DEFECTO.promos;
+  const promos = feriaListaDe(cfg.promos).filter(p => p && p.t);
+  const otras = promos.length ? null : feriaPromosDeOtroViaje(codigo);
   const sorteo = (viaje && viaje.sorteo) || {};
   const numeros = sorteo.numeros || {};
   const g = sorteo.ganador;
@@ -740,8 +750,9 @@ function adminFeriaPanelHTML(codigo, viaje){
   return `<div class="fer-admin">
     <div class="fer-aviso">📥 Todos los pedidos (kiosco, farmacia, coordinador, agencia y cumpleaños) están juntos en <b>la bandeja de pedidos</b>: botón 📥 de esta fila.</div>
     ${adminFeriaListaHTML(codigo, 'kiosco', '🍬 Menú del kiosco', '(uno por línea)', de('kiosco'))}
-    <div class="fer-admin-t">✈️ Promos de la agencia <small>(Título | detalle | descuento)</small></div>
-    <textarea id="admin-feria-promos-${codigo}" rows="4">${feriaEsc(promos.map(p => [p.t, p.d || '', p.off || 0].join(' | ')).join('\n'))}</textarea>
+    <div class="fer-admin-t">✈️ Promos de la agencia <small>(una por línea: Viaje | detalle | % de descuento)</small></div>
+    <textarea id="admin-feria-promos-${codigo}" rows="6" placeholder="Ejemplo:&#10;Bariloche 7 noches | Aéreo, hotel y excursiones | 10&#10;&#10;Estos son los viajes que ven los pasajeros en el puesto de la agencia. Si no hay descuento, dejá el 0 o no pongas nada.">${feriaEsc(promos.map(p => [p.t, p.d || '', p.off || 0].join(' | ')).join('\n'))}</textarea>
+    ${otras ? `<button class="btn-primary" style="background:#5b6b85;margin-bottom:6px;" onclick="adminFeriaTraerPromos('${codigo}')">📋 Traer las promos de mi viaje ${feriaEsc(otras.codigo)} (${otras.promos.length})</button>` : ''}
     <button class="btn-primary" onclick="adminFeriaGuardarPromos('${codigo}')">Guardar promos</button>
     ${adminFeriaListaHTML(codigo, 'servicios', '🧑‍✈️ Pedidos al coordinador', '(uno por línea)', de('servicios'))}
     ${adminFeriaListaHTML(codigo, 'farmacia', '💊 Opciones de la farmacia', '(uno por línea)', de('farmacia'))}

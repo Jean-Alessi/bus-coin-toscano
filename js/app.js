@@ -303,6 +303,7 @@ function renderAdminViajes(){
     // ya está vieja: no pisar la pantalla de login con datos de otra sesión.
     if(agenciaActualId !== agenciaIdAlPedir) return;
     const datos = snap.val() || {};
+    window.adminTodosLosViajes = datos;   // para traer promos de otro viaje (feria.js)
     const codigos = Object.keys(datos);
     if(!codigos.length){
       cont.innerHTML = '<p style="color:var(--gray);font-size:13px;">Todavía no hay viajes guardados.</p>';
