@@ -301,6 +301,7 @@ function renderAdminViajes(){
           <span>${pasajeros}${capacidad ? '/' + capacidad : ''} pasajero${pasajeros === 1 ? '' : 's'}</span>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleLista('${c}')" title="Cargar lista de pasajeros">📋${listaLen ? ' ' + listaLen : ''}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCursos('${c}')" title="Cursos para la Guerra de cursos">🎓${listaCursos.length ? ' ' + listaCursos.length : ''}</button>
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleRanking('${c}')" title="Ver quién va ganando (ranking del viaje)">🥇${pasajeros ? ' ' + pasajeros : ''}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleFeria('${c}')" title="Feria de la plaza: kiosco, agencia y sorteo">🎪</button>
           ${datos[c].destino ? `<button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCanjes('${c}')" title="Ver canjes de comercios">🏪</button>` : ''}
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarPueblo('${c}','${String(datos[c].pueblo || '').replace(/'/g, '')}')" title="Pueblo de origen de los chicos (para la Vidriera)">🏘️ ${datos[c].pueblo ? String(datos[c].pueblo).replace(/</g, '') : 'Pueblo'}</button>
@@ -316,6 +317,7 @@ function renderAdminViajes(){
       ${typeof adminCopaPanelHTML === 'function' ? adminCopaPanelHTML(c, datos[c]) : ''}
       ${typeof pedidosPanelHTML === 'function' ? pedidosPanelHTML(c) : ''}
       ${typeof adminFeriaPanelHTML === 'function' ? adminFeriaPanelHTML(c, datos[c]) : ''}
+      ${adminRankingAbiertoPara === c ? adminRankingHTML(c, datos[c]) : ''}
       ${listaAbierta ? `
       <div style="margin:-6px 0 10px;">
         <textarea id="admin-lista-input-${c}" rows="4" style="width:100%;font-family:monospace;font-size:12.5px;border:1px solid var(--line-color,#ccc);border-radius:10px;padding:10px;margin-bottom:6px;" placeholder="Seleccioná en Excel las columnas Apellido, Nombre y (si querés) Curso, copialas (Ctrl+C) y pegalas acá (Ctrl+V). El curso tiene que estar cargado antes en el botón 🎓, con el mismo nombre.">${(datos[c].listaPasajeros || []).map(p => `${p.apellido}\t${p.nombre}${p.curso ? '\t' + p.curso : ''}`).join('\n')}</textarea>
@@ -328,6 +330,24 @@ function renderAdminViajes(){
       </div>` : ''}`;
     }).join('');
   });
+}
+
+let adminRankingAbiertoPara = null;
+function adminToggleRanking(codigo){
+  adminRankingAbiertoPara = adminRankingAbiertoPara === codigo ? null : codigo;
+  renderAdminViajes();
+}
+// Tabla del ranking de un viaje (los puntos son los de la pantalla Ranking: con techo diario). Se actualiza al tocar 🔄.
+function adminRankingHTML(codigo, viaje){
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  const puntos = (viaje.ranking && viaje.ranking.puntos) || {};
+  const filas = Object.keys(puntos).map(as => ({ asiento: as, nombre: puntos[as].nombre || '?', pts: Number(puntos[as].pts) || 0 })).sort((p, q) => q.pts - p.pts || String(p.nombre).localeCompare(String(q.nombre)));
+  const medallas = ['🥇', '🥈', '🥉'];
+  const cuerpo = filas.length ? filas.map((f, i) => `<div class="bingo-roster-item"><span>${medallas[i] || (i + 1) + '°'} <b>${esc(f.nombre)}</b> <small style="opacity:.7;">asiento ${esc(f.asiento)}</small></span><span class="bingo-roster-derecha"><b>${f.pts}</b> pts</span></div>`).join('') : '<p style="font-size:12.5px;color:var(--gray);">Todavía nadie sumó puntos en este viaje.</p>';
+  return `<div style="margin:-6px 0 12px;">
+    <div class="section-label">🥇 Ranking de ${esc(codigo)} · ${filas.length} pasajero${filas.length === 1 ? '' : 's'} <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:2px 8px;font-size:11px;" onclick="renderAdminViajes()" title="Actualizar">🔄</button></div>
+    <div style="max-height:360px;overflow:auto;">${cuerpo}</div>
+  </div>`;
 }
 
 let adminListaAbiertaPara = null;
