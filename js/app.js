@@ -306,6 +306,7 @@ function renderAdminViajes(){
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarPueblo('${c}','${String(datos[c].pueblo || '').replace(/'/g, '')}')" title="Pueblo de origen de los chicos (para la Vidriera)">🏘️ ${datos[c].pueblo ? String(datos[c].pueblo).replace(/</g, '') : 'Pueblo'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminToggleCopa('${c}')" title="Copa Busmac: anotar los cursos y elegir capitanes">🏆</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminCambiarEdad('${c}','${(datos[c].ajustes && datos[c].ajustes.edad) || ''}')" title="Edad del grupo: para 6 a 9 años se muestran solo los juegos para chicos">👦 ${(datos[c].ajustes && datos[c].ajustes.edad) === '6-9' ? '6-9' : 'Todas'}</button>
+          <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTopeFichas('${c}', ${(datos[c].ajustes && Number(datos[c].ajustes.topeFichas)) || 0})" title="Tope de fichas que puede ganar cada pasajero en este viaje (o libres)">🪙 ${(datos[c].ajustes && Number(datos[c].ajustes.topeFichas) > 0) ? 'Tope ' + Number(datos[c].ajustes.topeFichas) : 'Fichas libres'}</button>
           <button class="btn-eliminar-pasajero" style="width:auto;border-radius:10px;padding:4px 8px;font-size:11px;" onclick="adminTogglePoker('${c}',${!(datos[c].ajustes && datos[c].ajustes.poker === true)})" title="Póker en este viaje (apagado para estudiantiles)">🃏 ${datos[c].ajustes && datos[c].ajustes.poker === true ? 'Sí' : 'No'}</button>
           <button class="btn-finalizar-viaje" onclick="toggleCerrarViaje('${c}',${!cerrado})">${cerrado ? 'Reabrir' : 'Finalizar'}</button>
           <button class="btn-eliminar-pasajero" onclick="eliminarViaje('${c}')" title="Eliminar viaje">✕</button>
@@ -356,6 +357,18 @@ function adminCambiarEdad(codigo, actual){
   const nueva = actual === '6-9' ? null : '6-9';
   db.ref('salas/' + codigo + '/ajustes/edad').set(nueva).then(() => {
     mostrarToast(nueva ? 'Grupo de 6 a 9 años: solo juegos para chicos' : 'Todas las edades: todos los juegos');
+    renderAdminViajes();
+  });
+}
+
+// Tope de fichas por pasajero en un viaje: un número, o vacío para dejarlas libres.
+function adminTopeFichas(codigo, actual){
+  const txt = prompt('Tope de fichas que puede ganar cada pasajero en este viaje.\n\nEscribí un número (por ejemplo 1000) o dejalo vacío para que las fichas sean libres.', actual > 0 ? String(actual) : '');
+  if(txt === null) return;
+  const n = parseInt(String(txt).replace(/\D/g, ''), 10);
+  const ref = db.ref('salas/' + codigo + '/ajustes/topeFichas');
+  (n > 0 ? ref.set(n) : ref.remove()).then(() => {
+    mostrarToast(n > 0 ? 'Tope de ' + n + ' fichas por pasajero en este viaje' : 'Fichas libres en este viaje');
     renderAdminViajes();
   });
 }
@@ -507,6 +520,7 @@ function organizadorTarjetaHomeHTML(){
 }
 
 function renderHome(){
+  topeFichasEscuchar();
   modulosPrecargarDeInicio();
   pokerEscucharAjuste();
   if(typeof mundoEscuchar === 'function') mundoEscuchar();
@@ -613,6 +627,7 @@ function renderCategoriasEnListas(vista){
 }
 
 function renderJuegos(){
+  topeFichasEscuchar();
   pokerEscucharAjuste();
   edadEscucharAjuste();
   if(typeof copaEscuchar === 'function') copaEscuchar();
@@ -842,8 +857,43 @@ function actualizarMonedasEnPantalla(){
 // Suma o resta monedas jugando (positivo si acertaste, negativo si no);
 // nunca deja el saldo en negativo. Todos los juegos usan esto, Bingo incluido,
 // y también actualiza el Ranking en vivo con el mismo número.
+// ---- Tope de fichas por viaje ----
+// El organizador puede limitar cuántas fichas (monedas de la billetera) gana cada pasajero en un viaje: salas/{viaje}/ajustes/topeFichas
+// (un número; si no está, las fichas son libres). Cuenta lo que se GANA en este viaje (no lo que se gasta). Se guarda en el celular, por viaje;
+// la primera vez arranca desde los puntos que el ranking ya tenía de esa persona. Los PUNTOS del ranking no se tocan (siguen con su techo diario),
+// así el orden de los premios no se empata.
+let topeFichas = 0, topeFichasCodigo = '';
+function topeFichasEscuchar(){
+  if(typeof codigoViaje === 'undefined' || !codigoViaje || topeFichasCodigo === codigoViaje) return;
+  topeFichasCodigo = codigoViaje;
+  try { db.ref('salas/' + codigoViaje + '/ajustes/topeFichas').on('value', snap => { const v = Number(snap.val()); topeFichas = v > 0 ? Math.floor(v) : 0; }); } catch(e){}
+}
+function fichasLeerGanadas(){
+  const clave = 'fichas-ganadas-' + codigoViaje;
+  let d = null; try { d = JSON.parse(localStorage.getItem(clave)); } catch(e){}
+  if(!d || typeof d.n !== 'number'){
+    const previo = (typeof rankingPuntos !== 'undefined' && rankingPuntos[String(miAsiento)]) || {};
+    d = { n: Math.max(0, Number(previo.pts) || 0), avisado: 0 };
+  }
+  return { clave, d };
+}
+// Devuelve cuántas de esas fichas se pueden sumar a la billetera (todas, si no hay tope). Las restas pasan enteras.
+function fichasAplicarTope(cantidad){
+  if(!(cantidad > 0) || !topeFichas || !codigoViaje) return cantidad;
+  const { clave, d } = fichasLeerGanadas();
+  const otorgar = Math.max(0, Math.min(cantidad, topeFichas - d.n));
+  d.n += otorgar;
+  const avisar = otorgar < cantidad && d.avisado !== topeFichas;
+  if(avisar) d.avisado = topeFichas;
+  try { localStorage.setItem(clave, JSON.stringify(d)); } catch(e){}
+  if(avisar) setTimeout(() => mostrarToast('🪙 Llegaste al tope de ' + topeFichas + ' fichas de este viaje. Seguís sumando puntos para el ranking.'), 2900);
+  return otorgar;
+}
+
 function ganarMonedas(cantidad){
-  monedasCoin = Math.max(0, monedasCoin + cantidad);
+  topeFichasEscuchar();
+  const otorgada = fichasAplicarTope(cantidad);
+  monedasCoin = Math.max(0, monedasCoin + otorgada);
   guardarMonedas();
   actualizarMonedasEnPantalla();
   if(!miNombre || !miAsiento) return;
